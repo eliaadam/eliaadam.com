@@ -66,7 +66,7 @@ export default function SignupPage() {
       <div className="w-full max-w-sm bg-white dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800 p-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-black dark:text-white m-0">
-            Maicore
+            Sonic
           </h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             Create your account

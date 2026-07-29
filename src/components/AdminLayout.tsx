@@ -39,7 +39,7 @@ export function AdminLayout() {
         <div className="flex items-center gap-2.5 px-5 pt-5 pb-6 border-b border-neutral-800">
           <span className="text-[22px]">◈</span>
           <span className="text-base font-bold tracking-tight">
-            Maicore Admin
+            Sonic Admin
           </span>
         </div>
 

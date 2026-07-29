@@ -11,7 +11,7 @@ export default function ProfileSection() {
           Profile
         </h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
-          Your actor identity on Maicore.
+          Your actor identity on Sonic.
         </p>
       </div>
 

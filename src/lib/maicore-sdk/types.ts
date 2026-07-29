@@ -1,5 +1,5 @@
 /**
- * Maicore Platform — shared types, enums, and DTOs.
+ * Sonic Platform — shared types, enums, and DTOs.
  * Mirrors the System Admin API Reference v1.0.
  */
 
