@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import PaymentsPanel from "./PaymentsPanel"; // the existing wallet/collect/transfer panel
 import PayoutsPanel from "./PayoutsPanel";
 import CardsPanel from "./CardsPanel";
@@ -24,7 +24,6 @@ type TabDef = {
 export default function PaymentsWorkspace({
   containerId,
   permissions,
-  isAdmin = false,
 }: {
   containerId: string;
   permissions: string[];

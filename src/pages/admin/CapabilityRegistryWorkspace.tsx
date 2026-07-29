@@ -3042,13 +3042,7 @@ function PermissionsPanel({
 
 /* ── about / taxonomy ─────────────────────────────────────────────── */
 
-function AboutPanel({
-  cap,
-  meta,
-}: {
-  cap: Capability;
-  meta: CatalogEntry | null;
-}) {
+function AboutPanel({ meta }: { cap: Capability; meta: CatalogEntry | null }) {
   if (!meta) {
     return (
       <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">

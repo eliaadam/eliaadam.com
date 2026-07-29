@@ -625,7 +625,7 @@ export default function SystemSpace() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]); // multi-select node ids
   const [connectMode, setConnectMode] = useState(false);
   const [pendingSource, setPendingSource] = useState<string | null>(null);
-  const [xformInfo, setXformInfo] = useState<XformInfo | null>(null);
+  // xformInfo state removed (unused)
   const [importError, setImportError] = useState<string | null>(null);
   const [importMenuOpen, setImportMenuOpen] = useState(false);
 
@@ -986,10 +986,10 @@ export default function SystemSpace() {
     /* ---------------- shared axis-projection helpers ---------------- */
     function rayFromClientPos(clientX: number, clientY: number) {
       const rect = renderer.domElement.getBoundingClientRect();
-      const ndc = {
-        x: ((clientX - rect.left) / rect.width) * 2 - 1,
-        y: -((clientY - rect.top) / rect.height) * 2 + 1,
-      };
+      const ndc = new THREE.Vector2(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1,
+      );
       raycasterRef.current.setFromCamera(ndc, camera);
       return raycasterRef.current.ray;
     }
@@ -1262,14 +1262,14 @@ export default function SystemSpace() {
     /* ---------------- pointer handling ---------------- */
     function ndcFromEvent(e: MouseEvent) {
       const rect = renderer.domElement.getBoundingClientRect();
-      return {
-        x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        y: -((e.clientY - rect.top) / rect.height) * 2 + 1,
-      };
+      return new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1,
+      );
     }
 
-    function pick(ndc: { x: number; y: number }) {
-      raycasterRef.current.setFromCamera(ndc, camera);
+    function pick(ndc: THREE.Vector2) {
+      raycasterRef.current.setFromCamera(ndc, camera as any);
       const nodeMeshes = Array.from(meshMap.current.values());
       const edgeMeshes = Array.from(edgeMeshMap.current.values()).flatMap(
         (o) => [o.line, o.cone],
@@ -1797,7 +1797,7 @@ export default function SystemSpace() {
     }
 
     edges.forEach((e) => {
-      let obj = edgeMeshMap.current.get(e.id);
+      const obj = edgeMeshMap.current.get(e.id);
       if (!obj) {
         const lineMat = new THREE.MeshStandardMaterial({
           color: e.color || "#8b93a1",
@@ -2175,8 +2175,6 @@ export default function SystemSpace() {
       .filter((e) => validIds.has(e.source) && validIds.has(e.target));
   }
 
-  // Merges one or more source scenes (each {nodes, edges}) into the CURRENT active scene,
-  // spreading each imported scene's group out so they don't stack on top of one another.
   const mergeScenesIntoCurrent = (
     sourceScenes: { nodes: unknown[]; edges: unknown[] }[],
   ) => {
@@ -3362,4 +3360,11 @@ export default function SystemSpace() {
       </div>
     </div>
   );
+}
+
+function setXformInfo(_info: XformInfo | null) {
+  // xform badge and state are driven from xformRef and HUD update loop.
+  // This helper exists so older call sites can notify about mode/axis changes.
+  // No-op: UI reads xformRef.current each frame in the render loop.
+  return;
 }

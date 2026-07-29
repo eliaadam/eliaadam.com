@@ -7,7 +7,7 @@ import ProjectsPanel from "./panels/ProjectsPanel";
 import MembersPanel from "./panels/MembersPanel";
 import CommunicationsPanel from "./panels/CommunicationsPanel";
 import ContainerManagementPanel from "./panels/ContainerManagementPanel";
-import PaymentsPanel from "./panels/PaymentsPanel";
+
 import { UxTemplateProvider, useUxTemplate } from "./ux/UxTemplateProvider";
 import PaymentsWorkspace from "./panels/PaymentsWorkspace";
 import KycPanel from "./panels/KycPanel";
