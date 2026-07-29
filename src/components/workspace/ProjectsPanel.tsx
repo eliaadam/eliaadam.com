@@ -115,7 +115,6 @@ export default function ProjectsPanel({
 }
 
 function CreateProjectForm({
-  containerId,
   onCreated,
   onCancel,
 }: {

@@ -139,19 +139,19 @@ function PlanCard({
   const [expanded, setExpanded] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [unmet, setUnmet] = useState<any[] | null>(null);
- 
+
   const isPaid = plan.price > 0;
   const [gateway, setGateway] = useState<"selcom" | "mpesa">("selcom");
   const [buyerName, setBuyerName] = useState(actorName);
   const [buyerEmail, setBuyerEmail] = useState(actorEmail);
   const [buyerPhone, setBuyerPhone] = useState("");
- 
+
   const detailsReady = !isPaid || buyerPhone.trim().length >= 9;
- 
+
   const [pollSubId, setPollSubId] = useState<string | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollStart = useRef<number>(0);
- 
+
   const preQ = useQuery({
     queryKey: ["sub-pre", plan.id],
     queryFn: () => api("GET", `subscriptions/plans/${plan.id}/preconditions`),
@@ -159,7 +159,6 @@ function PlanCard({
   });
 
   const subscribe = useMutation({
- 
     mutationFn: () =>
       api("POST", "subscriptions/pay", {
         plan_id: plan.id,
@@ -496,7 +495,7 @@ function MySubscriptions() {
 function RedeemVoucher({
   onPay,
 }: {
-  onPay?: (s: string, a: number, c: string) => void;
+  onPay?: (subscriptionId: string, amount: number, currency: string) => void;
 }) {
   const qc = useQueryClient();
   const [code, setCode] = useState("");

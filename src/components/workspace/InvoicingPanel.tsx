@@ -117,7 +117,6 @@ export default function InvoicingPanel({
 }
 
 function CreateInvoiceForm({
-  containerId,
   onCreated,
   onCancel,
 }: {
