@@ -34,8 +34,10 @@ type DraftRole = { code: string; label: string; permissions: string };
 
 export default function CreateCapabilityModal({
   onClose,
+  onCreated,
 }: {
   onClose: () => void;
+  onCreated?: (created?: { code?: string }) => void;
 }) {
   const qc = useQueryClient();
   const [featureCode, setFeatureCode] = useState("custom.");
@@ -102,9 +104,10 @@ export default function CreateCapabilityModal({
                     .filter(Boolean),
           })),
       }),
-    onSuccess: () => {
+    onSuccess: (created: any) => {
       qc.invalidateQueries({ queryKey: ["capabilities"] });
       qc.invalidateQueries({ queryKey: ["catalog"] });
+      onCreated?.(created);
       onClose();
     },
     onError: (e: Error) => setError(e.message),
