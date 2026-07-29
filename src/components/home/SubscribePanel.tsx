@@ -526,6 +526,9 @@ function RedeemVoucher({
         setMsg(
           `Discount applied: pay ${money(d.discounted_amount, d.currency)} (was ${money(d.original_amount, d.currency)}).`,
         );
+        if (d.payment_required && d.subscription_id) {
+          onPay?.(d.subscription_id, d.discounted_amount, d.currency);
+        }
       }
     },
     onError: (e: any) => setMsg(e.body?.message ?? e.message),
