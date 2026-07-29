@@ -20,7 +20,6 @@ const RolePermissionManagementPage = lazy(
 );
 
 import HomePage from "./pages/HomePage";
-import LandingPage from "./pages/LandingPage";
 
 import AuditExplorer from "./pages/admin/AuditExplorer";
 import SystemSpace from "./pages/admin/SystemSpace";
@@ -35,9 +34,10 @@ import { VouchersPage } from "./pages/admin/VouchersPage";
 import { SubscriptionsAdminPage } from "./pages/admin/SubscriptionsAdminPage";
 import { QuestionnairesPage } from "./pages/user/panels/QuestionnairesPage";
 import { InstantiationRequestsPage } from "./pages/user/panels/InstantiationRequestsPage";
+import Home from "./pages/Home";
+import LoginPage from "./pages/LoginPage";
 const PublicSlugPage = lazy(() => import("./pages/PublicSlugPage"));
 
-const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignupPage = lazy(() => import("./pages/SignupPage"));
 
 const AdminOverviewPage = lazy(() => import("./pages/admin/AdminOverviewPage"));
@@ -69,7 +69,7 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Guest routes */}
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<Home />} />
             <Route element={<GuestGuard />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
