@@ -150,7 +150,7 @@ function PlanCard({
     "vodacom" | "airtel" | "tigo" | "halotel"
   >("vodacom");
   const buyerName = actorName;
-  const buyerEmail = actorEmail;
+  const [buyerEmail, setBuyerEmail] = useState(actorEmail);
   const [buyerPhone, setBuyerPhone] = useState("");
   // Phone is always required. For Selcom, a network must also be picked (it
   // selects the Selcom utilitycode for the USSD push). M-Pesa is Vodacom-only,
@@ -427,7 +427,13 @@ function PlanCard({
               name/email is collected — the prompt goes straight to the phone.
               buyer_name/email are still sent from the account behind the scenes
               (the pay endpoint requires them), so nothing to re-enter here. */}
-
+          <input
+            value={buyerEmail}
+            onChange={(e) => setBuyerEmail(e.target.value)}
+            placeholder="Email"
+            type="email"
+            className="w-full px-3 py-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-black dark:text-white"
+          />
           <p className="text-[10px] text-neutral-400 m-0">
             {gateway === "mpesa"
               ? "A payment prompt will be sent to this phone. Approve it to activate."
