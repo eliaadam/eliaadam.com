@@ -140,18 +140,33 @@ function PlanCard({
   const [msg, setMsg] = useState<string | null>(null);
   const [unmet, setUnmet] = useState<any[] | null>(null);
 
+  // Collection details for a PAID plan. Name + email come from the actor's
+  // account (prefilled, editable) — the actor should not re-enter what we
+  // already know. Only the PHONE is genuinely required from them, since a
+  // mobile-money number isn't part of their profile.
   const isPaid = plan.price > 0;
   const [gateway, setGateway] = useState<"selcom" | "mpesa">("selcom");
-  const [buyerName, setBuyerName] = useState(actorName);
-  const [buyerEmail, setBuyerEmail] = useState(actorEmail);
+  const [network, setNetwork] = useState<
+    "vodacom" | "airtel" | "tigo" | "halotel"
+  >("vodacom");
+  const buyerName = actorName;
+  const buyerEmail = actorEmail;
   const [buyerPhone, setBuyerPhone] = useState("");
+  // Phone is always required. For Selcom, a network must also be picked (it
+  // selects the Selcom utilitycode for the USSD push). M-Pesa is Vodacom-only,
+  // so no network picker there.
+  const detailsReady =
+    !isPaid ||
+    (buyerPhone.trim().length >= 9 &&
+      (gateway !== "selcom" || Boolean(network)));
 
-  const detailsReady = !isPaid || buyerPhone.trim().length >= 9;
-
+  // Polling state for an async (M-Pesa / USSD) payment that returns 'processing'
+  // with no redirect. We poll payment-status until active / failed / timeout.
   const [pollSubId, setPollSubId] = useState<string | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollStart = useRef<number>(0);
 
+  // Lazily evaluate pre-conditions when the user expands the card.
   const preQ = useQuery({
     queryKey: ["sub-pre", plan.id],
     queryFn: () => api("GET", `subscriptions/plans/${plan.id}/preconditions`),
@@ -159,12 +174,15 @@ function PlanCard({
   });
 
   const subscribe = useMutation({
+    // Use the pay endpoint: it subscribes, and for paid plans creates+initiates
+    // the payment intent and returns a checkout_url. Free plans come back active.
     mutationFn: () =>
       api("POST", "subscriptions/pay", {
         plan_id: plan.id,
         ...(isPaid
           ? {
               gateway,
+              ...(gateway === "selcom" ? { network } : {}),
               buyer_name: buyerName || actorName,
               buyer_email: buyerEmail || actorEmail,
               buyer_phone: buyerPhone,
@@ -175,9 +193,15 @@ function PlanCard({
       setUnmet(null);
       if (data.payment_required) {
         if (data.checkout_url) {
+          // Redirect the browser to the gateway. On return, the settled listener
+          // will have activated the subscription; the create flow re-checks and
+          // sees satisfying_subscription_id set.
           setMsg("Redirecting to payment…");
           window.location.href = data.checkout_url;
         } else {
+          // No redirect (M-Pesa / USSD): a prompt was pushed to the payer's
+          // phone. Start polling payment-status; the subscription stays PENDING
+          // until they approve and settlement activates it. No false success.
           setMsg(
             `Check your phone (${buyerPhone}) — approve the ${money(data.amount, data.currency)} prompt. Waiting for confirmation…`,
           );
@@ -351,10 +375,43 @@ function PlanCard({
                     : "border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300"
                 }`}
               >
-                {g === "selcom" ? "Selcom (card/mobile)" : "M-Pesa"}
+                {g === "selcom" ? "Selcom (mobile money)" : "M-Pesa"}
               </button>
             ))}
           </div>
+
+          {/* Network picker — Selcom only. Selects the mobile-money network the
+              USSD prompt is pushed to. M-Pesa is Vodacom-only, so it's hidden. */}
+          {gateway === "selcom" && (
+            <div>
+              <p className="text-[10px] text-neutral-400 m-0 mb-1">
+                Choose your mobile network:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ["vodacom", "M-Pesa (Vodacom)"],
+                    ["airtel", "Airtel Money"],
+                    ["tigo", "Mixx (Tigo)"],
+                    ["halotel", "Halopesa"],
+                  ] as const
+                ).map(([code, label]) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => setNetwork(code)}
+                    className={`px-3 py-1.5 text-[11px] font-semibold rounded-md border ${
+                      network === code
+                        ? "bg-black text-white dark:bg-white dark:text-black border-black dark:border-white"
+                        : "border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Phone — the one thing we don't already have. Required. */}
           <input
@@ -366,33 +423,15 @@ function PlanCard({
             className="w-full px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-black dark:text-white"
           />
 
-          {/* Name + email for Selcom checkout — prefilled from the account,
-              editable, NOT re-entered from scratch. Hidden for M-Pesa. */}
-          {gateway === "selcom" && (
-            <div className="space-y-2">
-              <p className="text-[10px] text-neutral-400 m-0">
-                Billed to your account details (edit if needed):
-              </p>
-              <input
-                value={buyerName}
-                onChange={(e) => setBuyerName(e.target.value)}
-                placeholder="Full name"
-                className="w-full px-3 py-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-black dark:text-white"
-              />
-              <input
-                value={buyerEmail}
-                onChange={(e) => setBuyerEmail(e.target.value)}
-                placeholder="Email"
-                type="email"
-                className="w-full px-3 py-2 text-xs rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-black dark:text-white"
-              />
-            </div>
-          )}
+          {/* Selcom is now mobile-money USSD push (not hosted checkout), so no
+              name/email is collected — the prompt goes straight to the phone.
+              buyer_name/email are still sent from the account behind the scenes
+              (the pay endpoint requires them), so nothing to re-enter here. */}
 
           <p className="text-[10px] text-neutral-400 m-0">
             {gateway === "mpesa"
               ? "A payment prompt will be sent to this phone. Approve it to activate."
-              : "You'll be taken to Selcom to complete payment."}
+              : "A payment prompt will be sent to this phone on your selected network. Approve it to activate."}
           </p>
         </div>
       )}

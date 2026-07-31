@@ -68,9 +68,13 @@ export default function LinksPanel({
   return (
     <div className="space-y-5 max-w-3xl">
       {can("link.manage") && <CreateLink containerId={containerId} />}
-      {can("link.view") && <LinkList containerId={containerId} canManage={can("link.manage")} />}
+      {can("link.view") && (
+        <LinkList containerId={containerId} canManage={can("link.manage")} />
+      )}
       {!can("link.view") && !can("link.manage") && (
-        <p className="text-sm text-neutral-400">You don't have access to payment links here.</p>
+        <p className="text-sm text-neutral-400">
+          You don't have access to payment links here.
+        </p>
       )}
     </div>
   );
@@ -106,7 +110,9 @@ function CreateLink({ containerId }: { containerId: string }) {
 
   return (
     <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-3">Create a payment link</p>
+      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-3">
+        Create a payment link
+      </p>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -131,7 +137,9 @@ function CreateLink({ containerId }: { containerId: string }) {
         </select>
       </div>
       {amountInvalid && (
-        <p className="text-[11px] text-amber-600 m-0 mb-2">Use digits only, max 2 decimals.</p>
+        <p className="text-[11px] text-amber-600 m-0 mb-2">
+          Use digits only, max 2 decimals.
+        </p>
       )}
       <button
         onClick={() => valid && create.mutate()}
@@ -145,7 +153,13 @@ function CreateLink({ containerId }: { containerId: string }) {
   );
 }
 
-function LinkList({ containerId, canManage }: { containerId: string; canManage: boolean }) {
+function LinkList({
+  containerId,
+  canManage,
+}: {
+  containerId: string;
+  canManage: boolean;
+}) {
   const qc = useQueryClient();
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -172,7 +186,9 @@ function LinkList({ containerId, canManage }: { containerId: string; canManage: 
 
   return (
     <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-3">Payment links</p>
+      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-3">
+        Payment links
+      </p>
       {q.isLoading ? (
         <p className="text-[11px] text-neutral-400 m-0">Loading…</p>
       ) : rows.length === 0 ? (
@@ -180,30 +196,50 @@ function LinkList({ containerId, canManage }: { containerId: string; canManage: 
       ) : (
         <div className="space-y-2">
           {rows.map((l) => (
-            <div key={l.id} className="py-2 border-b border-neutral-100 dark:border-neutral-900 last:border-0">
+            <div
+              key={l.id}
+              className="py-2 border-b border-neutral-100 dark:border-neutral-900 last:border-0"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-black dark:text-white m-0">{l.title}</p>
+                  <p className="text-sm text-black dark:text-white m-0">
+                    {l.title}
+                  </p>
                   <p className="text-[11px] text-neutral-400 m-0 tabular-nums">
-                    {l.amount !== null ? `${fromMinorUnits(l.amount)} ${l.currency}` : "Open amount"} · {l.mode} · {l.payment_count} paid
+                    {l.amount !== null
+                      ? `${fromMinorUnits(l.amount)} ${l.currency}`
+                      : "Open amount"}{" "}
+                    · {l.mode} · {l.payment_count} paid
                   </p>
                 </div>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                  l.status === "active" ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" : "text-neutral-500 bg-neutral-100 dark:bg-neutral-900"
-                }`}>
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    l.status === "active"
+                      ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30"
+                      : "text-neutral-500 bg-neutral-100 dark:bg-neutral-900"
+                  }`}
+                >
                   {l.status}
                 </span>
               </div>
               <div className="flex gap-2 mt-2">
-                <button onClick={() => copy(l.slug)}
-                  className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700">
+                <button
+                  onClick={() => copy(l.slug)}
+                  className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700"
+                >
                   {copied === l.slug ? "Copied!" : "Copy link"}
                 </button>
                 {canManage && (
                   <button
-                    onClick={() => toggle.mutate({ id: l.id, status: l.status === "active" ? "disabled" : "active" })}
+                    onClick={() =>
+                      toggle.mutate({
+                        id: l.id,
+                        status: l.status === "active" ? "disabled" : "active",
+                      })
+                    }
                     disabled={toggle.isPending}
-                    className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40">
+                    className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40"
+                  >
                     {l.status === "active" ? "Disable" : "Enable"}
                   </button>
                 )}
