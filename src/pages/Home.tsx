@@ -379,11 +379,11 @@ export default function Home(): React.ReactElement {
             ))}
           </nav>
           <a
-            href="https://sonicpesa.com/login"
+            href="/home"
             className="rounded-md border px-4 py-2 font-mono text-[11px] tracking-[0.12em] uppercase transition-colors hover:border-[color:var(--acc)] focus-visible:ring-1 focus-visible:outline-none"
             style={{ borderColor: LINE, color: TEXT }}
           >
-            Access Portal
+            Get Started
           </a>
         </div>
       </header>

@@ -7,11 +7,11 @@ import ProjectsPanel from "./panels/ProjectsPanel";
 import MembersPanel from "./panels/MembersPanel";
 import CommunicationsPanel from "./panels/CommunicationsPanel";
 import ContainerManagementPanel from "./panels/ContainerManagementPanel";
-
+import HrWorkspace from "./panels/HrWorkspace";
 import { UxTemplateProvider, useUxTemplate } from "./ux/UxTemplateProvider";
 import PaymentsWorkspace from "./panels/PaymentsWorkspace";
 import KycPanel from "./panels/KycPanel";
-
+import LogisticsWorkspace from "./panels/LogisticsWorkspace";
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 const UUID_RE =
@@ -153,6 +153,20 @@ const PANELS: Record<
     order: 90,
     slug: "manage",
     component: ContainerManagementPanel,
+  },
+  "maicore.hr": {
+    label: "Human Resources",
+    icon: "👥",
+    order: 45,
+    slug: "hr",
+    component: HrWorkspace,
+  },
+  "maicore.logistics": {
+    label: "Logistics",
+    icon: "🚚",
+    order: 50,
+    slug: "logistics",
+    component: LogisticsWorkspace,
   },
 };
 

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const API = import.meta.env.VITE_API_URL ?? "";
+const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");
-  const res = await fetch(`${API}/api/v1/hr${path}`, {
+  const res = await fetch(`${API}/api/hr${path}`, {
     method,
     headers: {
       Accept: "application/json",

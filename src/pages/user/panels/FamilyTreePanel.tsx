@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const API = import.meta.env.VITE_API_URL ?? "";
+const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");
-  const res = await fetch(`${API}/api/v1/hr${path}`, {
+  const res = await fetch(`${API}/api/hr${path}`, {
     method,
     headers: {
       Accept: "application/json",
@@ -81,7 +81,8 @@ export default function FamilyTreePanel({
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => api("DELETE", `/containers/${containerId}/relationships/${id}`),
+    mutationFn: (id: string) =>
+      api("DELETE", `/containers/${containerId}/relationships/${id}`),
     onSuccess: () => {
       setMsg("Relationship removed.");
       qc.invalidateQueries({ queryKey: ["hr", "relationships", containerId] });
@@ -158,10 +159,15 @@ export default function FamilyTreePanel({
       ) : (
         <div className="divide-y divide-neutral-100 dark:divide-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-md">
           {list.map((e) => (
-            <div key={e.id} className="flex items-center justify-between px-3 py-2 text-sm">
+            <div
+              key={e.id}
+              className="flex items-center justify-between px-3 py-2 text-sm"
+            >
               <span className="text-black dark:text-white">
                 {nameOf(e.from_record_id)}{" "}
-                <span className="text-neutral-400">is {e.relation_type} of</span>{" "}
+                <span className="text-neutral-400">
+                  is {e.relation_type} of
+                </span>{" "}
                 {nameOf(e.to_record_id)}
               </span>
               {canRemove && (

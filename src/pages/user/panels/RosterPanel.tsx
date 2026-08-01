@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const API = import.meta.env.VITE_API_URL ?? "";
+const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");
-  const res = await fetch(`${API}/api/v1/hr${path}`, {
+  const res = await fetch(`${API}/api/hr${path}`, {
     method,
     headers: {
       Accept: "application/json",
@@ -51,7 +51,9 @@ export default function RosterPanel({
   const canViewAll = can("maicore.hr.personnel.view");
   const canCreate = can("maicore.hr.personnel.create");
   const canHire = can("maicore.hr.assignment.assign");
-  const canMove = can("maicore.hr.assignment.transfer") || can("maicore.hr.assignment.promote");
+  const canMove =
+    can("maicore.hr.assignment.transfer") ||
+    can("maicore.hr.assignment.promote");
   const canOffboard = can("maicore.hr.personnel.offboard");
 
   const roster = useQuery({
@@ -59,7 +61,9 @@ export default function RosterPanel({
     queryFn: () =>
       canViewAll
         ? api("GET", `/containers/${containerId}/personnel`)
-        : api("GET", `/containers/${containerId}/personnel/me`).then((r: Person | null) => (r ? [r] : [])),
+        : api("GET", `/containers/${containerId}/personnel/me`).then(
+            (r: Person | null) => (r ? [r] : []),
+          ),
   });
 
   const [newActorId, setNewActorId] = useState("");
@@ -82,7 +86,9 @@ export default function RosterPanel({
 
   const hire = useMutation({
     mutationFn: (recordId: string) =>
-      api("POST", `/containers/${containerId}/assignments/hire`, { personnel_record_id: recordId }),
+      api("POST", `/containers/${containerId}/assignments/hire`, {
+        personnel_record_id: recordId,
+      }),
     onSuccess: () => {
       setMsg("Hired — assignment opened.");
       qc.invalidateQueries({ queryKey: ["hr", "roster", containerId] });
@@ -92,7 +98,11 @@ export default function RosterPanel({
 
   const promote = useMutation({
     mutationFn: (recordId: string) =>
-      api("POST", `/containers/${containerId}/personnel/${recordId}/promote`, {}),
+      api(
+        "POST",
+        `/containers/${containerId}/personnel/${recordId}/promote`,
+        {},
+      ),
     onSuccess: () => {
       setMsg("Promoted.");
       qc.invalidateQueries({ queryKey: ["hr", "roster", containerId] });
@@ -102,7 +112,11 @@ export default function RosterPanel({
 
   const offboard = useMutation({
     mutationFn: (recordId: string) =>
-      api("POST", `/containers/${containerId}/personnel/${recordId}/offboard`, {}),
+      api(
+        "POST",
+        `/containers/${containerId}/personnel/${recordId}/offboard`,
+        {},
+      ),
     onSuccess: () => {
       setMsg("Offboarded.");
       qc.invalidateQueries({ queryKey: ["hr", "roster", containerId] });
@@ -147,16 +161,23 @@ export default function RosterPanel({
       {roster.isLoading ? (
         <div className="text-sm text-neutral-500">Loading roster…</div>
       ) : people.length === 0 ? (
-        <div className="text-sm text-neutral-500">No personnel records yet.</div>
+        <div className="text-sm text-neutral-500">
+          No personnel records yet.
+        </div>
       ) : (
         <div className="divide-y divide-neutral-100 dark:divide-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-md">
           {people.map((p) => (
-            <div key={p.id} className="flex items-center justify-between px-3 py-2 gap-3">
+            <div
+              key={p.id}
+              className="flex items-center justify-between px-3 py-2 gap-3"
+            >
               <div className="min-w-0">
                 <div className="text-sm text-black dark:text-white truncate">
                   {p.display_name ?? p.actor_id}
                   {p.status !== "active" && (
-                    <span className="ml-2 text-[10px] uppercase text-neutral-400">{p.status}</span>
+                    <span className="ml-2 text-[10px] uppercase text-neutral-400">
+                      {p.status}
+                    </span>
                   )}
                 </div>
                 <div className="text-[11px] text-neutral-400 truncate">
