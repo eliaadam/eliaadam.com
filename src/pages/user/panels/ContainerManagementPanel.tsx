@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PublicAddressSection from "./PublicAddressSection";
 import Section from "./ContainerManagement/Section";
 import Msg from "./ContainerManagement/Msg";
+import ContainerCredentialsSection from "./ContainerManagement/ContainerCredentialsSection";
 
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
@@ -56,6 +57,7 @@ export default function ContainerManagementPanel({
       label: "Lifecycle",
       show: can("archive") || can("restore"),
     },
+    { key: "credentials", label: "Login", show: can("rename") },
   ].filter((t) => t.show);
 
   const [tab, setTab] = useState<string>(tabs[0]?.key ?? "general");
@@ -97,7 +99,11 @@ export default function ContainerManagementPanel({
           {can("rename") && <PresentationSection containerId={containerId} />}
         </div>
       )}
-
+      {tab === "credentials" && (
+        <div className="space-y-5">
+          <ContainerCredentialsSection containerId={containerId} />
+        </div>
+      )}
       {tab === "structure" && (
         <div className="space-y-5">
           {can("create_child") && (
