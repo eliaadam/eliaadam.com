@@ -1,16 +1,3 @@
-/*
- * Communications API client. commApi's unwrap rule (see MessageThread's
- * comment) is load-bearing for the rest of this module, so it's centralized
- * here instead of re-implemented per component:
- *
- *   - Laravel paginators ({ current_page, per_page, total, data: [...] })
- *     are returned AS-IS — callers dig into `.data` themselves, because the
- *     pagination metadata matters (see ConversationList/GroupsSurface).
- *   - A single custom envelope ({ data: <value> }, with no pagination keys)
- *     is unwrapped automatically — callers get <value> directly.
- *   - Everything else (bare arrays, { message, <name>: <value> } envelopes,
- *     bare Eloquent models) passes through unchanged.
- */
 
 const API_BASE = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 const COMM_PREFIX = "/api/communications";

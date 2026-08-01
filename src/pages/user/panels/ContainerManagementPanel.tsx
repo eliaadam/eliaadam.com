@@ -1,23 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PublicAddressSection from "./PublicAddressSection";
-
-/*
- * Container management — feature `maicore.hierarchy` (platform tier, on every
- * container). Redesigned as a tabbed panel so the growing set of tools stays
- * legible instead of an endless scroll.
- *
- * Tabs are permission-shaped: a tab only appears if you hold something in it.
- *   General      → rename, public address, presentation (UX template)
- *   Structure    → create child, move (with access preview)
- *   Lifecycle    → archive / restore
- *
- * Gate per action:
- *   rename / create_child      → container-admin and up
- *   archive / restore / move   → owner (via wildcard)
- * Presentation reuses the rename gate — a shared visual decision, not
- * self-service, but never an authorization one.
- */
+import Section from "./ContainerManagement/Section";
+import Msg from "./ContainerManagement/Msg";
 
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
@@ -56,12 +41,21 @@ export default function ContainerManagementPanel({
   containerId: string;
   permissions: string[];
 }) {
-  const can = (a: string) => permissions.includes(`maicore.hierarchy.container.${a}`);
+  const can = (a: string) =>
+    permissions.includes(`maicore.hierarchy.container.${a}`);
 
   const tabs: { key: string; label: string; show: boolean }[] = [
     { key: "general", label: "General", show: can("rename") },
-    { key: "structure", label: "Structure", show: can("create_child") || can("move") },
-    { key: "lifecycle", label: "Lifecycle", show: can("archive") || can("restore") },
+    {
+      key: "structure",
+      label: "Structure",
+      show: can("create_child") || can("move"),
+    },
+    {
+      key: "lifecycle",
+      label: "Lifecycle",
+      show: can("archive") || can("restore"),
+    },
   ].filter((t) => t.show);
 
   const [tab, setTab] = useState<string>(tabs[0]?.key ?? "general");
@@ -106,7 +100,9 @@ export default function ContainerManagementPanel({
 
       {tab === "structure" && (
         <div className="space-y-5">
-          {can("create_child") && <CreateChildSection containerId={containerId} />}
+          {can("create_child") && (
+            <CreateChildSection containerId={containerId} />
+          )}
           {can("move") && <MoveSection containerId={containerId} />}
         </div>
       )}
@@ -132,7 +128,10 @@ function RenameSection({ containerId }: { containerId: string }) {
   const [msg, setMsg] = useState<string | null>(null);
 
   const rename = useMutation({
-    mutationFn: () => api("PATCH", `/containers/${containerId}/name`, { display_name: name.trim() }),
+    mutationFn: () =>
+      api("PATCH", `/containers/${containerId}/name`, {
+        display_name: name.trim(),
+      }),
     onSuccess: () => {
       setMsg("Renamed.");
       setName("");
@@ -142,7 +141,10 @@ function RenameSection({ containerId }: { containerId: string }) {
   });
 
   return (
-    <Section title="Rename container" subtitle="Changes the display name everywhere it appears.">
+    <Section
+      title="Rename container"
+      subtitle="Changes the display name everywhere it appears."
+    >
       <div className="flex gap-2">
         <input
           value={name}
@@ -176,7 +178,9 @@ function PresentationSection({ containerId }: { containerId: string }) {
 
   const set = useMutation({
     mutationFn: (code: string | null) =>
-      api("PUT", `/containers/${containerId}/ux-template`, { template_code: code }),
+      api("PUT", `/containers/${containerId}/ux-template`, {
+        template_code: code,
+      }),
     onSuccess: (_d, code) => {
       setMsg(
         code === null
@@ -191,8 +195,12 @@ function PresentationSection({ containerId }: { containerId: string }) {
 
   const own = q.data?.own as string | null | undefined;
   const effective = q.data?.effective as string | undefined;
-  const available: { code: string; display_name: string; description: string | null; is_default: boolean }[] =
-    Array.isArray(q.data?.available) ? q.data.available : [];
+  const available: {
+    code: string;
+    display_name: string;
+    description: string | null;
+    is_default: boolean;
+  }[] = Array.isArray(q.data?.available) ? q.data.available : [];
 
   return (
     <Section
@@ -233,7 +241,9 @@ function PresentationSection({ containerId }: { containerId: string }) {
                     )}
                   </div>
                   {t.description && (
-                    <p className="text-[11px] text-neutral-400 m-0 mt-0.5">{t.description}</p>
+                    <p className="text-[11px] text-neutral-400 m-0 mt-0.5">
+                      {t.description}
+                    </p>
                   )}
                 </button>
               );
@@ -271,9 +281,14 @@ function CreateChildSection({ containerId }: { containerId: string }) {
   const [msg, setMsg] = useState<string | null>(null);
 
   const create = useMutation({
-    mutationFn: () => api("POST", `/containers/${containerId}/children`, { display_name: name.trim() }),
+    mutationFn: () =>
+      api("POST", `/containers/${containerId}/children`, {
+        display_name: name.trim(),
+      }),
     onSuccess: (child: any) => {
-      setMsg(`Created "${child.display_name ?? name}". You are seated as its owner.`);
+      setMsg(
+        `Created "${child.display_name ?? name}". You are seated as its owner.`,
+      );
       setName("");
       qc.invalidateQueries({ queryKey: ["move-targets", containerId] });
     },
@@ -319,7 +334,10 @@ function MoveSection({ containerId }: { containerId: string }) {
   });
 
   const doPreview = useMutation({
-    mutationFn: () => api("POST", `/containers/${containerId}/move/preview`, { new_parent_id: targetId }),
+    mutationFn: () =>
+      api("POST", `/containers/${containerId}/move/preview`, {
+        new_parent_id: targetId,
+      }),
     onSuccess: (p: MovePreview) => {
       setPreview(p);
       setMsg(null);
@@ -328,7 +346,10 @@ function MoveSection({ containerId }: { containerId: string }) {
   });
 
   const doMove = useMutation({
-    mutationFn: () => api("POST", `/containers/${containerId}/move`, { new_parent_id: targetId }),
+    mutationFn: () =>
+      api("POST", `/containers/${containerId}/move`, {
+        new_parent_id: targetId,
+      }),
     onSuccess: () => {
       setPreview(null);
       setTargetId("");
@@ -339,9 +360,8 @@ function MoveSection({ containerId }: { containerId: string }) {
     onError: (e: Error) => setMsg(e.message),
   });
 
-  const list: { id: string; display_name: string; depth: number }[] = Array.isArray(targets.data)
-    ? targets.data
-    : [];
+  const list: { id: string; display_name: string; depth: number }[] =
+    Array.isArray(targets.data) ? targets.data : [];
 
   return (
     <Section
@@ -351,7 +371,11 @@ function MoveSection({ containerId }: { containerId: string }) {
       {!preview ? (
         <>
           <div className="flex gap-2">
-            <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className={inputClass}>
+            <select
+              value={targetId}
+              onChange={(e) => setTargetId(e.target.value)}
+              className={inputClass}
+            >
               <option value="">Choose new parent…</option>
               {list.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -375,19 +399,35 @@ function MoveSection({ containerId }: { containerId: string }) {
       ) : (
         <div className="rounded-xl border border-amber-300 dark:border-amber-700 p-4">
           <p className="text-sm text-black dark:text-white m-0 mb-2">
-            Moving <strong>{preview.container.display_name}</strong> ({preview.subtree_size} container
+            Moving <strong>{preview.container.display_name}</strong> (
+            {preview.subtree_size} container
             {preview.subtree_size !== 1 ? "s" : ""} total) under{" "}
             <strong>{preview.new_parent.display_name}</strong>
           </p>
 
-          <AccessDiff label="Will lose access" people={preview.losing_access} tone="loss" />
-          <AccessDiff label="Will gain access" people={preview.gaining_access} tone="gain" />
+          <AccessDiff
+            label="Will lose access"
+            people={preview.losing_access}
+            tone="loss"
+          />
+          <AccessDiff
+            label="Will gain access"
+            people={preview.gaining_access}
+            tone="gain"
+          />
 
           <div className="flex gap-2 mt-3">
-            <button onClick={() => doMove.mutate()} disabled={doMove.isPending} className={primaryBtn}>
+            <button
+              onClick={() => doMove.mutate()}
+              disabled={doMove.isPending}
+              className={primaryBtn}
+            >
               Confirm move
             </button>
-            <button onClick={() => setPreview(null)} className="px-3 py-2 text-xs text-neutral-500">
+            <button
+              onClick={() => setPreview(null)}
+              className="px-3 py-2 text-xs text-neutral-500"
+            >
               Cancel
             </button>
           </div>
@@ -409,7 +449,9 @@ function AccessDiff({
 }) {
   return (
     <div className="mb-2">
-      <p className={`text-[11px] font-semibold m-0 mb-1 ${tone === "loss" ? "text-amber-600" : "text-emerald-600"}`}>
+      <p
+        className={`text-[11px] font-semibold m-0 mb-1 ${tone === "loss" ? "text-amber-600" : "text-emerald-600"}`}
+      >
         {label} ({people.length})
       </p>
       {people.length === 0 ? (
@@ -418,7 +460,8 @@ function AccessDiff({
         <ul className="m-0 pl-4">
           {people.map((p) => (
             <li key={p.actor_id} className="text-[11px] text-neutral-500">
-              {p.actor_id.slice(0, 8)}… <span className="text-neutral-400">via {p.via_container}</span>
+              {p.actor_id.slice(0, 8)}…{" "}
+              <span className="text-neutral-400">via {p.via_container}</span>
             </li>
           ))}
         </ul>
@@ -487,7 +530,10 @@ function ArchiveSection({
               >
                 Yes, archive
               </button>
-              <button onClick={() => setConfirming(false)} className="px-3 py-2 text-xs text-neutral-500">
+              <button
+                onClick={() => setConfirming(false)}
+                className="px-3 py-2 text-xs text-neutral-500"
+              >
                 Cancel
               </button>
             </>
@@ -513,28 +559,3 @@ const inputClass =
   "flex-1 px-3 py-2 text-sm rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-black dark:text-white";
 const primaryBtn =
   "px-3 py-2 text-xs font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black disabled:opacity-40";
-
-function Msg({ text }: { text: string }) {
-  return <p className="text-[11px] text-neutral-500 mt-2 m-0">{text}</p>;
-}
-
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="rounded-xl border border-neutral-200 dark:border-neutral-800"
-      style={{ padding: "var(--ux-panel-pad, 1rem)" }}
-    >
-      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-1">{title}</p>
-      {subtitle && <p className="text-[11px] text-neutral-400 m-0 mb-3">{subtitle}</p>}
-      {children}
-    </div>
-  );
-}
