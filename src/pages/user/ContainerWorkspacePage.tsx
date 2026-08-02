@@ -14,6 +14,7 @@ import KycPanel from "./panels/KycPanel";
 import LogisticsWorkspace from "./panels/LogisticsWorkspace";
 import MarketplaceWorkspace from "./panels/Marketplace/MarketplaceWorkspace";
 import InventoryWorkspace from "./panels/Inventory/InventoryWorkspace";
+import AppsWorkspace from "./panels/Apps/AppsWorkspace";
 
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
@@ -92,7 +93,6 @@ const PANELS: Record<
     label: string;
     icon: string;
     order: number;
-    /** URL-safe short name for this panel in the path, e.g. /acme/payments. */
     slug: string;
     component: React.ComponentType<{
       containerId: string;
@@ -185,6 +185,13 @@ const PANELS: Record<
     slug: "inventory",
     component: InventoryWorkspace,
   },
+  "maicore.apps": {
+    label: "Apps",
+    icon: "🧩",
+    order: 90,
+    slug: "apps",
+    component: AppsWorkspace,
+  },
 };
 
 /** panel slug (from URL) → capability code */
@@ -243,7 +250,7 @@ export default function ContainerWorkspacePage() {
     return () => {
       cancelled = true;
     };
-  }, [rawId, isUuid]);
+  }, [rawId, isUuid, navigate]);
 
   const workspaceQuery = useQuery({
     queryKey: ["workspace", resolvedId],
