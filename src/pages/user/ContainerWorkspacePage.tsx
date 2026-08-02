@@ -12,6 +12,8 @@ import { UxTemplateProvider, useUxTemplate } from "./ux/UxTemplateProvider";
 import PaymentsWorkspace from "./panels/PaymentsWorkspace";
 import KycPanel from "./panels/KycPanel";
 import LogisticsWorkspace from "./panels/LogisticsWorkspace";
+import MarketplaceWorkspace from "./panels/Marketplace/MarketplaceWorkspace";
+import InventoryWorkspace from "./panels/InventoryWorkspace";
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 const UUID_RE =
@@ -167,6 +169,20 @@ const PANELS: Record<
     order: 50,
     slug: "logistics",
     component: LogisticsWorkspace,
+  },
+  "maicore.marketplace": {
+    label: "Marketplace",
+    icon: "🏪",
+    order: 70,
+    slug: "marketplace",
+    component: MarketplaceWorkspace,
+  },
+  "maicore.inventory": {
+    label: "Inventory",
+    icon: "📦",
+    order: 60,
+    slug: "inventory",
+    component: InventoryWorkspace,
   },
 };
 

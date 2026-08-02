@@ -127,10 +127,10 @@ export default function HomeSection() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3 mb-1">
                   <h3 className="text-sm font-semibold text-black dark:text-white m-0">
-                    {c.display_name}
+                    {c.code}
                   </h3>
                   <span className="text-xs font-mono px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400">
-                    {c.code}
+                    {c.display_name}
                   </span>
                   <span
                     className={`inline-block px-2 py-0.5 text-[11px] font-semibold rounded-full uppercase ${

@@ -7,7 +7,7 @@ import { userApi } from "../../lib/maicore";
 type SubTab = "recent" | "discover";
 
 export default function DashboardSection() {
-  const { actor, isAdmin } = useAuth();
+  const { actor } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [subTab, setSubTab] = useState<SubTab>("recent");
@@ -98,25 +98,6 @@ export default function DashboardSection() {
         </p>
       </div>
 
-      {isAdmin && (
-        <div className="rounded-xl border border-black dark:border-white p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-black dark:text-white m-0">
-              You have System Admin access
-            </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 m-0 mt-0.5">
-              Manage actors, containers, and roles.
-            </p>
-          </div>
-          <button
-            onClick={() => navigate("/admin")}
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition flex-shrink-0"
-          >
-            Open Admin →
-          </button>
-        </div>
-      )}
-
       {/* Chip navigation */}
       <div className="flex gap-2">
         <Chip active={subTab === "recent"} onClick={() => setSubTab("recent")}>
@@ -151,10 +132,10 @@ export default function DashboardSection() {
               >
                 <div className="min-w-0">
                   <span className="text-sm font-medium text-black dark:text-white block truncate">
-                    {c.display_name}
+                    {c.code}
                   </span>
                   <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-600">
-                    {c.code}
+                    {c.display_name}
                   </span>
                 </div>
                 <span className="text-neutral-400 dark:text-neutral-600 flex-shrink-0 ml-3">
@@ -225,16 +206,16 @@ export default function DashboardSection() {
                   key={c.id}
                   className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 ">
                     <div className="flex flex-wrap items-center gap-3 mb-1">
                       <h3 className="text-sm font-semibold text-black dark:text-white m-0">
-                        {c.display_name}
+                        {c.code}
                       </h3>
                       <span className="text-xs font-mono px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400">
-                        {c.code}
+                        {c.display_name}
                       </span>
                       <span
-                        className={`inline-block px-2 py-0.5 text-[11px] font-semibold rounded-full uppercase ${
+                        className={`inline-block px-2 py-0.5 text-[8px] font-semibold rounded-full uppercase ${
                           c.status === "active"
                             ? "bg-black text-white dark:bg-white dark:text-black"
                             : "border border-neutral-300 dark:border-neutral-700 text-neutral-500"

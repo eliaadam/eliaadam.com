@@ -3,6 +3,9 @@ import { useState } from "react";
 import RosterPanel from "./RosterPanel";
 import OrgChartPanel from "./OrgChartPanel";
 import FamilyTreePanel from "./FamilyTreePanel";
+import PositionsPanel from "./PositionsPanel";
+import WorkforceCostPanel from "./WorkforceCostPanel";
+import HrPolicyPanel from "./HrPolicyPanel";
 
 /**
  * HR workspace shell. One capability, two ux projections over the SAME data:
@@ -33,17 +36,36 @@ export default function HrWorkspace({
     {
       key: "roster",
       label: "Roster",
-      show: can("maicore.hr.personnel.view") || can("maicore.hr.personnel.view_self"),
+      show:
+        can("maicore.hr.personnel.view") ||
+        can("maicore.hr.personnel.view_self"),
     },
     {
       key: "org",
       label: "Org Chart",
-      show: !isFamily && (can("maicore.hr.position.view") || can("maicore.hr.assignment.view")),
+      show:
+        !isFamily &&
+        (can("maicore.hr.position.view") || can("maicore.hr.assignment.view")),
     },
     {
       key: "family",
       label: "Family Tree",
       show: isFamily && can("maicore.hr.relationship.view"),
+    },
+    {
+      key: "positions",
+      label: "Positions",
+      show: !isFamily && can("maicore.hr.position.view"),
+    },
+    {
+      key: "workforce",
+      label: "Workforce",
+      show: !isFamily && can("maicore.hr.cost.view"),
+    },
+    {
+      key: "policy",
+      label: "Policy",
+      show: can("maicore.hr.policy.view") || can("maicore.hr.policy.manage"),
     },
   ].filter((t) => t.show);
 
@@ -76,9 +98,30 @@ export default function HrWorkspace({
       </div>
 
       <div className="flex-1 overflow-auto">
-        {active === "roster" && <RosterPanel containerId={containerId} permissions={permissions} />}
-        {active === "org" && <OrgChartPanel containerId={containerId} permissions={permissions} />}
-        {active === "family" && <FamilyTreePanel containerId={containerId} permissions={permissions} />}
+        {active === "roster" && (
+          <RosterPanel containerId={containerId} permissions={permissions} />
+        )}
+        {active === "org" && (
+          <OrgChartPanel containerId={containerId} permissions={permissions} />
+        )}
+        {active === "family" && (
+          <FamilyTreePanel
+            containerId={containerId}
+            permissions={permissions}
+          />
+        )}
+        {active === "positions" && (
+          <PositionsPanel containerId={containerId} permissions={permissions} />
+        )}
+        {active === "workforce" && (
+          <WorkforceCostPanel
+            containerId={containerId}
+            permissions={permissions}
+          />
+        )}
+        {active === "policy" && (
+          <HrPolicyPanel containerId={containerId} permissions={permissions} />
+        )}
       </div>
     </div>
   );
