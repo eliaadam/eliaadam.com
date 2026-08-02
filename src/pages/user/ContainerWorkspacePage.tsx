@@ -13,7 +13,8 @@ import PaymentsWorkspace from "./panels/PaymentsWorkspace";
 import KycPanel from "./panels/KycPanel";
 import LogisticsWorkspace from "./panels/LogisticsWorkspace";
 import MarketplaceWorkspace from "./panels/Marketplace/MarketplaceWorkspace";
-import InventoryWorkspace from "./panels/InventoryWorkspace";
+import InventoryWorkspace from "./panels/Inventory/InventoryWorkspace";
+
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 const UUID_RE =
@@ -228,10 +229,7 @@ export default function ContainerWorkspacePage() {
         setResolveError("notfound");
       } else if (r.type === "redirect") {
         const to = r.id.replace(/^redirect:/, "");
-        // Preserve whatever panel is in the URL at redirect time. Read it live
-        // rather than depending on params.panel, so a mere tab switch does NOT
-        // re-run slug resolution (which would blank resolvedId and reload the
-        // whole workspace on every tab click).
+
         const segments = window.location.pathname.split("/").filter(Boolean);
         const panelInUrl = segments[1]; // /{slug}/{panel}
         navigate(`/${to}${panelInUrl ? `/${panelInUrl}` : ""}`, {
@@ -245,18 +243,13 @@ export default function ContainerWorkspacePage() {
     return () => {
       cancelled = true;
     };
-    // Identity only. The panel is intentionally NOT a dependency: switching
-    // tabs must not re-resolve the container.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawId, isUuid]);
 
   const workspaceQuery = useQuery({
     queryKey: ["workspace", resolvedId],
     queryFn: () => fetchWorkspace(resolvedId!),
     enabled: !!resolvedId,
-    // The workspace (capabilities, permissions, template) doesn't change as you
-    // move between tabs. Keep it fresh briefly so panel navigation serves from
-    // cache instead of refetching on every tab click.
+
     staleTime: 30_000,
   });
 
@@ -322,9 +315,6 @@ export default function ContainerWorkspacePage() {
       <WorkspaceBody
         workspace={workspace}
         containerId={resolvedId}
-        // The slug is CANONICAL when the container has one: a container with a
-        // public address always lives at /{slug}/..., even if reached by UUID.
-        // Only a container WITHOUT a slug uses the /u/workspace/{id} path.
         addressBase={
           workspace.container.slug
             ? `/${workspace.container.slug}`
@@ -362,8 +352,6 @@ function WorkspaceBody({
     (c) => !PANELS[c.code] && c.has_frontend !== false,
   );
 
-  // The active panel now comes from the URL. Map the panel slug in the path to
-  // a capability code; fall back to the first renderable capability.
   const codeFromUrl = panelSlugFromUrl
     ? PANEL_SLUG_TO_CODE[panelSlugFromUrl]
     : undefined;
@@ -372,21 +360,13 @@ function WorkspaceBody({
       ? codeFromUrl
       : (renderable[0]?.code ?? null);
 
-  // Navigating is how you switch tabs — the URL is the source of truth.
   const goToPanel = (code: string) => {
     const panelSlug = PANELS[code]?.slug;
     if (!panelSlug) return;
-    // On the UUID route addressBase already includes the id; append the panel.
-    // On the slug route addressBase is "/{slug}"; append the panel.
+
     navigate(`${addressBase}/${panelSlug}`);
   };
 
-  // Canonicalise the URL. Two corrections, both via one replace:
-  //   1. no panel in the path  → append the active panel, so the URL always
-  //      names what's shown and is shareable.
-  //   2. wrong base            → if the container has a slug, addressBase is
-  //      /{slug}; a visit via /u/workspace/{uuid}/panel is redirected onto the
-  //      canonical slug address. A container without a slug stays on the uuid.
   useEffect(() => {
     if (!active) return;
 
@@ -397,7 +377,6 @@ function WorkspaceBody({
     if (window.location.pathname !== canonical) {
       navigate(canonical, { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panelSlugFromUrl, active, addressBase]);
 
   const activeCapability = renderable.find((c) => c.code === active);
