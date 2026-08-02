@@ -1,17 +1,17 @@
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 
 const navItems = [
-  { tab: "dashboard", label: "Dashboard", icon: "📊" },
-  { tab: "home", label: "Home", icon: "🏠" },
-  { tab: "apps", label: "Apps", icon: "📦" },
+  { tab: "dashboard", label: "Stats", icon: "📊" },
+  { tab: "home", label: "Feeds", icon: "🏠" },
+  { tab: "apps", label: "Marketplace", icon: "📦" },
   { tab: "invitations", label: "Invitations", icon: "✉️" },
-  { tab: "create", label: "Create", icon: "🚀" },
-  { tab: "profile", label: "Profile", icon: "👤" },
+  { tab: "profile", label: "Manage", icon: "👤" },
+  { tab: "create", label: "Developer", icon: "🚀" },
 ];
 
-export function HomeLayout() {
+export function ContianerWorkspaceLayout() {
   const { actor, isAdmin, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();

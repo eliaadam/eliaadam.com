@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthGuard, GuestGuard } from "./components/AuthGuard";
 import { AdminGuard } from "./components/AdminGuard";
-import { AdminLayout } from "./components/AdminLayout";
+import { AdminLayout } from "./components/layouts/AdminLayout";
 import ContainerManagementPage from "./pages/admin/ContainerManagementPage";
 import ContainerKindManagementPage from "./pages/admin/ContainerKindManagementPage";
 import ContainerTemplateManagementPage from "./pages/admin/ContainerTemplateManagementPage";
@@ -13,7 +13,7 @@ const ContainerWorkspacePage = lazy(
   () => import("./pages/user/ContainerWorkspacePage"),
 );
 
-import { HomeLayout } from "./components/HomeLayout";
+import { HomeLayout } from "./components/layouts/HomeLayout";
 
 const RolePermissionManagementPage = lazy(
   () => import("./pages/admin/RolePermissionManagementPage"),
@@ -36,6 +36,7 @@ import { QuestionnairesPage } from "./pages/user/panels/QuestionnairesPage";
 import { InstantiationRequestsPage } from "./pages/user/panels/InstantiationRequestsPage";
 import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
+
 const PublicSlugPage = lazy(() => import("./pages/PublicSlugPage"));
 
 const SignupPage = lazy(() => import("./pages/SignupPage"));
@@ -80,9 +81,16 @@ export default function App() {
               <Route element={<HomeLayout />}>
                 <Route path="/home" element={<HomePage />} />
 
-                {/* Workspace by internal id — for containers WITHOUT a slug,
-                    and the entry the "Open in workspace" button uses before the
-                    workspace canonicalises itself to a slug when one exists. */}
+                {/* <Route element={<ContianerWorkspaceLayout />}>
+                  <Route
+                    path="/u/workspace/:containerId"
+                    element={<ContainerWorkspacePage />}
+                  />
+                  <Route
+                    path="/u/workspace/:containerId/:panel"
+                    element={<ContainerWorkspacePage />}
+                  />
+                </Route> */}
                 <Route
                   path="/u/workspace/:containerId"
                   element={<ContainerWorkspacePage />}
@@ -91,12 +99,6 @@ export default function App() {
                   path="/u/workspace/:containerId/:panel"
                   element={<ContainerWorkspacePage />}
                 />
-
-                {/* Workspace by vanity slug — SAME guard + layout as the id
-                    route, so /acme/members renders identically to the uuid path.
-                    This is the authenticated workspace, just at a pretty
-                    address. (The bare-slug public stub below stays outside the
-                    layout on purpose.) */}
                 <Route
                   path="/:slug/:panel"
                   element={<ContainerWorkspacePage />}
