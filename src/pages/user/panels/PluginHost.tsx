@@ -29,7 +29,7 @@ type PluginManifest = {
   id: string;
   name: string;
   app_slug: string;
-  entry: string; // absolute URL to the plugin's index.html
+  entry: string;
   requested_scopes: string[];
   sandbox?: { allow_forms?: boolean; allow_popups?: boolean };
 };
@@ -37,15 +37,12 @@ type PluginManifest = {
 type Props = {
   manifest: PluginManifest;
   containerId: string;
-  grantedScopes: string[]; // the App's installed scopes in this container (from server)
-  appToken: string; // the app's /api/v1 token — TRUSTED, never passed to iframe
+  grantedScopes: string[];
+  appToken: string;
   apiBase?: string;
   height?: number;
 };
 
-// Map a scope to the API path prefixes it permits (client mirror of server rules).
-// This MUST stay a strict subset of what the server enforces — err on the side of
-// denying. The server is the real gate; this only produces fast, honest errors.
 const SCOPE_RULES: Record<string, { methods: string[]; prefix: RegExp }[]> = {
   "inventory.read": [{ methods: ["GET"], prefix: /^\/inventory\// }],
   "inventory.write": [
@@ -101,8 +98,6 @@ export default function PluginHost({
           "*",
         );
 
-      // Path must be relative and container-scoped by the host — the plugin never
-      // chooses the container; we inject the CURRENT one.
       if (!path.startsWith("/"))
         return reply({
           ok: false,
@@ -110,7 +105,6 @@ export default function PluginHost({
           error: "path must start with /",
         });
 
-      // Client-side scope mirror (fast fail). Server re-checks regardless.
       if (!scopeAllows(effectiveScopes, method, path)) {
         return reply({
           ok: false,
@@ -120,8 +114,6 @@ export default function PluginHost({
         });
       }
 
-      // Inject the container into inventory/marketplace paths so a plugin can't
-      // target a different container than the one it's installed in.
       const scopedPath = path.replace(
         /^\/(inventory|marketplace)\/containers\/[^/]+/,
         (_m, cap) => `/${cap}/containers/${containerId}`,
