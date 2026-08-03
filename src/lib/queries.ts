@@ -39,20 +39,6 @@ export async function fetchSession(): Promise<Actor | null> {
   return null;
 }
 
-/**
- * "System admin" is NOT a permission you check — it is a STATE: you hold a
- * wildcard role in the system container.
- *
- * The old version asked the Gate for resource "system" / action "admin", i.e.
- * permission "system.admin". That permission does not exist — the only
- * system-tier entry is the wildcard marker "system.*", which is not a checkable
- * permission. So the Gate always returned false and the System Admin button
- * never lit, even for a real admin.
- *
- * The backend endpoint answers the real question directly: does this actor hold
- * a wildcard in the system container? No permission code, no guessing, and it
- * cannot drift out of sync with what the Gate considers an admin.
- */
 export async function checkIsAdmin(): Promise<boolean> {
   const token = localStorage.getItem("maicore_token");
   if (!token) return false;

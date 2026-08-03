@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
-import { system, setAuthToken, clearToken } from "../lib/system";
+
 import {
   queryKeys,
   fetchSession,
@@ -10,7 +10,7 @@ import {
   clearActor,
 } from "../lib/queries";
 import type { Actor, LoginRequest, MaicoreValidationError } from "../lib/system-sdk";
-
+import { system, setAuthToken, clearToken } from "../lib/system";
 
 export interface AuthState {
   actor: Actor | null | undefined;

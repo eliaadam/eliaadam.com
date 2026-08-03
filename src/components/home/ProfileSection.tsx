@@ -10,9 +10,6 @@ export default function ProfileSection() {
         <h1 className="text-xl sm:text-2xl font-bold text-black dark:text-white m-0">
           Profile
         </h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
-          Your actor identity on Sonic.
-        </p>
       </div>
 
       <div className="bg-white dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 sm:p-6">
@@ -44,11 +41,9 @@ export default function ProfileSection() {
           Actor Details
         </h3>
         <div className="flex flex-col gap-3">
-          <DetailRow label="Actor ID" value={actor.id} mono />
           <DetailRow label="Display Name" value={actor.display_name} />
-          <DetailRow label="Code" value={actor.code ?? "—"} />
+          <DetailRow label="User Name" value={actor.code ?? "—"} />
           <DetailRow label="Status" value={actor.status} />
-          <DetailRow label="Type ID" value={actor.actor_type_id || "—"} mono />
         </div>
       </div>
     </div>

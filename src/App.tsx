@@ -23,7 +23,7 @@ import PublicPayPage from "./pages/PublicPayPage";
 import { PaymentSettingsPage } from "./pages/user/PaymentSettingsPage";
 import { KycReviewPage } from "./pages/admin/KycReviewPage";
 import { PayoutsAdminPage } from "./pages/admin/PayoutsAdminPage";
-import CapabilityRegistryWorkspace from "./pages/admin/CapabilityRegistryWorkspace";
+
 import { InstantiationRulesPage } from "./pages/admin/InstantiationRulesPage";
 import { SubscriptionPlansPage } from "./pages/admin/SubscriptionPlansPage";
 import { VouchersPage } from "./pages/admin/VouchersPage";
@@ -35,6 +35,7 @@ import LoginPage from "./pages/LoginPage";
 import ContainerManagementPage from "./pages/admin/containers/ContainerManagementPage";
 import { HomeSectionLayout } from "./components/layouts/HomeSectionLayout";
 import { AdminSectionLayout } from "./components/layouts/AdminSectionLayout";
+import CapabilityRegistryWorkspace from "./pages/admin/registry/CapabilityRegistryWorkspace";
 
 const PublicSlugPage = lazy(() => import("./pages/PublicSlugPage"));
 
