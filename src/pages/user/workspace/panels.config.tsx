@@ -27,7 +27,9 @@ import MarketplaceWorkspace from "../panels/Marketplace/MarketplaceWorkspace";
 import InventoryWorkspace from "../panels/Inventory/InventoryWorkspace";
 import AppsWorkspace from "../panels/Apps/AppsWorkspace";
 import InvoicingPanel from "../panels/InvoicingPanel";
+
 import type { PanelDefinition } from "./types";
+import TemplatesWorkspace from "../panels/templates/TemplatesWorkspace";
 
 export const PANELS: Record<string, PanelDefinition> = {
   "system.membership": {
@@ -120,6 +122,13 @@ export const PANELS: Record<string, PanelDefinition> = {
     order: 90,
     slug: "apps",
     component: AppsWorkspace,
+  },
+  "maicore.templates": {
+    label: "Templates",
+    icon: FileText,
+    order: 55,
+    slug: "templates",
+    component: TemplatesWorkspace,
   },
 };
 

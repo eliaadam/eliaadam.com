@@ -94,7 +94,7 @@ export default function DashboardSection() {
           Welcome, {actor?.display_name}
         </h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
-          Here's what's happening across your containers.
+          Here's what's happening across your apps.
         </p>
       </div>
 
