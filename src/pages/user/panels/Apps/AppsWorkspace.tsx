@@ -2,6 +2,7 @@ import { useState } from "react";
 import InstalledAppsPanel from "./InstalledAppsPanel";
 import AppDirectoryPanel from "./AppDirectoryPanel";
 import DeveloperAppsPanel from "./DeveloperAppsPanel";
+import PluginsPanel from "./PluginsPanel";
 
 /**
  * Apps workspace — three faces of the developer platform:
@@ -18,15 +19,36 @@ export default function AppsWorkspace({
 }) {
   const can = (c: string) => permissions.includes(c);
   const tabs = [
-    { key: "installed", label: "Installed", show: can("maicore.apps.installation.view") },
-    { key: "directory", label: "Directory", show: can("maicore.apps.installation.install") },
-    { key: "developer", label: "Developer", show: can("maicore.apps.app.view") },
+    {
+      key: "installed",
+      label: "Installed",
+      show: can("maicore.apps.installation.view"),
+    },
+    {
+      key: "directory",
+      label: "Directory",
+      show: can("maicore.apps.installation.install"),
+    },
+    {
+      key: "developer",
+      label: "Developer",
+      show: can("maicore.apps.app.view"),
+    },
+    {
+      key: "plugins",
+      label: "Plugins",
+      show: can("maicore.apps.installation.view"),
+    },
   ].filter((t) => t.show);
 
   const [active, setActive] = useState(tabs[0]?.key ?? "installed");
 
   if (tabs.length === 0) {
-    return <div className="p-6 text-sm text-neutral-500">You don't hold any apps permissions here.</div>;
+    return (
+      <div className="p-6 text-sm text-neutral-500">
+        You don't hold any apps permissions here.
+      </div>
+    );
   }
 
   return (
@@ -43,9 +65,25 @@ export default function AppsWorkspace({
         ))}
       </div>
       <div className="flex-1 overflow-auto">
-        {active === "installed" && <InstalledAppsPanel containerId={containerId} permissions={permissions} />}
-        {active === "directory" && <AppDirectoryPanel containerId={containerId} permissions={permissions} />}
-        {active === "developer" && <DeveloperAppsPanel containerId={containerId} permissions={permissions} />}
+        {active === "installed" && (
+          <InstalledAppsPanel
+            containerId={containerId}
+            permissions={permissions}
+          />
+        )}
+        {active === "directory" && (
+          <AppDirectoryPanel
+            containerId={containerId}
+            permissions={permissions}
+          />
+        )}
+        {active === "developer" && (
+          <DeveloperAppsPanel
+            containerId={containerId}
+            permissions={permissions}
+          />
+        )}
+        {active === "plugins" && <PluginsPanel containerId={containerId} />}
       </div>
     </div>
   );
