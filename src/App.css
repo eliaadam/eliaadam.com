@@ -1,44 +1,47 @@
 @import "tailwindcss";
 
- 
-  html {
-    scrollbar-width: thin;
-    scrollbar-color: rgb(163 163 163) rgb(245 245 245);
-  }
+/* Thin, minimal scrollbar matching the grayscale design system — applies globally */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(212 212 212) transparent; /* neutral-300 */
+}
 
-  html.dark {
-    scrollbar-color: rgb(82 82 82) rgb(23 23 23);
-  }
+*::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
 
-  *::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  *::-webkit-scrollbar-track {
-    background: rgb(245 245 245);
-  }
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(212 212 212); /* neutral-300 */
+  border-radius: 9999px;
+}
 
-  *::-webkit-scrollbar-thumb {
-    background: rgb(163 163 163);
-    border-radius: 9999px;
-    border: 2px solid rgb(245 245 245);
-  }
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(163 163 163); /* neutral-400 */
+}
 
-  *::-webkit-scrollbar-thumb:hover {
-    background: rgb(115 115 115);
-  }
+.dark * {
+  scrollbar-color: rgb(64 64 64) transparent; /* neutral-700 */
+}
 
-  html.dark *::-webkit-scrollbar-track {
-    background: rgb(23 23 23);
-  }
+.dark *::-webkit-scrollbar-thumb {
+  background-color: rgb(64 64 64); /* neutral-700 */
+}
 
-  html.dark *::-webkit-scrollbar-thumb {
-    background: rgb(82 82 82);
-    border-color: rgb(23 23 23);
-  }
+.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(115 115 115); /* neutral-500 */
+}
 
-  html.dark *::-webkit-scrollbar-thumb:hover {
-    background: rgb(115 115 115);
-  }
- 
+/* Add alongside your existing scroll-thin rules */
+.scroll-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}

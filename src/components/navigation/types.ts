@@ -1,0 +1,1 @@
+export type SidebarView = "full" | "icons" | "text";

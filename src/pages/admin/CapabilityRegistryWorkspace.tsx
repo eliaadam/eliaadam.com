@@ -9,7 +9,6 @@ import CreateCapabilityModal from "./CreateCapabilityModal";
 
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
-/** Used for /api/authority/*, /api/hierarchy/* — unwraps straight to `.data`. */
 async function api(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");
   const res = await fetch(`${API}/api${path}`, {
@@ -31,12 +30,6 @@ async function api(method: string, path: string, body?: unknown) {
   return j.data ?? j;
 }
 
-/**
- * Used for /api/registry/* — returns the raw body ({data, metadata} or
- * {data, meta}) rather than unwrapping, because several call sites need the
- * sibling keys (pagination `meta`, or just want to destructure `.data`
- * themselves). Defaults to GET; pass a method/body for writes.
- */
 async function apiFetch<T>(
   path: string,
   method: string = "GET",

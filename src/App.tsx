@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthGuard, GuestGuard } from "./components/AuthGuard";
 import { AdminGuard } from "./components/AdminGuard";
 import { AdminLayout } from "./components/layouts/AdminLayout";
-import ContainerManagementPage from "./pages/admin/ContainerManagementPage";
+
 import ContainerKindManagementPage from "./pages/admin/ContainerKindManagementPage";
 import ContainerTemplateManagementPage from "./pages/admin/ContainerTemplateManagementPage";
 import HierarchyTemplateManagementPage from "./pages/admin/HierarchyTemplateManagementPage";
@@ -36,6 +36,7 @@ import { QuestionnairesPage } from "./pages/user/panels/QuestionnairesPage";
 import { InstantiationRequestsPage } from "./pages/user/panels/InstantiationRequestsPage";
 import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
+import ContainerManagementPage from "./pages/admin/containers/ContainerManagementPage";
 
 const PublicSlugPage = lazy(() => import("./pages/PublicSlugPage"));
 
