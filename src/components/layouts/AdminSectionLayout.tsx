@@ -9,7 +9,7 @@ export function AdminSectionLayout() {
   return (
     <MainLayout
       items={adminNavItems}
-      title="Sonic Admin"
+      title="Hala Admin"
       actions={<UserMenu actor={actor} isAdmin={isAdmin} onLogout={logout} />}
     />
   );

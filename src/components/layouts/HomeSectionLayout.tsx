@@ -9,7 +9,7 @@ export function HomeSectionLayout() {
   return (
     <MainLayout
       items={homeNavItems}
-      title="Sonic"
+      title="Hala"
       actions={<UserMenu actor={actor} isAdmin={isAdmin} onLogout={logout} />}
     />
   );

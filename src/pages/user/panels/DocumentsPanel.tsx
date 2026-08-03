@@ -24,7 +24,7 @@ function authHeaders(containerId?: string): Record<string, string> {
   return {
     Accept: "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(containerId ? { "X-Sonic-Container": containerId } : {}),
+    ...(containerId ? { "X-Hala-Container": containerId } : {}),
   };
 }
 

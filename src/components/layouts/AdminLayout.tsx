@@ -58,7 +58,7 @@ export function AdminLayout() {
           <div className="flex items-center gap-2.5">
             <span className="text-[22px]">◈</span>
             <span className="text-base font-bold tracking-tight">
-              Sonic Admin
+              Hala Admin
             </span>
           </div>
 
@@ -139,7 +139,7 @@ export function AdminLayout() {
             ☰
           </button>
           <span className="text-sm font-semibold dark:text-neutral-300">
-            Sonic Admin
+            Hala Admin
           </span>
         </div>
 

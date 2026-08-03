@@ -17,7 +17,7 @@ export function UserLayout() {
       <aside className="w-[240px] bg-white dark:bg-neutral-950 border-r border-neutral-200 dark:border-neutral-800 flex flex-col flex-shrink-0">
         <div className="px-5 py-5 border-b border-neutral-200 dark:border-neutral-800">
           <span className="text-base font-bold text-black dark:text-white">
-            Sonic
+            Hala
           </span>
         </div>
 
