@@ -48,8 +48,8 @@ export default function FamilyTreePanel({
   const qc = useQueryClient();
   const [msg, setMsg] = useState<string | null>(null);
 
-  const canAdd = can("maicore.hr.relationship.add");
-  const canRemove = can("maicore.hr.relationship.remove");
+  const canAdd = can("system.hr.relationship.add");
+  const canRemove = can("system.hr.relationship.remove");
 
   const people = useQuery({
     queryKey: ["hr", "roster", containerId],

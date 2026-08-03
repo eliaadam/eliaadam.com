@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { maicore } from "../../../lib/maicore";
+import { system } from "../../../lib/system";
 import { containerKeys } from "./queryKeys";
 import { DetailItem } from "./DetailItem";
 import { Toggle } from "./Toggle";
@@ -13,7 +13,7 @@ export function PolicySection({ containerId }: { containerId: string }) {
     queryKey: containerKeys.policy(containerId),
     queryFn: async () => {
       try {
-        return await maicore.hierarchy.policies.get(containerId);
+        return await system.hierarchy.policies.get(containerId);
       } catch {
         return null;
       }
@@ -31,8 +31,10 @@ export function PolicySection({ containerId }: { containerId: string }) {
 
   const applyMutation = useMutation({
     mutationFn: () =>
-      maicore.hierarchy.policies.apply(containerId, {
-        maximum_depth: form.maximum_depth ? Number(form.maximum_depth) : undefined,
+      system.hierarchy.policies.apply(containerId, {
+        maximum_depth: form.maximum_depth
+          ? Number(form.maximum_depth)
+          : undefined,
         maximum_children: form.maximum_children
           ? Number(form.maximum_children)
           : undefined,
@@ -45,7 +47,9 @@ export function PolicySection({ containerId }: { containerId: string }) {
           | "private",
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: containerKeys.policy(containerId) });
+      queryClient.invalidateQueries({
+        queryKey: containerKeys.policy(containerId),
+      });
       setEditing(false);
     },
   });
@@ -120,7 +124,10 @@ export function PolicySection({ containerId }: { containerId: string }) {
             label="Discovery"
             value={policy.allow_public_discovery ? "Public" : "Hidden"}
           />
-          <DetailItem label="Default Visibility" value={policy.default_visibility} />
+          <DetailItem
+            label="Default Visibility"
+            value={policy.default_visibility}
+          />
         </div>
       )}
 
@@ -136,7 +143,9 @@ export function PolicySection({ containerId }: { containerId: string }) {
                 min="1"
                 max="20"
                 value={form.maximum_depth}
-                onChange={(e) => setForm({ ...form, maximum_depth: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, maximum_depth: e.target.value })
+                }
                 placeholder="Unlimited"
                 className={inputBase}
               />

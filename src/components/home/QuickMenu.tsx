@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { userApi } from "../../lib/maicore";
+import { userApi } from "../../lib/system";
 
 export default function QuickMenu() {
   const { actor, isAdmin } = useAuth();

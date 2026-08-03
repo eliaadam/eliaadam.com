@@ -30,22 +30,33 @@ export default function LogisticsWorkspace({
     {
       key: "fleet",
       label: "Fleet",
-      show: can("maicore.logistics.vehicle.view") || can("maicore.logistics.driver.view") || can("maicore.logistics.driver.view_self"),
+      show:
+        can("system.logistics.vehicle.view") ||
+        can("system.logistics.driver.view") ||
+        can("system.logistics.driver.view_self"),
     },
     {
       key: "trips",
       label: "Trips",
-      show: can("maicore.logistics.trip.view") || can("maicore.logistics.trip.view_self"),
+      show:
+        can("system.logistics.trip.view") ||
+        can("system.logistics.trip.view_self"),
     },
     {
       key: "bookings",
       label: "Bookings",
-      show: !isFreight && (can("maicore.logistics.booking.view") || can("maicore.logistics.booking.view_self")),
+      show:
+        !isFreight &&
+        (can("system.logistics.booking.view") ||
+          can("system.logistics.booking.view_self")),
     },
     {
       key: "shipments",
       label: "Shipments",
-      show: isFreight && (can("maicore.logistics.shipment.view") || can("maicore.logistics.shipment.view_self")),
+      show:
+        isFreight &&
+        (can("system.logistics.shipment.view") ||
+          can("system.logistics.shipment.view_self")),
     },
   ].filter((t) => t.show);
 
@@ -78,10 +89,18 @@ export default function LogisticsWorkspace({
       </div>
 
       <div className="flex-1 overflow-auto">
-        {active === "fleet" && <FleetPanel containerId={containerId} permissions={permissions} />}
-        {active === "trips" && <TripsPanel containerId={containerId} permissions={permissions} />}
-        {active === "bookings" && <BookingsPanel containerId={containerId} permissions={permissions} />}
-        {active === "shipments" && <ShipmentsPanel containerId={containerId} permissions={permissions} />}
+        {active === "fleet" && (
+          <FleetPanel containerId={containerId} permissions={permissions} />
+        )}
+        {active === "trips" && (
+          <TripsPanel containerId={containerId} permissions={permissions} />
+        )}
+        {active === "bookings" && (
+          <BookingsPanel containerId={containerId} permissions={permissions} />
+        )}
+        {active === "shipments" && (
+          <ShipmentsPanel containerId={containerId} permissions={permissions} />
+        )}
       </div>
     </div>
   );

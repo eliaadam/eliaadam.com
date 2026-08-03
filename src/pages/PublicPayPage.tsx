@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 /*
- * Public payment page — maicore.com/pay/{slug}. NO authentication.
+ * Public payment page — system.com/pay/{slug}. NO authentication.
  *
  * The one place a member of the public originates a payment. Flow:
  *   1. resolve the link (public) → title, amount (or open), currency
@@ -22,7 +22,7 @@ type Link = {
   slug: string;
   title: string;
   description?: string;
-  amount: number | null;   // minor units; null = buyer chooses
+  amount: number | null; // minor units; null = buyer chooses
   currency: string;
   mode: string;
 };
@@ -64,9 +64,12 @@ export default function PublicPayPage() {
 
     async function resolve() {
       try {
-        const res = await fetch(`${API}/public/pay/${encodeURIComponent(slug ?? "")}`, {
-          headers: { Accept: "application/json" },
-        });
+        const res = await fetch(
+          `${API}/public/pay/${encodeURIComponent(slug ?? "")}`,
+          {
+            headers: { Accept: "application/json" },
+          },
+        );
         const body = await res.json().catch(() => ({}));
         if (cancelled) return;
 
@@ -75,7 +78,10 @@ export default function PublicPayPage() {
           return;
         }
         if (!res.ok) {
-          setState({ s: "error", message: body.message ?? "Could not load this payment link." });
+          setState({
+            s: "error",
+            message: body.message ?? "Could not load this payment link.",
+          });
           return;
         }
         setState({ s: "ready", link: body.data });
@@ -107,16 +113,22 @@ export default function PublicPayPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API}/public/pay/${encodeURIComponent(link.slug)}`, {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: openAmount ? minor : undefined,
-          buyer_name: name.trim(),
-          buyer_email: email.trim(),
-          buyer_phone: phone.trim(),
-        }),
-      });
+      const res = await fetch(
+        `${API}/public/pay/${encodeURIComponent(link.slug)}`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: openAmount ? minor : undefined,
+            buyer_name: name.trim(),
+            buyer_email: email.trim(),
+            buyer_phone: phone.trim(),
+          }),
+        },
+      );
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -149,35 +161,51 @@ export default function PublicPayPage() {
 
         {state.s === "notfound" && (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center">
-            <p className="text-lg font-semibold text-black dark:text-white m-0 mb-1">Link not found</p>
-            <p className="text-sm text-neutral-400 m-0">This payment link doesn't exist or has been disabled.</p>
+            <p className="text-lg font-semibold text-black dark:text-white m-0 mb-1">
+              Link not found
+            </p>
+            <p className="text-sm text-neutral-400 m-0">
+              This payment link doesn't exist or has been disabled.
+            </p>
           </div>
         )}
 
         {state.s === "error" && (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center">
-            <p className="text-lg font-semibold text-black dark:text-white m-0 mb-1">Something went wrong</p>
+            <p className="text-lg font-semibold text-black dark:text-white m-0 mb-1">
+              Something went wrong
+            </p>
             <p className="text-sm text-neutral-400 m-0">{state.message}</p>
           </div>
         )}
 
         {state.s === "ready" && (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8">
-            <p className="text-[11px] uppercase tracking-wide text-neutral-400 m-0 mb-1">Payment request</p>
-            <p className="text-xl font-semibold text-black dark:text-white m-0">{state.link.title}</p>
+            <p className="text-[11px] uppercase tracking-wide text-neutral-400 m-0 mb-1">
+              Payment request
+            </p>
+            <p className="text-xl font-semibold text-black dark:text-white m-0">
+              {state.link.title}
+            </p>
             {state.link.description && (
-              <p className="text-sm text-neutral-500 mt-1 m-0">{state.link.description}</p>
+              <p className="text-sm text-neutral-500 mt-1 m-0">
+                {state.link.description}
+              </p>
             )}
 
             <div className="my-6 py-4 border-y border-neutral-100 dark:border-neutral-800 text-center">
               {state.link.amount !== null ? (
                 <p className="text-3xl font-semibold text-black dark:text-white m-0 tabular-nums">
                   {fromMinorUnits(state.link.amount)}
-                  <span className="text-sm font-normal text-neutral-400 ml-2">{state.link.currency}</span>
+                  <span className="text-sm font-normal text-neutral-400 ml-2">
+                    {state.link.currency}
+                  </span>
                 </p>
               ) : (
                 <div>
-                  <label className="text-[11px] text-neutral-400 block mb-1">Amount ({state.link.currency})</label>
+                  <label className="text-[11px] text-neutral-400 block mb-1">
+                    Amount ({state.link.currency})
+                  </label>
                   <input
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
@@ -220,7 +248,11 @@ export default function PublicPayPage() {
               {submitting ? "Starting payment…" : "Pay now"}
             </button>
 
-            {payError && <p className="text-[11px] text-red-600 mt-2 m-0 text-center">{payError}</p>}
+            {payError && (
+              <p className="text-[11px] text-red-600 mt-2 m-0 text-center">
+                {payError}
+              </p>
+            )}
 
             <p className="text-[10px] text-neutral-400 mt-4 m-0 text-center">
               You'll be taken to a secure Selcom checkout to complete payment.

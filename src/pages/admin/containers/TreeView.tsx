@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { maicore } from "../../../lib/maicore";
-import type { ContainerTreeNode } from "../../../lib/maicore-sdk";
+import { system } from "../../../lib/system";
+import type { ContainerTreeNode } from "../../../lib/system-sdk";
 import { containerKeys } from "./queryKeys";
 
 export function TreeView({
@@ -14,7 +14,7 @@ export function TreeView({
 }) {
   const treeQuery = useQuery({
     queryKey: containerKeys.tree(rootId),
-    queryFn: () => maicore.hierarchy.discovery.tree(rootId),
+    queryFn: () => system.hierarchy.discovery.tree(rootId),
   });
 
   const nodes = treeQuery.data ?? [];

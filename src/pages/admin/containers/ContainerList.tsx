@@ -1,4 +1,4 @@
-import type { Container } from "../../../lib/maicore-sdk";
+import type { Container } from "../../../lib/system-sdk";
 import { StatusBadge } from "./StatusBadge";
 
 export function ContainerList({

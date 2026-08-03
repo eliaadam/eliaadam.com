@@ -19,14 +19,14 @@ export default function MarketplaceWorkspace({
     {
       key: "discover",
       label: "Discover",
-      show: can("maicore.marketplace.listing.view"),
+      show: can("system.marketplace.listing.view"),
     },
     {
       key: "mine",
       label: "My Listings",
       show:
-        can("maicore.marketplace.listing.publish") ||
-        can("maicore.marketplace.listing.manage"),
+        can("system.marketplace.listing.publish") ||
+        can("system.marketplace.listing.manage"),
     },
   ].filter((t) => t.show);
 

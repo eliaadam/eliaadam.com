@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
-import { maicore, setAuthToken, clearToken } from "../lib/maicore";
+import { system, setAuthToken, clearToken } from "../lib/system";
 import {
   queryKeys,
   fetchSession,
@@ -9,7 +9,7 @@ import {
   persistActor,
   clearActor,
 } from "../lib/queries";
-import type { Actor, LoginRequest, MaicoreValidationError } from "../lib/maicore-sdk";
+import type { Actor, LoginRequest, MaicoreValidationError } from "../lib/system-sdk";
 
 
 export interface AuthState {
@@ -47,7 +47,7 @@ export function useAuth(): AuthState {
 
   const loginMutation = useMutation({
     mutationFn: async (params: LoginRequest) => {
-      const result = await maicore.identity.auth.login(params);
+      const result = await system.identity.auth.login(params);
 
       if (!result.authenticated || !result.token?.token || !result.actor) {
         throw new Error(result.message || "Authentication failed.");
@@ -76,7 +76,7 @@ export function useAuth(): AuthState {
 
   const logout = useCallback(async () => {
     try {
-      await maicore.identity.auth.logout();
+      await system.identity.auth.logout();
     } catch {
       // ignore
     } finally {

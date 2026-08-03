@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { userApi } from "../../lib/maicore";
+import { userApi } from "../../lib/system";
 
 type SubTab = "recent" | "discover";
 

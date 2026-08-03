@@ -1,4 +1,4 @@
-import type { ContainerStatus } from "../../../lib/maicore-sdk";
+import type { ContainerStatus } from "../../../lib/system-sdk";
 
 export function getContainerActions(status: ContainerStatus): string[] {
   switch (status) {

@@ -2,8 +2,8 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { maicore } from "../lib/maicore";
-import type { MaicoreValidationError } from "../lib/maicore-sdk";
+import { system } from "../lib/system";
+import type { MaicoreValidationError } from "../lib/system-sdk";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export default function SignupPage() {
       if (password !== passwordConfirm) {
         throw new Error("Passwords do not match.");
       }
-      await maicore.identity.auth.register({
+      await system.identity.auth.register({
         identifier,
         password,
         display_name: displayName,

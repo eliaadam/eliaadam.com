@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { templateApi } from "../../lib/maicore";
+import { templateApi } from "../../lib/system";
 import type { ContainerKind } from "../../lib/template-types";
 import { InstantiationRuleEditor } from "./InstantiationRuleEditor";
 

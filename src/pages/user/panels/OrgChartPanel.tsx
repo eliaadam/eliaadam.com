@@ -59,8 +59,8 @@ export default function OrgChartPanel({
   const qc = useQueryClient();
   const [msg, setMsg] = useState<string | null>(null);
 
-  const canCreate = can("maicore.hr.position.create");
-  const canAbolish = can("maicore.hr.position.abolish");
+  const canCreate = can("system.hr.position.create");
+  const canAbolish = can("system.hr.position.abolish");
 
   const positions = useQuery({
     queryKey: ["hr", "positions", containerId],
@@ -89,7 +89,8 @@ export default function OrgChartPanel({
   });
 
   const abolish = useMutation({
-    mutationFn: (id: string) => api("DELETE", `/containers/${containerId}/positions/${id}`),
+    mutationFn: (id: string) =>
+      api("DELETE", `/containers/${containerId}/positions/${id}`),
     onSuccess: () => {
       setMsg("Position abolished.");
       qc.invalidateQueries({ queryKey: ["hr", "positions", containerId] });
@@ -109,8 +110,14 @@ export default function OrgChartPanel({
           style={{ paddingLeft: `${12 + depth * 20}px` }}
         >
           <div className="min-w-0">
-            <span className="text-sm text-black dark:text-white">{p.title}</span>
-            {p.grade && <span className="ml-2 text-[11px] text-neutral-400">{p.grade}</span>}
+            <span className="text-sm text-black dark:text-white">
+              {p.title}
+            </span>
+            {p.grade && (
+              <span className="ml-2 text-[11px] text-neutral-400">
+                {p.grade}
+              </span>
+            )}
           </div>
           {canAbolish && (
             <button

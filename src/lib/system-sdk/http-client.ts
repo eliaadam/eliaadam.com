@@ -95,7 +95,7 @@ export class HttpClient {
 
     if (this.debug) {
       console.log(
-        "[maicore-sdk] setToken called ->",
+        "[system-sdk] setToken called ->",
         typeof token === "function" ? "(token function)" : maskToken(token ?? null),
       );
     }
@@ -122,7 +122,7 @@ export class HttpClient {
     this.csrfReady = true;
 
     if (this.debug) {
-      console.log("[maicore-sdk] CSRF cookie ensured, XSRF-TOKEN =", maskToken(readCookie("XSRF-TOKEN")));
+      console.log("[system-sdk] CSRF cookie ensured, XSRF-TOKEN =", maskToken(readCookie("XSRF-TOKEN")));
     }
   }
 
@@ -160,7 +160,7 @@ export class HttpClient {
     }
 
     if (this.debug) {
-      console.groupCollapsed(`[maicore-sdk] ${method} ${path}`);
+      console.groupCollapsed(`[system-sdk] ${method} ${path}`);
       console.log("url:", url);
       console.log("token resolved:", maskToken(token));
       console.log("Authorization header set:", Boolean(headers.Authorization));
@@ -186,7 +186,7 @@ export class HttpClient {
       });
     } catch (err) {
       if (this.debug) {
-        console.error(`[maicore-sdk] ${method} ${path} network error:`, err);
+        console.error(`[system-sdk] ${method} ${path} network error:`, err);
       }
 
       throw new MaicoreNetworkError(
@@ -201,7 +201,7 @@ export class HttpClient {
     }
 
     if (this.debug) {
-      console.log(`[maicore-sdk] ${method} ${path} ->`, response.status, response.ok ? "OK" : "FAILED");
+      console.log(`[system-sdk] ${method} ${path} ->`, response.status, response.ok ? "OK" : "FAILED");
     }
 
     if (!response.ok) {
@@ -210,7 +210,7 @@ export class HttpClient {
       } catch (err) {
         if (response.status === 401) {
           if (this.debug) {
-            console.warn(`[maicore-sdk] ${method} ${path} -> 401, invoking onUnauthorized()`);
+            console.warn(`[system-sdk] ${method} ${path} -> 401, invoking onUnauthorized()`);
           }
 
           this.onUnauthorized?.();

@@ -7,8 +7,8 @@ import { SearchResults } from "./SearchResults";
 import { TreeView } from "./TreeView";
 import { ContainerDetail } from "./ContainerDetail";
 import { CreateContainerForm } from "./CreateContainerForm";
-import { maicore } from "../../../lib/maicore";
-import type { Container } from "../../../lib/maicore-sdk";
+import { system } from "../../../lib/system";
+import type { Container } from "../../../lib/system-sdk";
 
 export default function ContainerManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,7 +20,7 @@ export default function ContainerManagementPage() {
   // Load all containers on mount
   const allContainersQuery = useQuery({
     queryKey: containerKeys.allList,
-    queryFn: () => maicore.hierarchy.discovery.list(),
+    queryFn: () => system.hierarchy.discovery.list(),
   });
 
   const allContainers = allContainersQuery.data ?? [];

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 /*
- * Payments panel — feature `maicore.payments` (business tier, licensable).
+ * Payments panel — feature `system.payments` (business tier, licensable).
  *
  * MONEY RULE, enforced in this file: the API speaks MINOR UNITS (integers).
  * The user types "10,500.50"; we send 1050050. Nothing here ever sends a float

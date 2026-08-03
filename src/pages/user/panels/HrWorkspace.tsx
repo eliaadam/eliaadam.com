@@ -37,35 +37,34 @@ export default function HrWorkspace({
       key: "roster",
       label: "Roster",
       show:
-        can("maicore.hr.personnel.view") ||
-        can("maicore.hr.personnel.view_self"),
+        can("system.hr.personnel.view") || can("system.hr.personnel.view_self"),
     },
     {
       key: "org",
       label: "Org Chart",
       show:
         !isFamily &&
-        (can("maicore.hr.position.view") || can("maicore.hr.assignment.view")),
+        (can("system.hr.position.view") || can("system.hr.assignment.view")),
     },
     {
       key: "family",
       label: "Family Tree",
-      show: isFamily && can("maicore.hr.relationship.view"),
+      show: isFamily && can("system.hr.relationship.view"),
     },
     {
       key: "positions",
       label: "Positions",
-      show: !isFamily && can("maicore.hr.position.view"),
+      show: !isFamily && can("system.hr.position.view"),
     },
     {
       key: "workforce",
       label: "Workforce",
-      show: !isFamily && can("maicore.hr.cost.view"),
+      show: !isFamily && can("system.hr.cost.view"),
     },
     {
       key: "policy",
       label: "Policy",
-      show: can("maicore.hr.policy.view") || can("maicore.hr.policy.manage"),
+      show: can("system.hr.policy.view") || can("system.hr.policy.manage"),
     },
   ].filter((t) => t.show);
 

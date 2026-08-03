@@ -30,14 +30,14 @@ import InvoicingPanel from "../panels/InvoicingPanel";
 import type { PanelDefinition } from "./types";
 
 export const PANELS: Record<string, PanelDefinition> = {
-  "maicore.membership": {
+  "system.membership": {
     label: "Members",
     icon: Users,
     order: 0,
     slug: "members",
     component: MembersPanel,
   },
-  "maicore.communications": {
+  "system.communications": {
     label: "Communications",
     icon: MessageSquare,
     order: 5,
@@ -79,42 +79,42 @@ export const PANELS: Record<string, PanelDefinition> = {
     slug: "kyc",
     component: KycPanel,
   },
-  "maicore.hierarchy": {
+  "system.hierarchy": {
     label: "Manage",
     icon: Settings,
     order: 90,
     slug: "manage",
     component: ContainerManagementPanel,
   },
-  "maicore.hr": {
+  "system.hr": {
     label: "Human Resources",
     icon: UserCog,
     order: 45,
     slug: "hr",
     component: HrWorkspace,
   },
-  "maicore.logistics": {
+  "system.logistics": {
     label: "Logistics",
     icon: Truck,
     order: 50,
     slug: "logistics",
     component: LogisticsWorkspace,
   },
-  "maicore.marketplace": {
+  "system.marketplace": {
     label: "Marketplace",
     icon: Store,
     order: 70,
     slug: "marketplace",
     component: MarketplaceWorkspace,
   },
-  "maicore.inventory": {
+  "system.inventory": {
     label: "Inventory",
     icon: Package,
     order: 60,
     slug: "inventory",
     component: InventoryWorkspace,
   },
-  "maicore.apps": {
+  "system.apps": {
     label: "Apps",
     icon: Blocks,
     order: 90,

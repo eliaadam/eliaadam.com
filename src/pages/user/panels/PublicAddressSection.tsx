@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
  *
  * OPT-IN by design: a container has no public address until someone claims one.
  * The copy makes the tradeoff explicit — claiming makes the container reachable
- * at maicore.com/{slug}; until then it is private and UUID-addressed. Claiming
+ * at system.com/{slug}; until then it is private and UUID-addressed. Claiming
  * an address does NOT publish the container's data; it only makes it findable.
  */
 
@@ -136,7 +136,7 @@ export default function PublicAddressSection({
       <div className="flex items-center gap-2">
         <div className="flex items-center flex-1 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
           <span className="pl-3 pr-1 text-sm text-neutral-400 select-none">
-            maicore.com/
+            system.com/
           </span>
           <input
             value={draft}
@@ -161,7 +161,7 @@ export default function PublicAddressSection({
             <span className="text-neutral-400">Checking…</span>
           ) : check?.available ? (
             <span className="text-emerald-600">
-              ✓ maicore.com/{draft.trim()} is available
+              ✓ system.com/{draft.trim()} is available
             </span>
           ) : (
             <span className="text-amber-600">

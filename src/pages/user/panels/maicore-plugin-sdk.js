@@ -6,11 +6,11 @@
  *
  * Usage inside a plugin's index.html:
  *
- *   <script src="maicore-plugin-sdk.js"></script>
+ *   <script src="system-plugin-sdk.js"></script>
  *   <script>
- *     maicore.ready().then(async (ctx) => {
+ *     system.ready().then(async (ctx) => {
  *       // ctx = { containerId, scopes, appSlug }
- *       const offerings = await maicore.get('/inventory/containers/_/offerings');
+ *       const offerings = await system.get('/inventory/containers/_/offerings');
  *       render(offerings.data);
  *     });
  *   </script>
@@ -73,7 +73,7 @@
     });
   }
 
-  window.maicore = {
+  window.system = {
     // Resolves once the host has sent context (scopes + container).
     ready() {
       post({ type: "ready" });

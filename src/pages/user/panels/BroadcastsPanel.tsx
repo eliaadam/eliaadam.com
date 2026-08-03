@@ -36,7 +36,7 @@ export default function BroadcastsPanel({
   permissions: string[];
 }) {
   const qc = useQueryClient();
-  const canSend = permissions.includes("maicore.communications.broadcast.send");
+  const canSend = permissions.includes("system.communications.broadcast.send");
 
   const TABS: { key: BroadcastTab; label: string; show: boolean }[] = [
     { key: "sent", label: "Sent", show: true },

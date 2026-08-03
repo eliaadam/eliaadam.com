@@ -1,4 +1,4 @@
-import type { ContainerStatus } from "../../../lib/maicore-sdk";
+import type { ContainerStatus } from "../../../lib/system-sdk";
 
 export function StatusBadge({ status }: { status: ContainerStatus }) {
   const base =
@@ -6,7 +6,9 @@ export function StatusBadge({ status }: { status: ContainerStatus }) {
 
   if (status === "active") {
     return (
-      <span className={`${base} bg-black text-white dark:bg-white dark:text-black`}>
+      <span
+        className={`${base} bg-black text-white dark:bg-white dark:text-black`}
+      >
         {status}
       </span>
     );

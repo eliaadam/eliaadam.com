@@ -1,4 +1,4 @@
-import { type MaicoreClientConfig, MaicoreClient } from "./maicore-sdk";
+import { type MaicoreClientConfig, MaicoreClient } from "./system-sdk";
 
 const STORAGE_KEY = "maicore_token";
 
@@ -33,21 +33,21 @@ const config: MaicoreClientConfig = {
   debug: import.meta.env.DEV,
   onUnauthorized: () => {
     // Clear both the SDK token and localStorage
-    maicore.setToken(undefined);
+    system.setToken(undefined);
     clearToken();
     localStorage.removeItem("maicore_actor");
   },
 };
 
-export const maicore = new MaicoreClient(config);
+export const system = new MaicoreClient(config);
 
 export function setAuthToken(token: string | null): void {
-  maicore.setToken(token ?? undefined);
+  system.setToken(token ?? undefined);
   persistToken(token);
 }
 
 // ═══════════════════════════════════════════════════════════
-// ADD THIS TO THE BOTTOM OF src/lib/maicore.ts
+// ADD THIS TO THE BOTTOM OF src/lib/system.ts
 // ═══════════════════════════════════════════════════════════
 
 export const templateApi = {

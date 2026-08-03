@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { maicore } from "../../lib/maicore";
+
 import type {
   Actor,
   ActorType,
   ActorStatus,
   MaicoreValidationError,
-} from "../../lib/maicore-sdk";
+} from "../../lib/system-sdk";
+import { system } from "../../lib/system";
 
 const keys = {
   actors: ["admin", "actors"] as const,
@@ -19,7 +20,7 @@ export default function ActorManagementPage() {
 
   const actorsQuery = useQuery({
     queryKey: keys.actors,
-    queryFn: () => maicore.identity.actors.list(),
+    queryFn: () => system.identity.actors.list(),
   });
 
   const actors = actorsQuery.data ?? [];
@@ -133,11 +134,11 @@ function ActorRow({ actor }: { actor: Actor }) {
     mutationFn: async (action: string) => {
       switch (action) {
         case "activate":
-          return maicore.identity.actors.activate(actor.id);
+          return system.identity.actors.activate(actor.id);
         case "suspend":
-          return maicore.identity.actors.suspend(actor.id);
+          return system.identity.actors.suspend(actor.id);
         case "retire":
-          return maicore.identity.actors.retire(actor.id);
+          return system.identity.actors.retire(actor.id);
         default:
           throw new Error(`Unknown action: ${action}`);
       }
@@ -262,12 +263,12 @@ function CreateActorForm({ onCreated }: { onCreated: () => void }) {
 
   const typesQuery = useQuery({
     queryKey: keys.actorTypes,
-    queryFn: () => maicore.identity.actors.listActorTypes(),
+    queryFn: () => system.identity.actors.listActorTypes(),
   });
 
   const createMutation = useMutation({
     mutationFn: () =>
-      maicore.identity.actors.create({
+      system.identity.actors.create({
         actor_type_id: typeId,
         display_name: displayName,
         code: code || undefined,

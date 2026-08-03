@@ -9,7 +9,7 @@ export default function WorkforceCostPanel({
   permissions: string[];
 }) {
   const can = (c: string) => permissions.includes(c);
-  if (!can("maicore.hr.cost.view")) {
+  if (!can("system.hr.cost.view")) {
     return (
       <div className="p-4 text-sm text-neutral-500">
         You don't have permission to view workforce cost.

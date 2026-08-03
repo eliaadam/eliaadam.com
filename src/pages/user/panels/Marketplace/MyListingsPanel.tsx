@@ -41,8 +41,8 @@ export default function MyListingsPanel({
   const [msg, setMsg] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
 
-  const canPublish = can("maicore.marketplace.listing.publish");
-  const canManage = can("maicore.marketplace.listing.manage");
+  const canPublish = can("system.marketplace.listing.publish");
+  const canManage = can("system.marketplace.listing.manage");
 
   const listings = useQuery({
     queryKey: ["mkt", "mine", containerId],

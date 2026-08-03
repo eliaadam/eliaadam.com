@@ -157,7 +157,7 @@ export default function CreateCapabilityModal({
                 className="w-full mt-1 px-3 py-2 text-sm rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-black dark:text-white font-mono"
               />
               <span className="text-[10px] text-neutral-400">
-                Lowercase, dotted. Reserved: maicore./system./platform.
+                Lowercase, dotted. Reserved: system./system./platform.
               </span>
             </label>
             <label className="block">

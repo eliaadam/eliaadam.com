@@ -70,7 +70,7 @@ export default function PositionsPanel({
   const [msg, setMsg] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
 
-  const canManage = can("maicore.hr.position.create");
+  const canManage = can("system.hr.position.create");
 
   const positions = useQuery({
     queryKey: ["hr", "positions", containerId],

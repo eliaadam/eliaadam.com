@@ -20,12 +20,12 @@ export default function HrPolicyPanel({
   const qc = useQueryClient();
   const [msg, setMsg] = useState<string | null>(null);
 
-  const canManage = can("maicore.hr.policy.manage");
+  const canManage = can("system.hr.policy.manage");
 
   const policy = useQuery({
     queryKey: ["hr", "policy", containerId],
     queryFn: () => api("GET", `/containers/${containerId}/policy`),
-    enabled: can("maicore.hr.policy.view") || canManage,
+    enabled: can("system.hr.policy.view") || canManage,
   });
 
   const [form, setForm] = useState<any>(null);
@@ -42,7 +42,7 @@ export default function HrPolicyPanel({
     onError: (e: any) => setMsg(e.message),
   });
 
-  if (!can("maicore.hr.policy.view") && !canManage) {
+  if (!can("system.hr.policy.view") && !canManage) {
     return (
       <div className="p-4 text-sm text-neutral-500">
         You don't have permission to view HR policy.

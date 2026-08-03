@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { Container } from "../../../lib/maicore-sdk";
+import type { Container } from "../../../lib/system-sdk";
 import { containerKeys } from "./queryKeys";
 import { getContainerActions } from "./containerActions";
 import { StatusBadge } from "./StatusBadge";
 import { DetailItem } from "./DetailItem";
 import { PolicySection } from "./PolicySection";
 import { CreateContainerForm } from "./CreateContainerForm";
-import { maicore } from "../../../lib/maicore";
+import { system } from "../../../lib/system";
 
 export function ContainerDetail({
   containerId,
@@ -29,12 +29,12 @@ export function ContainerDetail({
 
   const containerQuery = useQuery({
     queryKey: containerKeys.container(containerId),
-    queryFn: () => maicore.hierarchy.containers.get(containerId),
+    queryFn: () => system.hierarchy.containers.get(containerId),
   });
 
   const childrenQuery = useQuery({
     queryKey: containerKeys.children(containerId),
-    queryFn: () => maicore.hierarchy.discovery.children(containerId),
+    queryFn: () => system.hierarchy.discovery.children(containerId),
   });
 
   const container = containerQuery.data;
@@ -44,15 +44,15 @@ export function ContainerDetail({
     mutationFn: async (action: string) => {
       switch (action) {
         case "activate":
-          return maicore.hierarchy.containers.activate(containerId);
+          return system.hierarchy.containers.activate(containerId);
         case "suspend":
-          return maicore.hierarchy.containers.suspend(containerId);
+          return system.hierarchy.containers.suspend(containerId);
         case "archive":
-          return maicore.hierarchy.containers.archive(containerId);
+          return system.hierarchy.containers.archive(containerId);
         case "restore":
-          return maicore.hierarchy.containers.restore(containerId);
+          return system.hierarchy.containers.restore(containerId);
         case "delete":
-          await maicore.hierarchy.containers.delete(containerId);
+          await system.hierarchy.containers.delete(containerId);
           return null;
         default:
           throw new Error(`Unknown action: ${action}`);

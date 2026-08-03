@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { Command, LogOut } from "lucide-react";
 
 import type { SidebarView } from "./types";
-import type { Actor } from "../../lib/maicore-sdk";
+import type { Actor } from "../../lib/system-sdk";
 
 interface SidebarUserFooterProps {
   actor: Actor | null | undefined;

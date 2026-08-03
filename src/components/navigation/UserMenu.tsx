@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Command, LogOut, User as UserIcon, ChevronDown } from "lucide-react";
 import { useClickOutside } from "../../hooks/useClickOutside";
-import type { Actor } from "../../lib/maicore-sdk";
+import type { Actor } from "../../lib/system-sdk";
 
 interface UserMenuProps {
   actor: Actor | null | undefined;

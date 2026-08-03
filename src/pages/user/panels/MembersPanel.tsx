@@ -105,7 +105,7 @@ export default function MembersPanel({
   const [advancedFor, setAdvancedFor] = useState<string | null>(null);
 
   const can = (code: string) => permissions.includes(code);
-  const canAssignPosition = hrEnabled && can("maicore.hr.assignment.assign");
+  const canAssignPosition = hrEnabled && can("system.hr.assignment.assign");
 
   const q = useQuery({
     queryKey: ["members", containerId],
@@ -266,7 +266,7 @@ export default function MembersPanel({
       )}
 
       {/* ── Invite ── */}
-      {can("maicore.membership.member.invite") && (
+      {can("system.membership.member.invite") && (
         <div className="mb-6">
           {!inviting ? (
             <button
@@ -345,7 +345,7 @@ export default function MembersPanel({
                     {inv.role_code}
                   </span>
                 )}
-                {can("maicore.membership.invitation.cancel") && (
+                {can("system.membership.invitation.cancel") && (
                   <button
                     onClick={() =>
                       api("DELETE", `/hierarchy/invitations/${inv.id}`).then(
@@ -422,7 +422,7 @@ export default function MembersPanel({
                     )}
                   </div>
 
-                  {can("maicore.membership.member.remove") && (
+                  {can("system.membership.member.remove") && (
                     <button
                       onClick={() => setRemoving(m)}
                       className={`${btn} text-neutral-500 hover:text-red-600`}
@@ -476,7 +476,7 @@ export default function MembersPanel({
                     >
                       {r.code}
                       {/* Direct revoke only in Advanced mode when HR is on. */}
-                      {can("maicore.membership.member.assign_role") &&
+                      {can("system.membership.member.assign_role") &&
                         (!hrEnabled || showAdvanced) && (
                           <button
                             onClick={() =>
@@ -502,7 +502,7 @@ export default function MembersPanel({
 
                 {/* ADVANCED: direct role-granting. Primary when HR off; behind a
                     toggle when HR on (positions are the intended path there). */}
-                {can("maicore.membership.member.assign_role") &&
+                {can("system.membership.member.assign_role") &&
                   grantable.length > 0 && (
                     <div className="mt-2">
                       {hrEnabled && (
@@ -591,7 +591,7 @@ export default function MembersPanel({
         </div>
       )}
 
-      {!can("maicore.membership.member.invite") && (
+      {!can("system.membership.member.invite") && (
         <p className="text-[11px] text-neutral-400 mt-3 mb-0">
           You can see who is here. You cannot invite or remove people.
         </p>

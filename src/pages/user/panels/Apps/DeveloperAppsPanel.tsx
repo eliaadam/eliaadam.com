@@ -28,7 +28,7 @@ export default function DeveloperAppsPanel({
   const [newKey, setNewKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const canRegister = can("maicore.apps.app.register");
+  const canRegister = can("system.apps.app.register");
 
   const apps = useQuery({
     queryKey: ["apps", "mine", containerId],

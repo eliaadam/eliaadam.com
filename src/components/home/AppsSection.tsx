@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
-import { userApi } from "../../lib/maicore";
+import { userApi } from "../../lib/system";
 import { Link } from "react-router-dom";
 
 export default function AppsSection() {

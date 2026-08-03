@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { maicore } from "../../../lib/maicore";
-import type { Container } from "../../../lib/maicore-sdk";
+import { system } from "../../../lib/system";
+import type { Container } from "../../../lib/system-sdk";
 import { containerKeys } from "./queryKeys";
 import { StatusBadge } from "./StatusBadge";
 
@@ -15,7 +15,7 @@ export function SearchResults({
 }) {
   const searchQuery = useQuery({
     queryKey: containerKeys.search(query),
-    queryFn: () => maicore.hierarchy.discovery.search({ q: query, limit: 20 }),
+    queryFn: () => system.hierarchy.discovery.search({ q: query, limit: 20 }),
     enabled: !!query,
   });
 

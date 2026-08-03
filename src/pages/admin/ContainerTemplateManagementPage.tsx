@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { capabilityApi, templateApi } from "../../lib/maicore";
+import { capabilityApi, templateApi } from "../../lib/system";
 import type { ContainerKind } from "../../lib/template-types";
 import type { ContainerTemplate, TemplateRole } from "../../lib/template-types";
-import type { AccessMode, TemplateFeature } from "../../lib/maicore-sdk";
+import type { AccessMode, TemplateFeature } from "../../lib/system-sdk";
 import RoleSection from "./RoleSection";
 
 const keys = {

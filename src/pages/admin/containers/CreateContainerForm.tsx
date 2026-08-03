@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { maicore, templateApi } from "../../../lib/maicore";
+import { system, templateApi } from "../../../lib/system";
 import type {
   Container,
   ContainerVisibility,
   MaicoreValidationError,
-} from "../../../lib/maicore-sdk";
+} from "../../../lib/system-sdk";
 import { containerKeys } from "./queryKeys";
 
 export function CreateContainerForm({
@@ -43,7 +43,7 @@ export function CreateContainerForm({
 
   const createMutation = useMutation({
     mutationFn: () =>
-      maicore.hierarchy.containers.create({
+      system.hierarchy.containers.create({
         code,
         slug,
         display_name: displayName,
@@ -178,7 +178,9 @@ export function CreateContainerForm({
           </label>
           <select
             value={visibility}
-            onChange={(e) => setVisibility(e.target.value as ContainerVisibility)}
+            onChange={(e) =>
+              setVisibility(e.target.value as ContainerVisibility)
+            }
             className={`${inputBase} border-neutral-300 dark:border-neutral-700`}
           >
             <option value="public">Public</option>
@@ -205,7 +207,11 @@ export function CreateContainerForm({
         <button
           onClick={() => createMutation.mutate()}
           disabled={
-            createMutation.isPending || !code || !slug || !displayName || !kindId
+            createMutation.isPending ||
+            !code ||
+            !slug ||
+            !displayName ||
+            !kindId
           }
           className="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 disabled:opacity-50 transition"
         >

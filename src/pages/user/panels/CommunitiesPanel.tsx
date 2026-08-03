@@ -65,7 +65,7 @@ export default function CommunitiesPanel({
 
   return (
     <div>
-      {can("maicore.communications.community.create") && (
+      {can("system.communications.community.create") && (
         <div className="mb-4">
           {!creating ? (
             <button
@@ -281,7 +281,7 @@ function CommunityDetail({
                 <p className="text-xs font-semibold text-neutral-500 m-0">
                   Members ({community.members?.length ?? 0})
                 </p>
-                {can("maicore.communications.community.member.manage") && (
+                {can("system.communications.community.member.manage") && (
                   <button
                     onClick={() => setAddingMember((v) => !v)}
                     className="text-xs text-neutral-500 underline"

@@ -5,7 +5,7 @@
  *
  *   import PluginsPanel from "./PluginsPanel";
  *   // in the tabs array:
- *   { key: "plugins", label: "Plugins", show: can("maicore.apps.installation.view") },
+ *   { key: "plugins", label: "Plugins", show: can("system.apps.installation.view") },
  *   // in the body switch:
  *   {active === "plugins" && <PluginsPanel containerId={containerId} />}
  *

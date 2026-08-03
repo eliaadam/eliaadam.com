@@ -22,22 +22,22 @@ export default function AppsWorkspace({
     {
       key: "installed",
       label: "Installed",
-      show: can("maicore.apps.installation.view"),
+      show: can("system.apps.installation.view"),
     },
     {
       key: "directory",
       label: "Directory",
-      show: can("maicore.apps.installation.install"),
+      show: can("system.apps.installation.install"),
     },
     {
       key: "developer",
       label: "Developer",
-      show: can("maicore.apps.app.view"),
+      show: can("system.apps.app.view"),
     },
     {
       key: "plugins",
       label: "Plugins",
-      show: can("maicore.apps.installation.view"),
+      show: can("system.apps.installation.view"),
     },
   ].filter((t) => t.show);
 

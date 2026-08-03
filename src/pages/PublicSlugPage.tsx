@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Navigate, useNavigate } from "react-router-dom";
 
 /*
- * Public landing for maicore.com/{slug}.
+ * Public landing for system.com/{slug}.
  *
  * Resolves the slug via the PUBLIC resolver (no auth). Three outcomes:
  *   · historical slug → the API returns a redirect target; we replace to it
@@ -128,7 +128,7 @@ export default function PublicSlugPage() {
           {isContainer ? "🏢" : "👤"}
         </div>
         <h1 style={{ fontSize: "1.25rem", margin: "0 0 0.25rem" }}>
-          maicore.com/{slug}
+          system.com/{slug}
         </h1>
         <p
           style={{

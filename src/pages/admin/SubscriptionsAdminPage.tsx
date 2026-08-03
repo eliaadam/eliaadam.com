@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { userApi } from "../../lib/maicore";
+import { userApi } from "../../lib/system";
 
 /*
  * Admin → Subscriptions. Oversight + rescue.

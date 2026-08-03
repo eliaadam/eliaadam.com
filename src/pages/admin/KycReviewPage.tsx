@@ -17,7 +17,11 @@ async function kyc(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");
   const res = await fetch(`${API}/api/kyc${path}`, {
     method,
-    headers: { Accept: "application/json", "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   const j = await res.json().catch(() => ({}));
@@ -52,13 +56,23 @@ export function KycReviewPage() {
     queryFn: () => kyc("GET", "/review/queue"),
   });
 
-  const act = async (id: string, action: "start-review" | "approve" | "reject", reason?: string) => {
+  const act = async (
+    id: string,
+    action: "start-review" | "approve" | "reject",
+    reason?: string,
+  ) => {
     setBusy(id + action);
     setMsg(null);
     try {
-      await kyc("POST", `/records/${id}/${action}`, reason ? { reason } : undefined);
+      await kyc(
+        "POST",
+        `/records/${id}/${action}`,
+        reason ? { reason } : undefined,
+      );
       qc.invalidateQueries({ queryKey: ["admin", "kyc-queue"] });
-      setMsg(`Record ${action === "start-review" ? "moved to review" : action + "d"}.`);
+      setMsg(
+        `Record ${action === "start-review" ? "moved to review" : action + "d"}.`,
+      );
       setRejectFor(null);
       setRejectReason("");
     } catch (e: any) {
@@ -72,26 +86,38 @@ export function KycReviewPage() {
 
   return (
     <div className="p-8 max-w-4xl">
-      <h1 className="text-xl font-bold text-black dark:text-white m-0 mb-1">KYC Review</h1>
+      <h1 className="text-xl font-bold text-black dark:text-white m-0 mb-1">
+        KYC Review
+      </h1>
       <p className="text-sm text-neutral-500 mt-1 mb-6">
-        Submissions awaiting verification across all containers. Review the details and documents before approving.
+        Submissions awaiting verification across all containers. Review the
+        details and documents before approving.
       </p>
 
       {q.isLoading ? (
         <p className="text-sm text-neutral-400">Loading…</p>
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 p-8 text-center">
-          <p className="text-sm text-neutral-400 m-0">Nothing awaiting review.</p>
+          <p className="text-sm text-neutral-400 m-0">
+            Nothing awaiting review.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
           {rows.map((r) => (
-            <div key={r.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+            <div
+              key={r.id}
+              className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-base font-semibold text-black dark:text-white m-0">{r.legal_name ?? "—"}</p>
+                  <p className="text-base font-semibold text-black dark:text-white m-0">
+                    {r.legal_name ?? "—"}
+                  </p>
                   <p className="text-[11px] text-neutral-400 m-0">
-                    {r.metadata?.subject_type ? `${r.metadata.subject_type} · ` : ""}
+                    {r.metadata?.subject_type
+                      ? `${r.metadata.subject_type} · `
+                      : ""}
                     submitted {new Date(r.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -112,9 +138,15 @@ export function KycReviewPage() {
                     <Detail label="NIDA" value={r.nida_id} />
                     <Detail label="TIN" value={r.tin_number} />
                     <Detail label="BRELA" value={r.brela_number} />
-                    <Detail label="Business licence" value={r.business_license} />
+                    <Detail
+                      label="Business licence"
+                      value={r.business_license}
+                    />
                     <Detail label="Date of birth" value={r.metadata?.dob} />
-                    <Detail label="Nationality" value={r.metadata?.nationality} />
+                    <Detail
+                      label="Nationality"
+                      value={r.metadata?.nationality}
+                    />
                     <Detail label="Address" value={r.metadata?.address} />
                     <Detail label="City" value={r.metadata?.city} />
                   </div>
@@ -125,19 +157,30 @@ export function KycReviewPage() {
 
               <div className="flex gap-2 mt-3">
                 {r.status === "submitted" && (
-                  <button onClick={() => act(r.id, "start-review")} disabled={busy !== null}
-                    className="px-3 py-1.5 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40">
+                  <button
+                    onClick={() => act(r.id, "start-review")}
+                    disabled={busy !== null}
+                    className="px-3 py-1.5 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40"
+                  >
                     Start review
                   </button>
                 )}
                 {(r.status === "under_review" || r.status === "submitted") && (
                   <>
-                    <button onClick={() => act(r.id, "approve")} disabled={busy !== null}
-                      className="px-3 py-1.5 text-[11px] font-semibold rounded-md bg-emerald-600 text-white disabled:opacity-40">
+                    <button
+                      onClick={() => act(r.id, "approve")}
+                      disabled={busy !== null}
+                      className="px-3 py-1.5 text-[11px] font-semibold rounded-md bg-emerald-600 text-white disabled:opacity-40"
+                    >
                       {busy === r.id + "approve" ? "Approving…" : "Approve"}
                     </button>
-                    <button onClick={() => setRejectFor(rejectFor === r.id ? null : r.id)} disabled={busy !== null}
-                      className="px-3 py-1.5 text-[11px] font-semibold rounded-md text-red-600 border border-red-200 dark:border-red-900/40 disabled:opacity-40">
+                    <button
+                      onClick={() =>
+                        setRejectFor(rejectFor === r.id ? null : r.id)
+                      }
+                      disabled={busy !== null}
+                      className="px-3 py-1.5 text-[11px] font-semibold rounded-md text-red-600 border border-red-200 dark:border-red-900/40 disabled:opacity-40"
+                    >
                       Reject
                     </button>
                   </>
@@ -153,7 +196,10 @@ export function KycReviewPage() {
                     className="flex-1 px-3 py-1.5 text-[11px] rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-black dark:text-white"
                   />
                   <button
-                    onClick={() => rejectReason.trim() && act(r.id, "reject", rejectReason.trim())}
+                    onClick={() =>
+                      rejectReason.trim() &&
+                      act(r.id, "reject", rejectReason.trim())
+                    }
                     disabled={!rejectReason.trim() || busy !== null}
                     className="px-3 py-1.5 text-[11px] font-semibold rounded-md bg-red-600 text-white disabled:opacity-40"
                   >
@@ -174,8 +220,12 @@ export function KycReviewPage() {
 function Detail({ label, value }: { label: string; value?: string }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wide text-neutral-400 m-0">{label}</p>
-      <p className="text-sm text-black dark:text-white m-0">{value || <span className="text-neutral-400">—</span>}</p>
+      <p className="text-[10px] uppercase tracking-wide text-neutral-400 m-0">
+        {label}
+      </p>
+      <p className="text-sm text-black dark:text-white m-0">
+        {value || <span className="text-neutral-400">—</span>}
+      </p>
     </div>
   );
 }
@@ -183,13 +233,17 @@ function Detail({ label, value }: { label: string; value?: string }) {
 /* documents attached to the record — download links via the Documents API */
 function DocumentsList({ documentIds }: { documentIds: string[] }) {
   if (documentIds.length === 0) {
-    return <p className="text-[11px] text-neutral-400 m-0">No documents attached.</p>;
+    return (
+      <p className="text-[11px] text-neutral-400 m-0">No documents attached.</p>
+    );
   }
   const downloadUrl = (id: string) => `${API}/api/documents/${id}/download`;
 
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wide text-neutral-400 m-0 mb-1">Documents</p>
+      <p className="text-[10px] uppercase tracking-wide text-neutral-400 m-0 mb-1">
+        Documents
+      </p>
       <div className="flex flex-wrap gap-2">
         {documentIds.map((id) => (
           <a
@@ -204,7 +258,8 @@ function DocumentsList({ documentIds }: { documentIds: string[] }) {
         ))}
       </div>
       <p className="text-[10px] text-neutral-400 mt-1 m-0">
-        Downloads open with your admin session; viewing requires documents.document.view on the container.
+        Downloads open with your admin session; viewing requires
+        documents.document.view on the container.
       </p>
     </div>
   );
@@ -218,7 +273,9 @@ function KycStatus({ status }: { status: string }) {
     rejected: "text-red-600 bg-red-50 dark:bg-red-950/30",
   };
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[status] ?? "text-neutral-500 bg-neutral-100 dark:bg-neutral-900"}`}>
+    <span
+      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[status] ?? "text-neutral-500 bg-neutral-100 dark:bg-neutral-900"}`}
+    >
       {status.replace("_", " ")}
     </span>
   );

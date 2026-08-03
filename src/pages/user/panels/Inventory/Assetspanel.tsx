@@ -18,9 +18,9 @@ type Asset = {
 };
 
 const CAP_LABELS: Record<string, string> = {
-  "maicore.inventory": "Inventory",
-  "maicore.hr": "Human Resources",
-  "maicore.logistics": "Logistics",
+  "system.inventory": "Inventory",
+  "system.hr": "Human Resources",
+  "system.logistics": "Logistics",
 };
 
 /**
@@ -51,7 +51,7 @@ export default function AssetsPanel({
       ),
   });
 
-  if (!can("maicore.inventory.offering.view")) {
+  if (!can("system.inventory.offering.view")) {
     return (
       <div className="p-4 text-sm text-neutral-500">
         You don't have permission to view assets.

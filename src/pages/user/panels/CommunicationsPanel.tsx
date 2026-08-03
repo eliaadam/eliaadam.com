@@ -25,29 +25,29 @@ export default function CommunicationsPanel({
     {
       key: "chats",
       label: "Chats",
-      show: can("maicore.communications.dm.send"),
+      show: can("system.communications.dm.send"),
     },
     {
       key: "groups",
       label: "Groups",
       show:
-        can("maicore.communications.group.create") ||
-        can("maicore.communications.group.message.send"),
+        can("system.communications.group.create") ||
+        can("system.communications.group.message.send"),
     },
     {
       key: "broadcasts",
       label: "Broadcasts",
       show:
-        can("maicore.communications.broadcast.send") ||
-        can("maicore.communications.broadcast.create") ||
-        can("maicore.communications.broadcast.view"),
+        can("system.communications.broadcast.send") ||
+        can("system.communications.broadcast.create") ||
+        can("system.communications.broadcast.view"),
     },
     {
       key: "communities",
       label: "Communities",
       show:
-        can("maicore.communications.community.create") ||
-        can("maicore.communications.community.manage"),
+        can("system.communications.community.create") ||
+        can("system.communications.community.manage"),
     },
   ];
 
@@ -147,7 +147,7 @@ function ChatsSurface({
         readPath={`/conversations/${openId}/read`}
         reactPathPrefix="/messages/dm"
         queryKey={["comm", "dm-messages", openId]}
-        canSend={permissions.includes("maicore.communications.dm.send")}
+        canSend={permissions.includes("system.communications.dm.send")}
         onBack={() => setOpenId(null)}
       />
     );
@@ -286,7 +286,7 @@ function GroupsSurface({
           reactPathPrefix="/messages/group"
           queryKey={["comm", "group-messages", openId]}
           canSend={permissions.includes(
-            "maicore.communications.group.message.send",
+            "system.communications.group.message.send",
           )}
           onBack={() => setOpenId(null)}
         />
@@ -304,7 +304,7 @@ function GroupsSurface({
 
   return (
     <div>
-      {can("maicore.communications.group.create") && (
+      {can("system.communications.group.create") && (
         <div className="mb-4">
           {!creating ? (
             <button
@@ -388,7 +388,7 @@ function GroupMembersPanel({
   onChanged: () => void;
 }) {
   const can = (c: string) => permissions.includes(c);
-  const canManage = can("maicore.communications.group.participant.manage");
+  const canManage = can("system.communications.group.participant.manage");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

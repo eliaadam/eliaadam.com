@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { templateApi } from "../../lib/maicore";
+import { templateApi } from "../../lib/system";
 import { InstantiationRuleEditor } from "./InstantiationRuleEditor";
 import type {
   HierarchyTemplate,

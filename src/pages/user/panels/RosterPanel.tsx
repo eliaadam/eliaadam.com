@@ -48,13 +48,12 @@ export default function RosterPanel({
   const qc = useQueryClient();
   const [msg, setMsg] = useState<string | null>(null);
 
-  const canViewAll = can("maicore.hr.personnel.view");
-  const canCreate = can("maicore.hr.personnel.create");
-  const canHire = can("maicore.hr.assignment.assign");
+  const canViewAll = can("system.hr.personnel.view");
+  const canCreate = can("system.hr.personnel.create");
+  const canHire = can("system.hr.assignment.assign");
   const canMove =
-    can("maicore.hr.assignment.transfer") ||
-    can("maicore.hr.assignment.promote");
-  const canOffboard = can("maicore.hr.personnel.offboard");
+    can("system.hr.assignment.transfer") || can("system.hr.assignment.promote");
+  const canOffboard = can("system.hr.personnel.offboard");
 
   const roster = useQuery({
     queryKey: ["hr", "roster", containerId],

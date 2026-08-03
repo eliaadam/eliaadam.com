@@ -43,7 +43,7 @@ export default function ContainerManagementPanel({
   permissions: string[];
 }) {
   const can = (a: string) =>
-    permissions.includes(`maicore.hierarchy.container.${a}`);
+    permissions.includes(`system.hierarchy.container.${a}`);
 
   const tabs: { key: string; label: string; show: boolean }[] = [
     { key: "general", label: "General", show: can("rename") },
