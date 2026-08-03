@@ -23,7 +23,6 @@ import PublicPayPage from "./pages/PublicPayPage";
 import { PaymentSettingsPage } from "./pages/user/PaymentSettingsPage";
 import { KycReviewPage } from "./pages/admin/KycReviewPage";
 import { PayoutsAdminPage } from "./pages/admin/PayoutsAdminPage";
-
 import { InstantiationRulesPage } from "./pages/admin/InstantiationRulesPage";
 import { SubscriptionPlansPage } from "./pages/admin/SubscriptionPlansPage";
 import { VouchersPage } from "./pages/admin/VouchersPage";
@@ -158,12 +157,9 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* Public vanity landing — bare (no app chrome), it's a public page.
-                MUST come after all fixed routes and after /:slug/:panel above,
-                so it only catches a single bare segment nothing else claimed. */}
             <Route path="/:slug" element={<PublicSlugPage />} />
             <Route path="/pay/:slug" element={<PublicPayPage />} />
-            {/* Catch-all */}
+
             <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </Suspense>
