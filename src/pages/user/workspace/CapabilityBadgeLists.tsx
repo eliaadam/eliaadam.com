@@ -39,7 +39,7 @@ function CapabilityBadgeList({
 
 export function NotBuiltList({ capabilities }: { capabilities: Capability[] }) {
   return (
-    <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+    <div className="mt-8 pt-6">
       <CapabilityBadgeList
         title="Enabled, no interface yet"
         capabilities={capabilities}

@@ -3,8 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthGuard, GuestGuard } from "./components/AuthGuard";
 import { AdminGuard } from "./components/AdminGuard";
-import { AdminLayout } from "./components/layouts/AdminLayout";
-
 import ContainerKindManagementPage from "./pages/admin/ContainerKindManagementPage";
 import ContainerTemplateManagementPage from "./pages/admin/ContainerTemplateManagementPage";
 import HierarchyTemplateManagementPage from "./pages/admin/HierarchyTemplateManagementPage";
@@ -12,8 +10,6 @@ import HierarchyTemplateManagementPage from "./pages/admin/HierarchyTemplateMana
 const ContainerWorkspacePage = lazy(
   () => import("./pages/user/ContainerWorkspacePage"),
 );
-
-import { HomeLayout } from "./components/layouts/HomeLayout";
 
 const RolePermissionManagementPage = lazy(
   () => import("./pages/admin/RolePermissionManagementPage"),
@@ -37,6 +33,8 @@ import { InstantiationRequestsPage } from "./pages/user/panels/InstantiationRequ
 import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
 import ContainerManagementPage from "./pages/admin/containers/ContainerManagementPage";
+import { HomeSectionLayout } from "./components/layouts/HomeSectionLayout";
+import { AdminSectionLayout } from "./components/layouts/AdminSectionLayout";
 
 const PublicSlugPage = lazy(() => import("./pages/PublicSlugPage"));
 
@@ -77,21 +75,11 @@ export default function App() {
               <Route path="/signup" element={<SignupPage />} />
             </Route>
 
-            {/* Authenticated routes (inside HomeLayout) */}
+            {/* Authenticated routes (inside MainLayout) */}
             <Route element={<AuthGuard />}>
-              <Route element={<HomeLayout />}>
+              <Route element={<HomeSectionLayout />}>
                 <Route path="/home" element={<HomePage />} />
 
-                {/* <Route element={<ContianerWorkspaceLayout />}>
-                  <Route
-                    path="/u/workspace/:containerId"
-                    element={<ContainerWorkspacePage />}
-                  />
-                  <Route
-                    path="/u/workspace/:containerId/:panel"
-                    element={<ContainerWorkspacePage />}
-                  />
-                </Route> */}
                 <Route
                   path="/u/workspace/:containerId"
                   element={<ContainerWorkspacePage />}
@@ -109,7 +97,7 @@ export default function App() {
 
             {/* Admin routes — requires auth + system.admin */}
             <Route element={<AdminGuard />}>
-              <Route element={<AdminLayout />}>
+              <Route element={<AdminSectionLayout />}>
                 <Route
                   path="/admin/roles"
                   element={<RolePermissionManagementPage />}

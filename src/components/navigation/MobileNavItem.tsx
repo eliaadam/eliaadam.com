@@ -1,34 +1,34 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import type { NavItem } from "./navigation";
+import type { NavItem } from "./types";
+import { isNavItemActive, containsActiveDescendant } from "./navLocation";
 
 interface MobileNavItemProps {
   item: NavItem;
-  activeTab: string | null;
   depth?: number;
-  onSelectTab: (tab: string) => void;
-}
-
-function containsActiveTab(item: NavItem, activeTab: string | null): boolean {
-  if (item.tab === activeTab) return true;
-  return item.children?.some((c) => containsActiveTab(c, activeTab)) ?? false;
+  onAfterNavigate: () => void;
 }
 
 export function MobileNavItem({
   item,
-  activeTab,
   depth = 0,
-  onSelectTab,
+  onAfterNavigate,
 }: MobileNavItemProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const hasChildren = !!item.children?.length;
-  const [open, setOpen] = useState(() => containsActiveTab(item, activeTab));
+  const [open, setOpen] = useState(() =>
+    containsActiveDescendant(item, location.pathname, location.search),
+  );
 
   const Icon = item.icon;
-  const isActive = item.tab === activeTab;
+  const isActive = isNavItemActive(item, location.pathname, location.search);
 
   const handleClick = () => {
     if (hasChildren) setOpen((v) => !v);
-    onSelectTab(item.tab);
+    navigate(item.to);
+    onAfterNavigate();
   };
 
   return (
@@ -56,11 +56,10 @@ export function MobileNavItem({
         <div className="flex flex-col gap-0.5 mt-0.5">
           {item.children!.map((child) => (
             <MobileNavItem
-              key={child.tab}
+              key={child.key}
               item={child}
-              activeTab={activeTab}
               depth={depth + 1}
-              onSelectTab={onSelectTab}
+              onAfterNavigate={onAfterNavigate}
             />
           ))}
         </div>

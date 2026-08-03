@@ -1,25 +1,10 @@
 import type { ReactNode } from "react";
-import { navItems as defaultNavItems, type NavItem } from "./navigation";
+import { homeNavItems } from "./homeNavItems";
 import { SidebarNavItem } from "./SidebarNavItem";
-import type { SidebarView } from "./types";
-
-/*
-Example — reusing this sidebar standalone, outside HomeLayout,
-where you might still want its own header:
-
-<DesktopSidebar
-  items={settingsNavItems}
-  activeTab={activeTab}
-  onSelectTab={goToTab}
-  view="full"
-  title="Settings"
-/>
-*/
+import type { NavItem, SidebarView } from "./types";
 
 interface DesktopSidebarProps {
   items?: NavItem[];
-  activeTab: string | null;
-  onSelectTab: (tab: string) => void;
   view?: SidebarView;
   title?: string;
   footer?: ReactNode;
@@ -34,9 +19,7 @@ const WIDTH: Record<SidebarView, string> = {
 };
 
 export function DesktopSidebar({
-  items = defaultNavItems,
-  activeTab,
-  onSelectTab,
+  items = homeNavItems,
   view = "full",
   title,
   footer,
@@ -48,7 +31,7 @@ export function DesktopSidebar({
 
   return (
     <aside
-      className={`hidden lg:flex ${WIDTH[view]} flex-shrink-0 bg-white dark:bg-black   flex-col transition-[width] duration-150 ${className}`}
+      className={`hidden lg:flex ${WIDTH[view]} flex-shrink-0 bg-white dark:bg-black border-r   flex-col transition-[width] duration-150 ${className}`}
     >
       {showTextHeader && (
         <div className="px-5 py-5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-2">
@@ -70,13 +53,7 @@ export function DesktopSidebar({
 
       <nav className="flex-1 p-2 flex flex-col gap-0.5 overflow-y-auto scroll-thin">
         {items.map((item) => (
-          <SidebarNavItem
-            key={item.tab}
-            item={item}
-            activeTab={activeTab}
-            view={view}
-            onSelectTab={onSelectTab}
-          />
+          <SidebarNavItem key={item.key} item={item} view={view} />
         ))}
       </nav>
 

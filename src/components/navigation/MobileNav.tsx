@@ -1,33 +1,21 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
-
-import { navItems as defaultNavItems, type NavItem } from "./navigation";
-import { MobileNavItem } from "./MobileNavItem";
 import { useClickOutside } from "../../hooks/useClickOutside";
+import { homeNavItems } from "./homeNavItems";
+import type { NavItem } from "./types";
+import { MobileNavItem } from "./MobileNavItem";
 
 interface MobileNavProps {
   items?: NavItem[];
-  activeTab: string | null;
-  onSelectTab: (tab: string) => void;
   footer?: ReactNode;
 }
 
-export function MobileNav({
-  items = defaultNavItems,
-  activeTab,
-  onSelectTab,
-  footer,
-}: MobileNavProps) {
+export function MobileNav({ items = homeNavItems, footer }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   useClickOutside([triggerRef, panelRef], () => setOpen(false), open);
-
-  const handleSelectTab = (tab: string) => {
-    onSelectTab(tab);
-    setOpen(false);
-  };
 
   return (
     <div className="lg:hidden relative">
@@ -54,10 +42,9 @@ export function MobileNav({
             <nav className="p-2 flex flex-col gap-0.5 max-h-[60vh] overflow-y-auto scroll-thin">
               {items.map((item) => (
                 <MobileNavItem
-                  key={item.tab}
+                  key={item.key}
                   item={item}
-                  activeTab={activeTab}
-                  onSelectTab={handleSelectTab}
+                  onAfterNavigate={() => setOpen(false)}
                 />
               ))}
             </nav>

@@ -1,39 +1,31 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import type { NavItem } from "./navigation";
-import type { SidebarView } from "./types";
+import type { NavItem, SidebarView } from "./types";
+import { isNavItemActive, containsActiveDescendant } from "./navLocation";
 
 interface SidebarNavItemProps {
   item: NavItem;
-  activeTab: string | null;
   view: SidebarView;
   depth?: number;
-  onSelectTab: (tab: string) => void;
 }
 
-function containsActiveTab(item: NavItem, activeTab: string | null): boolean {
-  if (item.tab === activeTab) return true;
-  return item.children?.some((c) => containsActiveTab(c, activeTab)) ?? false;
-}
-
-export function SidebarNavItem({
-  item,
-  activeTab,
-  view,
-  depth = 0,
-  onSelectTab,
-}: SidebarNavItemProps) {
+export function SidebarNavItem({ item, view, depth = 0 }: SidebarNavItemProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const hasChildren = !!item.children?.length;
-  const [open, setOpen] = useState(() => containsActiveTab(item, activeTab));
+  const [open, setOpen] = useState(() =>
+    containsActiveDescendant(item, location.pathname, location.search),
+  );
 
   const Icon = item.icon;
-  const isActive = item.tab === activeTab;
+  const isActive = isNavItemActive(item, location.pathname, location.search);
   const showLabel = view !== "icons";
   const showIcon = view !== "text";
 
   const handleClick = () => {
     if (hasChildren && view !== "icons") setOpen((v) => !v);
-    onSelectTab(item.tab);
+    navigate(item.to);
   };
 
   return (
@@ -66,12 +58,10 @@ export function SidebarNavItem({
         <div className="flex flex-col gap-0.5 mt-0.5">
           {item.children!.map((child) => (
             <SidebarNavItem
-              key={child.tab}
+              key={child.key}
               item={child}
-              activeTab={activeTab}
               view={view}
               depth={depth + 1}
-              onSelectTab={onSelectTab}
             />
           ))}
         </div>
