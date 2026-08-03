@@ -9,7 +9,7 @@ interface TopAppBarProps {
 
 export function TopAppBar({
   mobileNav,
-  title = "Hala",
+  title = "HALA",
   desktopExtra,
   actions,
 }: TopAppBarProps) {

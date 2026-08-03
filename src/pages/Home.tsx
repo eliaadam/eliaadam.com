@@ -129,17 +129,17 @@ const solutionGroups: SolutionGroup[] = [
       {
         num: "01",
         name: "HALA Build",
-        href: "https://halasoftware.com/solutions#build",
+        href: "https://HALAsoftware.com/solutions#build",
       },
       {
         num: "02",
         name: "HALA BuildField",
-        href: "https://halasoftware.com/solutions#buildfield",
+        href: "https://HALAsoftware.com/solutions#buildfield",
       },
       {
         num: "03",
         name: "HALA Shop",
-        href: "https://halasoftware.com/solutions#buildfield",
+        href: "https://HALAsoftware.com/solutions#buildfield",
       },
     ],
   },
@@ -149,7 +149,7 @@ const solutionGroups: SolutionGroup[] = [
       {
         num: "04",
         name: "HALA VetTrack",
-        href: "https://halasoftware.com/solutions#vettrack",
+        href: "https://HALAsoftware.com/solutions#vettrack",
       },
     ],
   },
@@ -159,7 +159,7 @@ const solutionGroups: SolutionGroup[] = [
       {
         num: "05",
         name: "HALA MedTrack",
-        href: "https://halasoftware.com/solutions#medtrack",
+        href: "https://HALAsoftware.com/solutions#medtrack",
       },
     ],
   },
@@ -169,7 +169,7 @@ const solutionGroups: SolutionGroup[] = [
       {
         num: "06",
         name: "HALA SkillDesk",
-        href: "https://halasoftware.com/solutions#skilldesk",
+        href: "https://HALAsoftware.com/solutions#skilldesk",
       },
     ],
   },
@@ -179,12 +179,12 @@ const solutionGroups: SolutionGroup[] = [
       {
         num: "07",
         name: "HALA Collect",
-        href: "https://halasoftware.com/solutions#collect",
+        href: "https://HALAsoftware.com/solutions#collect",
       },
       {
         num: "08",
         name: "HALA TaxDesk",
-        href: "https://halasoftware.com/solutions#collect",
+        href: "https://HALAsoftware.com/solutions#collect",
       },
     ],
   },
@@ -194,12 +194,12 @@ const solutionGroups: SolutionGroup[] = [
       {
         num: "09",
         name: "HALA Consultancy Services",
-        href: "https://halasoftware.com/services",
+        href: "https://HALAsoftware.com/services",
       },
       {
         num: "10",
         name: "Hands-On Training",
-        href: "https://halasoftware.com/training",
+        href: "https://HALAsoftware.com/training",
       },
     ],
   },
@@ -240,41 +240,41 @@ const footerColumns: FooterColumn[] = [
   {
     title: "Products",
     links: [
-      { label: "HALA Build", href: "https://halasoftware.com/solutions#build" },
+      { label: "HALA Build", href: "https://HALAsoftware.com/solutions#build" },
       {
         label: "HALA BuildField",
-        href: "https://halasoftware.com/solutions#buildfield",
+        href: "https://HALAsoftware.com/solutions#buildfield",
       },
       {
         label: "HALA VetTrack",
-        href: "https://halasoftware.com/solutions#vettrack",
+        href: "https://HALAsoftware.com/solutions#vettrack",
       },
       {
         label: "HALA MedTrack",
-        href: "https://halasoftware.com/solutions#medtrack",
+        href: "https://HALAsoftware.com/solutions#medtrack",
       },
       {
         label: "HALA SkillDesk",
-        href: "https://halasoftware.com/solutions#skilldesk",
+        href: "https://HALAsoftware.com/solutions#skilldesk",
       },
       {
         label: "HALA Collect",
-        href: "https://halasoftware.com/solutions#collect",
+        href: "https://HALAsoftware.com/solutions#collect",
       },
       {
         label: "HALA TaxDesk",
-        href: "https://halasoftware.com/solutions#taxdesk",
+        href: "https://HALAsoftware.com/solutions#taxdesk",
       },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About Us", href: "https://halasoftware.com/about" },
-      { label: "Consultancy", href: "https://halasoftware.com/services" },
-      { label: "Training", href: "https://halasoftware.com/training" },
-      { label: "News & Insights", href: "https://halasoftware.com/news" },
-      { label: "Contact", href: "https://halasoftware.com/contact" },
+      { label: "About Us", href: "https://HALAsoftware.com/about" },
+      { label: "Consultancy", href: "https://HALAsoftware.com/services" },
+      { label: "Training", href: "https://HALAsoftware.com/training" },
+      { label: "News & Insights", href: "https://HALAsoftware.com/news" },
+      { label: "Contact", href: "https://HALAsoftware.com/contact" },
     ],
   },
   {
@@ -282,14 +282,14 @@ const footerColumns: FooterColumn[] = [
     links: [
       {
         label: "Downloads",
-        href: "https://halasoftware.com/solutions#downloads",
+        href: "https://HALAsoftware.com/solutions#downloads",
       },
-      { label: "Documentation", href: "https://halasoftware.com/" },
-      { label: "Support Center", href: "https://halasoftware.com/" },
-      { label: "FAQs", href: "https://halasoftware.com/" },
+      { label: "Documentation", href: "https://HALAsoftware.com/" },
+      { label: "Support Center", href: "https://HALAsoftware.com/" },
+      { label: "FAQs", href: "https://HALAsoftware.com/" },
       {
         label: "Case Studies",
-        href: "https://halasoftware.com/news#case-studies",
+        href: "https://HALAsoftware.com/news#case-studies",
       },
     ],
   },
@@ -298,24 +298,24 @@ const footerColumns: FooterColumn[] = [
     links: [
       {
         label: "Terms of Service",
-        href: "https://halasoftware.com/terms-of-services",
+        href: "https://HALAsoftware.com/terms-of-services",
       },
       {
         label: "Privacy Policy",
-        href: "https://halasoftware.com/privacy-policy",
+        href: "https://HALAsoftware.com/privacy-policy",
       },
       {
         label: "Cookie Policy",
-        href: "https://halasoftware.com/cookie-policy",
+        href: "https://HALAsoftware.com/cookie-policy",
       },
-      { label: "Licenses", href: "https://halasoftware.com/licences" },
+      { label: "Licenses", href: "https://HALAsoftware.com/licences" },
     ],
   },
 ];
 
 const navLinks: NavLink[] = [
-  { label: "Home", href: "https://halasoftware.com/" },
-  { label: "About", href: "https://halasoftware.com/about" },
+  { label: "Home", href: "https://HALAsoftware.com/" },
+  { label: "About", href: "https://HALAsoftware.com/about" },
 ];
 
 const heroStats: Stat[] = [
@@ -369,7 +369,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <a
-            href="https://halasoftware.com/"
+            href="https://HALAsoftware.com/"
             className="flex items-center gap-2"
           >
             <span className="text-[15px] font-bold tracking-tight text-neutral-900 dark:text-white">
@@ -407,13 +407,13 @@ export default function Home() {
                 <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-56">
                   <div className="rounded-xl border border-neutral-200 bg-white py-2 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
                     <a
-                      href="https://halasoftware.com/services"
+                      href="https://HALAsoftware.com/services"
                       className="block px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
                     >
                       Consultancy
                     </a>
                     <a
-                      href="https://halasoftware.com/training"
+                      href="https://HALAsoftware.com/training"
                       className="block px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
                     >
                       Training
@@ -424,13 +424,13 @@ export default function Home() {
             </div>
 
             <a
-              href="https://halasoftware.com/news"
+              href="https://HALAsoftware.com/news"
               className="text-neutral-600 transition hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               News
             </a>
             <a
-              href="https://halasoftware.com/contact"
+              href="https://HALAsoftware.com/contact"
               className="text-neutral-600 transition hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               Contact
@@ -475,31 +475,31 @@ export default function Home() {
               </a>
             ))}
             <a
-              href="https://halasoftware.com/services"
+              href="https://HALAsoftware.com/services"
               className="py-2 text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               Consultancy
             </a>
             <a
-              href="https://halasoftware.com/training"
+              href="https://HALAsoftware.com/training"
               className="py-2 text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               Training
             </a>
             <a
-              href="https://halasoftware.com/news"
+              href="https://HALAsoftware.com/news"
               className="py-2 text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               News
             </a>
             <a
-              href="https://halasoftware.com/contact"
+              href="https://HALAsoftware.com/contact"
               className="py-2 text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               Contact
             </a>
             <a
-              href="https://halasoftware.com/contact"
+              href="https://HALAsoftware.com/contact"
               className="mt-2 inline-flex justify-center items-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white dark:bg-white dark:text-neutral-900"
             >
               Get Started
@@ -541,13 +541,13 @@ export default function Home() {
           </p>
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <a href="https://halasoftware.com/solutions" className={primaryBtn}>
+            <a href="https://HALAsoftware.com/solutions" className={primaryBtn}>
               Download Our Software
             </a>
-            <a href="https://halasoftware.com/training" className={outlineBtn}>
+            <a href="https://HALAsoftware.com/training" className={outlineBtn}>
               View &amp; Enroll in Training
             </a>
-            <a href="https://halasoftware.com/services" className={outlineBtn}>
+            <a href="https://HALAsoftware.com/services" className={outlineBtn}>
               Request Consultancy
             </a>
           </div>
@@ -680,13 +680,13 @@ export default function Home() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="https://halasoftware.com/solutions" className={primaryBtn}>
+            <a href="https://HALAsoftware.com/solutions" className={primaryBtn}>
               Download Our Software
             </a>
-            <a href="https://halasoftware.com/training" className={outlineBtn}>
+            <a href="https://HALAsoftware.com/training" className={outlineBtn}>
               View &amp; Enroll in Training
             </a>
-            <a href="https://halasoftware.com/services" className={outlineBtn}>
+            <a href="https://HALAsoftware.com/services" className={outlineBtn}>
               Request Consultancy
             </a>
           </div>
@@ -715,7 +715,7 @@ export default function Home() {
 
               <div className="mt-5 flex flex-col gap-2.5 text-sm text-neutral-600 dark:text-neutral-400">
                 <a
-                  href="https://halasoftware.com/#location"
+                  href="https://HALAsoftware.com/#location"
                   className="flex items-center gap-2 transition hover:text-neutral-900 dark:hover:text-white"
                 >
                   <MapPin
@@ -725,11 +725,11 @@ export default function Home() {
                   Mbeya City, JB Street, Tanzania
                 </a>
                 <a
-                  href="mailto:info@halasoftware.com"
+                  href="mailto:info@HALAsoftware.com"
                   className="flex items-center gap-2 transition hover:text-neutral-900 dark:hover:text-white"
                 >
                   <Mail size={15} className="flex-shrink-0 text-neutral-500" />
-                  info@halasoftware.com
+                  info@HALAsoftware.com
                 </a>
                 <a
                   href="tel:+255713565874"
@@ -811,25 +811,25 @@ export default function Home() {
             <p>© 2019 - 2026 HALA Software. All rights reserved.</p>
             <div className="flex items-center gap-4">
               <a
-                href="https://halasoftware.com/terms-of-services"
+                href="https://HALAsoftware.com/terms-of-services"
                 className="transition hover:text-neutral-900 dark:hover:text-white"
               >
                 Terms
               </a>
               <a
-                href="https://halasoftware.com/privacy-policy"
+                href="https://HALAsoftware.com/privacy-policy"
                 className="transition hover:text-neutral-900 dark:hover:text-white"
               >
                 Privacy
               </a>
               <a
-                href="https://halasoftware.com/cookie-policy"
+                href="https://HALAsoftware.com/cookie-policy"
                 className="transition hover:text-neutral-900 dark:hover:text-white"
               >
                 Cookies
               </a>
               <a
-                href="https://halasoftware.com/licences"
+                href="https://HALAsoftware.com/licences"
                 className="transition hover:text-neutral-900 dark:hover:text-white"
               >
                 Licences
