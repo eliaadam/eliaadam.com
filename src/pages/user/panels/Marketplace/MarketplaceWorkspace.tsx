@@ -4,17 +4,6 @@ import PublishAssetsPanel from "./PublishAssetsPanel";
 import OrdersPanel from "./OrdersPanel";
 import SalesPanel from "./SalesPanel";
 
-/**
- * MarketplaceWorkspace — the full marketplace with transactions.
- *
- *   Discover  → browse + buy (any capability's listings)
- *   Publish   → per-capability sections of your monetizable assets to list
- *   My Orders → what you bought + per-type fulfillment (download/install/track)
- *   Sales     → orders you received + net proceeds
- *
- * Replaces the earlier Discover + My Listings only workspace. (Keep your existing
- * MyListingsPanel too if you want a manage-listings tab; add it alongside.)
- */
 export default function MarketplaceWorkspace({
   containerId,
   permissions,
