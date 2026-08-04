@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  marketplaceApi as api,
-  inventoryApi,
-  toMajor,
-} from "./marketplace-api";
+import { marketplaceApi as api, toMajor } from "./marketplace-api";
+import { inventoryApi } from "../Inventory/inventory-api";
 
 type Listing = {
   id: string;
