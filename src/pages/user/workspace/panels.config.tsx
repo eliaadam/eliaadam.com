@@ -37,6 +37,9 @@ import BrainstormWorkspace from "../panels/brainstorm/BrainstormWorkspace";
 import ProcurementWorkspace from "../procurements/ProcurementWorkspace";
 
 import type { PanelDefinition } from "./types";
+import FaithWorkspace from "../panels/faith/FaithWorkspace";
+import CrmWorkspace from "../panels/crm/CrmWorkspace";
+import ChurchCrmWorkspace from "../panels/crm/ChurchCrmWorkspace";
 
 /*
  * One entry per CAPABILITY (keyed by feature code). Orders are unique and
@@ -51,6 +54,27 @@ export const PANELS: Record<string, PanelDefinition> = {
     order: 0,
     slug: "members",
     component: MembersPanel,
+  },
+  "system.crm": {
+    label: "CRM",
+    icon: Users,
+    order: 0,
+    slug: "crm",
+    component: CrmWorkspace,
+  },
+  "system.crm_church": {
+    label: "Church Crm",
+    icon: Users,
+    order: 0,
+    slug: "crm_church",
+    component: ChurchCrmWorkspace,
+  },
+  "system.faith": {
+    label: "Faith",
+    icon: Users,
+    order: 0,
+    slug: "faith",
+    component: FaithWorkspace,
   },
   "system.communications": {
     label: "Communications",
