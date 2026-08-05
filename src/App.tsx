@@ -29,7 +29,7 @@ import { VouchersPage } from "./pages/admin/VouchersPage";
 import { SubscriptionsAdminPage } from "./pages/admin/SubscriptionsAdminPage";
 import { QuestionnairesPage } from "./pages/user/panels/QuestionnairesPage";
 import { InstantiationRequestsPage } from "./pages/user/panels/InstantiationRequestsPage";
-//import Home from "./pages/Home";
+
 import LoginPage from "./pages/LoginPage";
 import ContainerManagementPage from "./pages/admin/containers/ContainerManagementPage";
 import { HomeSectionLayout } from "./components/layouts/HomeSectionLayout";
@@ -69,7 +69,7 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Guest routes */}
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<LoginPage />} />
             <Route element={<GuestGuard />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
