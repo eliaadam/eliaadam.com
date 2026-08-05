@@ -13,6 +13,10 @@ import {
   Store,
   Package,
   Blocks,
+  Gavel,
+  LayoutTemplate,
+  Newspaper,
+  Brain,
 } from "lucide-react";
 import DocumentsPanel from "../panels/DocumentsPanel";
 import ProjectsPanel from "../panels/ProjectsPanel";
@@ -27,10 +31,19 @@ import MarketplaceWorkspace from "../panels/Marketplace/MarketplaceWorkspace";
 import InventoryWorkspace from "../panels/Inventory/InventoryWorkspace";
 import AppsWorkspace from "../panels/Apps/AppsWorkspace";
 import InvoicingPanel from "../panels/InvoicingPanel";
+import TemplatesWorkspace from "../panels/templates/TemplatesWorkspace";
+import ContentWorkspace from "../panels/content/ContentWorkspace";
+import BrainstormWorkspace from "../panels/brainstorm/BrainstormWorkspace";
+import ProcurementWorkspace from "../procurements/ProcurementWorkspace";
 
 import type { PanelDefinition } from "./types";
-import TemplatesWorkspace from "../panels/templates/TemplatesWorkspace";
 
+/*
+ * One entry per CAPABILITY (keyed by feature code). Orders are unique and
+ * ascending so the sidebar sort is deterministic. Procurement is a single
+ * capability (system.procurement); its My Tenders / Open Tenders / Contracts
+ * tabs live inside ProcurementWorkspace — they are NOT separate capabilities.
+ */
 export const PANELS: Record<string, PanelDefinition> = {
   "system.membership": {
     label: "Members",
@@ -77,16 +90,9 @@ export const PANELS: Record<string, PanelDefinition> = {
   kyc: {
     label: "KYC",
     icon: IdCard,
-    order: 45,
+    order: 44,
     slug: "kyc",
     component: KycPanel,
-  },
-  "system.hierarchy": {
-    label: "Manage",
-    icon: Settings,
-    order: 90,
-    slug: "manage",
-    component: ContainerManagementPanel,
   },
   "system.hr": {
     label: "Human Resources",
@@ -95,6 +101,13 @@ export const PANELS: Record<string, PanelDefinition> = {
     slug: "hr",
     component: HrWorkspace,
   },
+  "system.procurement": {
+    label: "Procurement",
+    icon: Gavel,
+    order: 48,
+    slug: "procurement",
+    component: ProcurementWorkspace,
+  },
   "system.logistics": {
     label: "Logistics",
     icon: Truck,
@@ -102,12 +115,27 @@ export const PANELS: Record<string, PanelDefinition> = {
     slug: "logistics",
     component: LogisticsWorkspace,
   },
-  "system.marketplace": {
-    label: "Marketplace",
-    icon: Store,
-    order: 70,
-    slug: "marketplace",
-    component: MarketplaceWorkspace,
+  "maicore.templates": {
+    // NOTE: inconsistent code — rename to system.templates when convenient.
+    label: "Templates",
+    icon: LayoutTemplate,
+    order: 55,
+    slug: "templates",
+    component: TemplatesWorkspace,
+  },
+  "system.content": {
+    label: "Content",
+    icon: Newspaper,
+    order: 56,
+    slug: "content",
+    component: ContentWorkspace,
+  },
+  "system.brainstorm": {
+    label: "Brainstorm",
+    icon: Brain,
+    order: 57,
+    slug: "brainstorm",
+    component: BrainstormWorkspace,
   },
   "system.inventory": {
     label: "Inventory",
@@ -116,26 +144,44 @@ export const PANELS: Record<string, PanelDefinition> = {
     slug: "inventory",
     component: InventoryWorkspace,
   },
+  "system.marketplace": {
+    label: "Marketplace",
+    icon: Store,
+    order: 70,
+    slug: "marketplace",
+    component: MarketplaceWorkspace,
+  },
+  "system.hierarchy": {
+    label: "Manage",
+    icon: Settings,
+    order: 90,
+    slug: "manage",
+    component: ContainerManagementPanel,
+  },
   "system.apps": {
     label: "Apps",
     icon: Blocks,
-    order: 90,
+    order: 91,
     slug: "apps",
     component: AppsWorkspace,
   },
-  "maicore.templates": {
-    label: "Templates",
-    icon: FileText,
-    order: 55,
-    slug: "templates",
-    component: TemplatesWorkspace,
-  },
 };
 
-/** panel slug (from URL) → capability code */
-export const PANEL_SLUG_TO_CODE: Record<string, string> = Object.fromEntries(
-  Object.entries(PANELS).map(([code, p]) => [p.slug, code]),
-);
+/** panel slug (from URL) → capability code. Guards against duplicate slugs. */
+export const PANEL_SLUG_TO_CODE: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  for (const [code, p] of Object.entries(PANELS)) {
+    if (map[p.slug]) {
+      // Surfaces a collision in dev instead of silently overwriting.
+      console.warn(
+        `Duplicate panel slug "${p.slug}" (${map[p.slug]} vs ${code}).`,
+      );
+      continue;
+    }
+    map[p.slug] = code;
+  }
+  return map;
+})();
 
 /** Fallback icon for capabilities with no PANELS entry (e.g. driven by cap.family). */
 export const FALLBACK_ICON = Blocks;
