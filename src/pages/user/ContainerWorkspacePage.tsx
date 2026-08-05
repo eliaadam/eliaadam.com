@@ -44,7 +44,7 @@ export default function ContainerWorkspacePage() {
       } else if (r.type === "redirect") {
         const to = r.id.replace(/^redirect:/, "");
         const segments = window.location.pathname.split("/").filter(Boolean);
-        const panelInUrl = segments[1]; // /{slug}/{panel}
+        const panelInUrl = segments[1];
         navigate(`/${to}${panelInUrl ? `/${panelInUrl}` : ""}`, {
           replace: true,
         });
