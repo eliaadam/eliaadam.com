@@ -1,5 +1,5 @@
 /**
- * HALA Platform — shared types, enums, and DTOs.
+ * Platform Platform — shared types, enums, and DTOs.
  * Mirrors the System Admin API Reference v1.0.
  */
 

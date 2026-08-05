@@ -72,4 +72,4 @@ export default defineConfig([
 ]);
 ```
 
-# HALAsystemui
+# Platformsystemui
