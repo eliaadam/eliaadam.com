@@ -9,6 +9,12 @@ import {
 } from "./workspace/WorkspaceStatusScreen";
 import { WorkspaceBody } from "./workspace/shells/WorkspaceBody";
 
+type SlugResolution = {
+  slug: string;
+  id: string | null;
+  error: string | null;
+};
+
 export default function ContainerWorkspacePage() {
   const params = useParams<{
     containerId?: string;
@@ -20,26 +26,21 @@ export default function ContainerWorkspacePage() {
   const rawId = params.containerId ?? params.slug ?? "";
   const isUuid = UUID_RE.test(rawId);
 
-  const [resolvedId, setResolvedId] = useState<string | null>(
-    isUuid ? rawId : null,
-  );
-  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [slugResolution, setSlugResolution] = useState<SlugResolution>({
+    slug: "",
+    id: null,
+    error: null,
+  });
 
   useEffect(() => {
+    if (isUuid) return;
+
     let cancelled = false;
-
-    if (isUuid) {
-      setResolvedId(rawId);
-      return;
-    }
-
-    setResolvedId(null);
-    setResolveError(null);
 
     resolveSlug(rawId).then((r) => {
       if (cancelled) return;
       if (r === null) {
-        setResolveError("notfound");
+        setSlugResolution({ slug: rawId, id: null, error: "notfound" });
       } else if (r.type === "redirect") {
         const to = r.id.replace(/^redirect:/, "");
         const segments = window.location.pathname.split("/").filter(Boolean);
@@ -48,7 +49,7 @@ export default function ContainerWorkspacePage() {
           replace: true,
         });
       } else {
-        setResolvedId(r.id);
+        setSlugResolution({ slug: rawId, id: r.id, error: null });
       }
     });
 
@@ -56,6 +57,10 @@ export default function ContainerWorkspacePage() {
       cancelled = true;
     };
   }, [rawId, isUuid, navigate]);
+
+  const matched = slugResolution.slug === rawId;
+  const resolvedId = isUuid ? rawId : matched ? slugResolution.id : null;
+  const resolveError = !isUuid && matched ? slugResolution.error : null;
 
   const workspaceQuery = useQuery({
     queryKey: ["workspace", resolvedId],
