@@ -8,7 +8,7 @@ import {
   nodeLabelText,
   updateLineGeometry,
 } from "./sceneHelpers";
-import type { SceneParams, SimEdge, SimNode } from "./registry/types";
+import type { SimNode, SimEdge, SceneParams } from "./types";
 
 export interface GraphSceneProps {
   nodes: SimNode[];

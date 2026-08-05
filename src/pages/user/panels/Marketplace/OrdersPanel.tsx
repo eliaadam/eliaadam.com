@@ -28,7 +28,7 @@ const STATUS_STYLES: Record<string, string> = {
  * a Download button; installable → Install; shippable → Track; etc. This is where
  * "different asset types interact differently" is visible to the user.
  */
-export default function OrdersPanel({ containerId, permissions }: { containerId: string; permissions: string[] }) {
+export default function OrdersPanel({ containerId }: { containerId: string; permissions: string[] }) {
   const [msg, setMsg] = useState<string | null>(null);
 
   const orders = useQuery({

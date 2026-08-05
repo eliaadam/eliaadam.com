@@ -35,7 +35,7 @@ export default function CatalogPanel({
   const [filter, setFilter] = useState<string>("all");
 
   const canCreate = can("system.inventory.offering.create");
-  const canUpdate = can("system.inventory.offering.update");
+
   const canStock = can("system.inventory.offering.adjust_stock");
   const canArchive = can("system.inventory.offering.archive");
 
