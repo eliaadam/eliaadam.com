@@ -31,9 +31,7 @@ export default function CreateSection() {
         Pick a template to create your organization with a pre-defined
         structure, roles, and policies.
       </p>
-
-      {/* The user's own instantiation requests (pending approval, approved,
-          rejected) — shown so a submitted request is visible and trackable. */}
+ 
       <MyInstantiationRequests />
 
       {templatesQuery.isLoading && (
