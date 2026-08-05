@@ -58,28 +58,28 @@ export const PANELS: Record<string, PanelDefinition> = {
   "system.crm": {
     label: "CRM",
     icon: Users,
-    order: 0,
+    order: 1,
     slug: "crm",
     component: CrmWorkspace,
   },
-  "system.crm_church": {
+  "system.crm.church": {
     label: "Church Crm",
     icon: Users,
-    order: 0,
+    order: 2,
     slug: "crm_church",
     component: ChurchCrmWorkspace,
   },
   "system.faith": {
     label: "Faith",
     icon: Users,
-    order: 0,
+    order: 3,
     slug: "faith",
     component: FaithWorkspace,
   },
   "system.communications": {
     label: "Communications",
     icon: MessageSquare,
-    order: 5,
+    order: 9,
     slug: "chat",
     component: CommunicationsPanel,
   },
