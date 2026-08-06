@@ -74,7 +74,8 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
             </Route>
-
+            {/* PUBLIC — pay a link with no account. Keep it out of every guard. */}
+            <Route path="/pay/:slug" element={<PublicPayPage />} />
             {/* Authenticated routes (inside MainLayout) */}
             <Route element={<AuthGuard />}>
               <Route element={<HomeSectionLayout />}>
