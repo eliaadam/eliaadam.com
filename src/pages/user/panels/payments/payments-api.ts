@@ -92,18 +92,24 @@ export const publicPayApi = {
         api("GET", `pay/charge/${chargeToken}/status`, undefined, false),
 };
 
-// ── marketplace pay (auth) — uses your existing place endpoint ────
+// ── marketplace checkout (auth) — two-step: create order, then pay it ───
+// NOTE: field names below are inferred from patterns elsewhere in this app
+// (payment_link charge/pay shapes). Confirm against the real OrderController
+// once available and adjust if it expects different keys.
 export const marketplaceApi = {
-    // Adjust the path to your real place route.
-    place: (b: {
-        buyer_container_id: string;
-        listing_id: string;
-        quantity?: number;
-        payment_method: "wallet" | "ussd";
-        gateway?: string;
-        buyer_name?: string;
-        buyer_email?: string;
-        buyer_phone?: string;
-    }) => api("POST", "marketplace/checkout", b),
-};
+    createOrder: (
+        containerId: string,
+        b: { listing_id: string; quantity?: number },
+    ) => api("POST", `marketplace/containers/${containerId}/orders`, b),
 
+    pay: (
+        containerId: string,
+        orderId: string,
+        b: {
+            gateway?: string; // e.g. "wallet" | "selcom" | "mpesa"
+            buyer_name?: string;
+            buyer_email?: string;
+            buyer_phone?: string;
+        },
+    ) => api("POST", `marketplace/containers/${containerId}/orders/${orderId}/pay`, b),
+};

@@ -7,6 +7,8 @@ import { usePaymentPoll } from "./usePaymentPoll";
  * Buy a listing with a choice of rail: pay from wallet balance (instant) or via
  * USSD prompt. Shows the wallet balance so the buyer knows if the wallet rail is
  * possible; falls back to USSD when balance is short.
+ *
+ * Checkout is two steps against the real API: create the order, then pay it.
  */
 export default function MarketplaceCheckout({
   listingId,
@@ -49,28 +51,33 @@ export default function MarketplaceCheckout({
     setBusy(true);
     setMsg(null);
     try {
-      const res = await marketplaceApi.place({
-        buyer_container_id: buyerContainerId,
+      // 1. create the order
+      const order = await marketplaceApi.createOrder(buyerContainerId, {
         listing_id: listingId,
-        payment_method: method,
+        quantity: 1,
+      });
+
+      // 2. pay it
+      const res = await marketplaceApi.pay(buyerContainerId, order.id, {
+        gateway: method === "wallet" ? "wallet" : "selcom",
         ...(method === "ussd" ? { buyer_phone: phone } : {}),
       });
-      const payment = res.payment ?? res.order?.payment;
+
       if (
         method === "wallet" ||
-        payment?.status === "paid" ||
-        payment?.status === "not_required"
+        res.status === "succeeded" ||
+        res.status === "not_required"
       ) {
         setPaid(true);
         setMsg(
-          payment?.status === "not_required"
-            ? "Order placed."
-            : "Paid from wallet.",
+          res.status === "not_required" ? "Order placed." : "Paid from wallet.",
         );
         onPaid?.();
+      } else if (res.checkout_url) {
+        window.location.href = res.checkout_url;
       } else {
         // USSD rail — poll the collection intent.
-        setIntentId(payment?.intent_id ?? res.order?.payment_reference ?? null);
+        setIntentId(res.intent_id ?? null);
         setMsg(
           `Check your phone (${phone}) and approve the ${money(price, currency)} prompt.`,
         );
