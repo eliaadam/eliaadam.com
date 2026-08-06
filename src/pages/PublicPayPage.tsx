@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
 /*
  * Public payment page — system.com/pay/{slug}. NO authentication.
@@ -6,13 +7,13 @@ import { useEffect, useState } from "react";
  * The one place a member of the public originates a payment. Flow:
  *   1. resolve the link (public) → title, amount (or open), currency
  *   2. buyer enters their details (+ amount if the link is open)
- *   3. POST pay → the server creates an intent against the link's container and
- *      returns a Selcom checkout URL
- *   4. we redirect the buyer to that checkout URL to complete payment
+ *   3. POST pay → the server creates an intent against the link's container.
+ *      - hosted checkout rail: returns checkout_url → redirect there
+ *      - USSD rail: returns charge_token, no checkout_url → poll for status
  *
  * Money never moves here — settlement happens later via Selcom's webhook. This
- * page only kicks off the collection; the buyer pays on Selcom's hosted page and
- * the wallet is credited when the verified webhook lands.
+ * page only kicks off the collection; the wallet is credited when the verified
+ * webhook lands.
  */
 
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
@@ -29,7 +30,13 @@ type Link = {
 type State =
   | { s: "loading" }
   | { s: "notfound" }
-  | { s: "ready"; link: Link; awaitingUssd?: boolean; chargeToken?: string }
+  | {
+      s: "ready";
+      link: Link;
+      awaitingUssd?: boolean;
+      chargeToken?: string;
+      succeeded?: boolean;
+    }
   | { s: "error"; message: string };
 
 function fromMinorUnits(minor: number): string {
@@ -47,6 +54,7 @@ function toMinorUnits(input: string): number | null {
 }
 
 export default function PublicPayPage() {
+  const { slug } = useParams<{ slug: string }>();
   const [state, setState] = useState<State>({ s: "loading" });
 
   // buyer form
@@ -57,9 +65,47 @@ export default function PublicPayPage() {
   const [submitting, setSubmitting] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
+  // resolve the link on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolve() {
+      try {
+        const res = await fetch(
+          `${API}/api/pay/${encodeURIComponent(slug ?? "")}`,
+          { headers: { Accept: "application/json" } },
+        );
+        const body = await res.json().catch(() => ({}));
+        if (cancelled) return;
+
+        if (res.status === 404) {
+          setState({ s: "notfound" });
+          return;
+        }
+        if (!res.ok) {
+          setState({
+            s: "error",
+            message: body.message ?? "Could not load this payment link.",
+          });
+          return;
+        }
+        setState({ s: "ready", link: body.data });
+      } catch {
+        if (!cancelled) setState({ s: "error", message: "Network error." });
+      }
+    }
+
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  // poll charge status while awaiting a USSD approval
   useEffect(() => {
     if (state.s !== "ready" || !state.awaitingUssd || !state.chargeToken)
       return;
+
     const token = state.chargeToken;
     const start = Date.now();
     const TIMEOUT_MS = 3 * 60 * 1000;
@@ -69,6 +115,7 @@ export default function PublicPayPage() {
         setPayError(
           "We haven't seen the payment yet. If you approved it, check back shortly.",
         );
+        setSubmitting(false);
         return;
       }
       try {
@@ -77,17 +124,25 @@ export default function PublicPayPage() {
         });
         const body = await res.json().catch(() => ({}));
         const status = body.data?.payment_status;
+
         if (status === "succeeded") {
           setPayError(null);
-          // e.g. show a success screen
+          setSubmitting(false);
+          setState((s) =>
+            s.s === "ready" ? { ...s, awaitingUssd: false, succeeded: true } : s,
+          );
         } else if (status === "failed") {
           setPayError(
             "The payment failed or was cancelled. You can try again.",
           );
           setSubmitting(false);
+          setState((s) =>
+            s.s === "ready" ? { ...s, awaitingUssd: false, chargeToken: undefined } : s,
+          );
         }
+        // else still processing — keep polling
       } catch {
-        // transient, keep polling
+        // transient — keep polling until timeout
       }
     };
 
@@ -140,6 +195,7 @@ export default function PublicPayPage() {
       const { checkout_url, charge_token } = body.data ?? {};
 
       if (checkout_url) {
+        // Hand off to Selcom's hosted checkout.
         window.location.href = checkout_url;
         return;
       }
@@ -190,7 +246,37 @@ export default function PublicPayPage() {
           </div>
         )}
 
-        {state.s === "ready" && (
+        {state.s === "ready" && state.succeeded && (
+          <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/40 bg-white dark:bg-neutral-900 p-8 text-center">
+            <p className="text-lg font-semibold text-black dark:text-white m-0 mb-1">
+              Payment received
+            </p>
+            <p className="text-sm text-neutral-500 m-0">
+              Thanks — your payment for "{state.link.title}" is complete.
+            </p>
+          </div>
+        )}
+
+        {state.s === "ready" && !state.succeeded && state.awaitingUssd && (
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center">
+            <p className="text-lg font-semibold text-black dark:text-white m-0 mb-1">
+              Check your phone
+            </p>
+            <p className="text-sm text-neutral-500 m-0 mb-4">
+              A payment prompt was sent to {phone}. Approve it to complete
+              your payment for "{state.link.title}".
+            </p>
+            <span className="inline-flex items-center gap-2 text-[11px] text-neutral-400">
+              <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              Waiting for confirmation…
+            </span>
+            {payError && (
+              <p className="text-[11px] text-red-600 mt-3 m-0">{payError}</p>
+            )}
+          </div>
+        )}
+
+        {state.s === "ready" && !state.succeeded && !state.awaitingUssd && (
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8">
             <p className="text-[11px] uppercase tracking-wide text-neutral-400 m-0 mb-1">
               Payment request
@@ -266,7 +352,8 @@ export default function PublicPayPage() {
             )}
 
             <p className="text-[10px] text-neutral-400 mt-4 m-0 text-center">
-              You'll be taken to a secure Selcom checkout to complete payment.
+              You'll be taken to a secure checkout, or asked to approve a
+              payment prompt on your phone.
             </p>
           </div>
         )}
