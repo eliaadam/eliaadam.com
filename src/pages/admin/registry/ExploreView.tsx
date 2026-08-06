@@ -127,7 +127,7 @@ export function ExploreView({
       <header className="flex h-auto min-h-14 flex-wrap items-center justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-6 py-2">
         <div className="flex items-center gap-3">
           <span className="text-base font-bold tracking-tight text-black dark:text-white">
-            Platform Registry
+            HALA Registry
           </span>
           <span className="mx-1 hidden sm:inline-block h-3.5 w-px bg-neutral-200 dark:bg-neutral-800" />
           <span className="hidden sm:inline text-xs text-neutral-400 dark:text-neutral-600">

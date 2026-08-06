@@ -31,7 +31,7 @@ export function ContianerWorkspaceLayout() {
       {/* Mobile top bar */}
       <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-black">
         <span className="text-base font-bold text-black dark:text-white">
-          Platform
+          HALA
         </span>
         <button
           onClick={() => setMobileOpen((v) => !v)}
@@ -83,7 +83,7 @@ export function ContianerWorkspaceLayout() {
       <aside className="hidden lg:flex w-[240px] flex-shrink-0 bg-white dark:bg-neutral-950 border-r border-neutral-200 dark:border-neutral-800 flex-col">
         <div className="px-5 py-5 border-b border-neutral-200 dark:border-neutral-800">
           <span className="text-base font-bold text-black dark:text-white">
-            Platform
+            HALA
           </span>
         </div>
 

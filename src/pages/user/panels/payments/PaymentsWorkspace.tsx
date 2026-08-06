@@ -1,18 +1,9 @@
 import { useState, type JSX } from "react";
-import PaymentsPanel from "./PaymentsPanel"; // the existing wallet/collect/transfer panel
+import PaymentsPanel from "./PaymentsPanel";
 import PayoutsPanel from "./PayoutsPanel";
 import CardsPanel from "../CardsPanel";
-import LinksPanel from "../LinksPanel";
-
-/*
- * The Payments workspace tab, now a tabbed shell. The original PaymentsPanel
- * (wallet, take payment, transfer, history) becomes the first tab; payouts,
- * cards, links and settings are the rest. Each tab is permission-gated, so a
- * collector sees only "Money in", while a treasurer sees everything.
- *
- * This is what mounts under the `payments` slug in ContainerWorkspacePage —
- * point the PANELS map's `payments.component` at THIS file.
- */
+import DepositPanel from "./DepositPanel";
+import PaymentLinksPanel from "./PaymentLinksPanel";
 
 type TabDef = {
   key: string;
@@ -42,6 +33,13 @@ export default function PaymentsWorkspace({
       ),
     },
     {
+      // NEW: top up this container's wallet from mobile money (USSD).
+      key: "deposit",
+      label: "Deposit",
+      show: hasPay("payment.create"),
+      render: () => <DepositPanel containerId={containerId} />,
+    },
+    {
       key: "payouts",
       label: "Payouts",
       show: hasPay("payout.request") || hasPay("payout.view"),
@@ -58,17 +56,13 @@ export default function PaymentsWorkspace({
       ),
     },
     {
+      // NEW: shareable payment links (create/manage), backed by the new
+      // payment_links flow. Replaces the old LinksPanel.
       key: "links",
       label: "Links",
       show: hasPay("link.view") || hasPay("link.manage"),
-      render: () => (
-        <LinksPanel containerId={containerId} permissions={permissions} />
-      ),
+      render: () => <PaymentLinksPanel containerId={containerId} />,
     },
-    // NOTE: platform payment SETTINGS are deliberately NOT here. They're
-    // system-admin, platform-wide config and live in the admin console
-    // (Admin → Payment Settings / PaymentSettingsPage), not inside a tenant's
-    // container workspace.
   ].filter((t) => t.show);
 
   const [active, setActive] = useState(tabs[0]?.key ?? "money-in");

@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { commApi, unwrapList, type Conversation, type Group } from "./api";
 import MessageThread from "./MessageThread";
-import MemberPicker from "./MemberPicker";
+ 
 import BroadcastsPanel from "./BroadcastsPanel";
 import CommunitiesPanel from "./CommunitiesPanel";
+import MemberPicker from "./MemberPicker";
 
 type SubTab = "chats" | "groups" | "broadcasts" | "communities";
 

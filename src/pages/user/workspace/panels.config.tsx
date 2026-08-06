@@ -21,7 +21,7 @@ import {
 import DocumentsPanel from "../panels/DocumentsPanel";
 import ProjectsPanel from "../panels/ProjectsPanel";
 import MembersPanel from "../panels/MembersPanel";
-import CommunicationsPanel from "../panels/CommunicationsPanel";
+ 
 import ContainerManagementPanel from "../panels/ContainerManagementPanel";
 import HrWorkspace from "../panels/HrWorkspace";
 import PaymentsWorkspace from "../panels/payments/PaymentsWorkspace";
@@ -40,6 +40,7 @@ import type { PanelDefinition } from "./types";
 import FaithWorkspace from "../panels/faith/FaithWorkspace";
 import CrmWorkspace from "../panels/crm/CrmWorkspace";
 import ChurchCrmWorkspace from "../panels/crm/ChurchCrmWorkspace";
+import CommunicationsPanel from "../panels/communications/CommunicationsPanel";
 
 /*
  * One entry per CAPABILITY (keyed by feature code). Orders are unique and

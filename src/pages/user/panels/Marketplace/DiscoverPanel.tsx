@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { marketplaceApi as api } from "./marketplace-api";
-import BuyButton from "./BuyButton";
+import MarketplaceCheckout from "./Marketplacecheckout";
+ 
 
 type Listing = {
   id: string;
@@ -16,9 +17,10 @@ type Listing = {
 };
 
 /**
- * Discover — browse marketplace listings and buy. The Buy action is uniform; the
- * differing post-purchase interaction lives in My Orders (driven by fulfillment
- * type). Listings from every capability appear here (products, templates, apps…).
+ * Discover — browse marketplace listings and buy. Buying opens the dual-rail
+ * checkout (pay from wallet balance, or via a USSD prompt) in a modal; the
+ * differing post-purchase interaction still lives in My Orders (driven by
+ * fulfillment type).
  */
 export default function DiscoverPanel({
   containerId,
@@ -26,7 +28,9 @@ export default function DiscoverPanel({
   containerId: string;
   permissions: string[];
 }) {
+  const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [checkout, setCheckout] = useState<Listing | null>(null);
 
   const listings = useQuery({
     queryKey: ["marketplace", "discover", containerId, q],
@@ -80,19 +84,74 @@ export default function DiscoverPanel({
                   by {l.seller_name}
                 </div>
               )}
-              <div className="mt-3">
+
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-black dark:text-white tabular-nums">
+                  {(l.price / 100).toLocaleString()} {l.currency}
+                </span>
                 {l.container_id === containerId ? (
                   <span className="text-[11px] text-neutral-400">
                     Your listing
                   </span>
                 ) : (
-                  <BuyButton containerId={containerId} listing={l} />
+                  <button
+                    onClick={() => setCheckout(l)}
+                    className="px-3 py-1.5 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black"
+                  >
+                    Buy
+                  </button>
                 )}
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Checkout modal — dual-rail (wallet / USSD) for the selected listing. */}
+      {checkout && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setCheckout(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-neutral-950 p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-sm font-semibold text-black dark:text-white m-0">
+                  {checkout.title}
+                </p>
+                {checkout.seller_name && (
+                  <p className="text-[11px] text-neutral-400 m-0">
+                    by {checkout.seller_name}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setCheckout(null)}
+                className="text-neutral-400 hover:text-neutral-600 text-lg leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <MarketplaceCheckout
+              listingId={checkout.id}
+              buyerContainerId={containerId}
+              price={checkout.price}
+              currency={checkout.currency}
+              onPaid={() => {
+                // Refresh orders so My Orders reflects the new purchase, then
+                // close shortly after the success state shows.
+                qc.invalidateQueries({ queryKey: ["marketplace", "orders"] });
+                setTimeout(() => setCheckout(null), 1500);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

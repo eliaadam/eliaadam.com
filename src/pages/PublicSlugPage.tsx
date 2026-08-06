@@ -138,7 +138,7 @@ export default function PublicSlugPage() {
           }}
         >
           This {isContainer ? "container" : "person"} has a public address on
-          Platform. Public profile pages are coming soon.
+          HALA. Public profile pages are coming soon.
         </p>
 
         {isContainer &&

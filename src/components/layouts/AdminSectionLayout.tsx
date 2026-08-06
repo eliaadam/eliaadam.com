@@ -9,7 +9,7 @@ export function AdminSectionLayout() {
   return (
     <MainLayout
       items={adminNavItems}
-      title="Platform Admin"
+      title="HALA Admin"
       actions={<UserMenu actor={actor} isAdmin={isAdmin} onLogout={logout} />}
     />
   );

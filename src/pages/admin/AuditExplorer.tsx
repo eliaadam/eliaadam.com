@@ -1563,7 +1563,7 @@ export default function AuditExplorer() {
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-6">
         <div className="flex items-center gap-3">
           <span className="text-base font-bold tracking-tight text-black dark:text-white">
-            Platform Audit
+            HALA Audit
           </span>
           <span className="mx-1 h-3.5 w-px bg-neutral-200 dark:bg-neutral-800" />
           <span className="text-xs text-neutral-400 dark:text-neutral-600">
