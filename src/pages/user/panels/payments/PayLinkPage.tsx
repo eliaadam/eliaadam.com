@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { publicPayApi, money } from "./payments-api";
-import { usePaymentPoll } from "./usePaymentPoll";
+import { usePaymentPoll } from "../Marketplace/usePaymentPoll";
 
 /**
  * PUBLIC standalone page for paying a link — no login. Mount at /pay/:slug

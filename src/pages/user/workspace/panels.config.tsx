@@ -24,7 +24,7 @@ import MembersPanel from "../panels/MembersPanel";
 import CommunicationsPanel from "../panels/CommunicationsPanel";
 import ContainerManagementPanel from "../panels/ContainerManagementPanel";
 import HrWorkspace from "../panels/HrWorkspace";
-import PaymentsWorkspace from "../panels/PaymentsWorkspace";
+import PaymentsWorkspace from "../panels/payments/PaymentsWorkspace";
 import KycPanel from "../panels/KycPanel";
 import LogisticsWorkspace from "../panels/LogisticsWorkspace";
 import MarketplaceWorkspace from "../panels/Marketplace/MarketplaceWorkspace";

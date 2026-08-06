@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { marketplaceApi, intentApi, money } from "./payments-api";
+import { marketplaceApi, intentApi, money } from "../payments/payments-api";
 import { usePaymentPoll } from "./usePaymentPoll";
 
 /**

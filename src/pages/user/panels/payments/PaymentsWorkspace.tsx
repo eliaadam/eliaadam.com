@@ -1,8 +1,8 @@
 import { useState, type JSX } from "react";
 import PaymentsPanel from "./PaymentsPanel"; // the existing wallet/collect/transfer panel
 import PayoutsPanel from "./PayoutsPanel";
-import CardsPanel from "./CardsPanel";
-import LinksPanel from "./LinksPanel";
+import CardsPanel from "../CardsPanel";
+import LinksPanel from "../LinksPanel";
 
 /*
  * The Payments workspace tab, now a tabbed shell. The original PaymentsPanel
