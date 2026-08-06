@@ -65,10 +65,8 @@ export default function PublicPayPage() {
     async function resolve() {
       try {
         const res = await fetch(
-          `${API}/public/pay/${encodeURIComponent(slug ?? "")}`,
-          {
-            headers: { Accept: "application/json" },
-          },
+          `${API}/api/pay/${encodeURIComponent(slug ?? "")}`,
+          { headers: { Accept: "application/json" } },
         );
         const body = await res.json().catch(() => ({}));
         if (cancelled) return;
@@ -114,7 +112,7 @@ export default function PublicPayPage() {
     setSubmitting(true);
     try {
       const res = await fetch(
-        `${API}/public/pay/${encodeURIComponent(link.slug)}`,
+        `${API}/api/pay/${encodeURIComponent(link.slug)}`,
         {
           method: "POST",
           headers: {

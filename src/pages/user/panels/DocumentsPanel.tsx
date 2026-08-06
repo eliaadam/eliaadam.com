@@ -1,21 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-/*
- * The first business capability with a real UI.
- *
- * ── THE ONE RULE ────────────────────────────────────────────────────
- *
- * The server decides what this actor can do. It handed us `permissions` — a
- * flat list of codes — and this component renders exactly that and nothing
- * more.
- *
- * We never infer permissions from a role, never hardcode "managers can
- * delete", never guess. If the button is not backed by a permission in the
- * list, it does not exist. And the API re-checks anyway, so a hidden button is
- * a courtesy, not a security control.
- */
-
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 function authHeaders(containerId?: string): Record<string, string> {
