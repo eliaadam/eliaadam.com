@@ -2,25 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
 
-/*
- * SubscribePanel — the user-facing subscribe flow.
- *
- *   1. browse available plans (optionally filtered to an entitlement type)
- *   2. pick one → we evaluate its pre-conditions for this user. If any blocking
- *      step is unmet (KYC, questionnaire), we show WHAT to do rather than let
- *      them try to pay.
- *   3. all clear → subscribe. Free plans activate instantly; paid plans return
- *      an amount and we hand off to payment (create an intent, redirect/prompt).
- *   4. a "redeem voucher" box grants or discounts.
- *   5. "my subscriptions" shows what's active.
- *
- * Payment hand-off: subscribe() returns {payment_required, amount, currency}.
- * The actual intent creation depends on your payments client; this panel calls
- * onPay(subscription, amount, currency) so the host wires it to the existing
- * payment flow (Selcom/M-Pesa) — the same intent→checkout the rest of payments
- * uses. If onPay isn't provided, we surface the amount and a note.
- */
-
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown) {
@@ -140,10 +121,6 @@ function PlanCard({
   const [msg, setMsg] = useState<string | null>(null);
   const [unmet, setUnmet] = useState<any[] | null>(null);
 
-  // Collection details for a PAID plan. Name + email come from the actor's
-  // account (prefilled, editable) — the actor should not re-enter what we
-  // already know. Only the PHONE is genuinely required from them, since a
-  // mobile-money number isn't part of their profile.
   const isPaid = plan.price > 0;
   const [gateway, setGateway] = useState<"selcom" | "mpesa">("selcom");
   const [network, setNetwork] = useState<
@@ -152,21 +129,16 @@ function PlanCard({
   const buyerName = actorName;
   const [buyerEmail, setBuyerEmail] = useState(actorEmail);
   const [buyerPhone, setBuyerPhone] = useState("");
-  // Phone is always required. For Selcom, a network must also be picked (it
-  // selects the Selcom utilitycode for the USSD push). M-Pesa is Vodacom-only,
-  // so no network picker there.
+
   const detailsReady =
     !isPaid ||
     (buyerPhone.trim().length >= 9 &&
       (gateway !== "selcom" || Boolean(network)));
 
-  // Polling state for an async (M-Pesa / USSD) payment that returns 'processing'
-  // with no redirect. We poll payment-status until active / failed / timeout.
   const [pollSubId, setPollSubId] = useState<string | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollStart = useRef<number>(0);
 
-  // Lazily evaluate pre-conditions when the user expands the card.
   const preQ = useQuery({
     queryKey: ["sub-pre", plan.id],
     queryFn: () => api("GET", `subscriptions/plans/${plan.id}/preconditions`),
@@ -174,8 +146,6 @@ function PlanCard({
   });
 
   const subscribe = useMutation({
-    // Use the pay endpoint: it subscribes, and for paid plans creates+initiates
-    // the payment intent and returns a checkout_url. Free plans come back active.
     mutationFn: () =>
       api("POST", "subscriptions/pay", {
         plan_id: plan.id,
@@ -193,15 +163,9 @@ function PlanCard({
       setUnmet(null);
       if (data.payment_required) {
         if (data.checkout_url) {
-          // Redirect the browser to the gateway. On return, the settled listener
-          // will have activated the subscription; the create flow re-checks and
-          // sees satisfying_subscription_id set.
           setMsg("Redirecting to payment…");
           window.location.href = data.checkout_url;
         } else {
-          // No redirect (M-Pesa / USSD): a prompt was pushed to the payer's
-          // phone. Start polling payment-status; the subscription stays PENDING
-          // until they approve and settlement activates it. No false success.
           setMsg(
             `Check your phone (${buyerPhone}) — approve the ${money(data.amount, data.currency)} prompt. Waiting for confirmation…`,
           );

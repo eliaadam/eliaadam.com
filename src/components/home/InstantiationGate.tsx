@@ -2,31 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import SubscribePanel from "./SubscribePanel";
 import { QuestionnaireFiller } from "../../pages/user/panels/QuestionnaireFiller";
-
-/*
- * InstantiationGate (v2) — now handles BOTH paths:
- *
- *   AUTOMATIC (subscription/cap only):
- *     allowed            → children (the create form) render
- *     needs subscription → inline SubscribePanel
- *     at cap             → "you've reached your limit"
- *
- *   APPROVAL (judgment pre-conditions — KYC / questionnaire):
- *     The gate detects requires_approval and switches to a REQUEST flow: the
- *     user completes the pre-conditions (KYC link, questionnaire inline), enters
- *     the instantiation parameters, and SUBMITS A REQUEST. An admin reviews and
- *     approves — only then is the container created. The user sees their pending
- *     request rather than an instant container.
- *
- * The decision shape now carries requires_approval + the pre-conditions. For a
- * judgment target, the gate collects evidence and posts to
- * /hierarchy/instantiation-requests, then shows "submitted — pending review".
- *
- * `parameters` is whatever the target's instantiate call needs (code_prefix,
- * display_name_prefix, visibility). The gate renders a small param form for the
- * request; on the automatic path, the wrapped children collect params as before.
- */
-
+ 
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown) {
@@ -178,11 +154,7 @@ function RequestFlow({
   const kycNeeded = preconditions.some((p) => p.kind === "kyc_approved");
   const questionnaire = preconditions.find((p) => p.kind === "questionnaire");
   const questionnaireId = questionnaire?.config?.questionnaire_id;
-
-  // Subscription is ALSO required at approval time — approve() re-checks it. If
-  // the rule needs a subscription and the actor has none, they must subscribe
-  // BEFORE submitting, or the request is guaranteed to be refused at approval
-  // ("An active subscription is required"). Surface it here as the first step.
+ 
   const needsSubscription =
     Boolean(decision.requires_subscription) &&
     !decision.satisfying_subscription_id;
