@@ -1,21 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-/*
- * Public payment page — system.com/pay/{slug}. NO authentication.
- *
- * The one place a member of the public originates a payment. Flow:
- *   1. resolve the link (public) → title, amount (or open), currency
- *   2. buyer enters their details (+ amount if the link is open)
- *   3. POST pay → the server creates an intent against the link's container.
- *      - hosted checkout rail: returns checkout_url → redirect there
- *      - USSD rail: returns charge_token, no checkout_url → poll for status
- *
- * Money never moves here — settlement happens later via Selcom's webhook. This
- * page only kicks off the collection; the wallet is credited when the verified
- * webhook lands.
- */
-
 const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
 
 type Link = {
@@ -129,7 +114,9 @@ export default function PublicPayPage() {
           setPayError(null);
           setSubmitting(false);
           setState((s) =>
-            s.s === "ready" ? { ...s, awaitingUssd: false, succeeded: true } : s,
+            s.s === "ready"
+              ? { ...s, awaitingUssd: false, succeeded: true }
+              : s,
           );
         } else if (status === "failed") {
           setPayError(
@@ -137,7 +124,9 @@ export default function PublicPayPage() {
           );
           setSubmitting(false);
           setState((s) =>
-            s.s === "ready" ? { ...s, awaitingUssd: false, chargeToken: undefined } : s,
+            s.s === "ready"
+              ? { ...s, awaitingUssd: false, chargeToken: undefined }
+              : s,
           );
         }
         // else still processing — keep polling
@@ -263,8 +252,8 @@ export default function PublicPayPage() {
               Check your phone
             </p>
             <p className="text-sm text-neutral-500 m-0 mb-4">
-              A payment prompt was sent to {phone}. Approve it to complete
-              your payment for "{state.link.title}".
+              A payment prompt was sent to {phone}. Approve it to complete your
+              payment for "{state.link.title}".
             </p>
             <span className="inline-flex items-center gap-2 text-[11px] text-neutral-400">
               <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
