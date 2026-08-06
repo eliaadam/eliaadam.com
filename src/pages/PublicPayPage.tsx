@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 
 /*
  * Public payment page — system.com/pay/{slug}. NO authentication.
@@ -30,7 +29,7 @@ type Link = {
 type State =
   | { s: "loading" }
   | { s: "notfound" }
-  | { s: "ready"; link: Link }
+  | { s: "ready"; link: Link; awaitingUssd?: boolean; chargeToken?: string }
   | { s: "error"; message: string };
 
 function fromMinorUnits(minor: number): string {
@@ -48,7 +47,6 @@ function toMinorUnits(input: string): number | null {
 }
 
 export default function PublicPayPage() {
-  const { slug } = useParams<{ slug: string }>();
   const [state, setState] = useState<State>({ s: "loading" });
 
   // buyer form
@@ -60,39 +58,43 @@ export default function PublicPayPage() {
   const [payError, setPayError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    if (state.s !== "ready" || !state.awaitingUssd || !state.chargeToken)
+      return;
+    const token = state.chargeToken;
+    const start = Date.now();
+    const TIMEOUT_MS = 3 * 60 * 1000;
 
-    async function resolve() {
-      try {
-        const res = await fetch(
-          `${API}/api/pay/${encodeURIComponent(slug ?? "")}`,
-          { headers: { Accept: "application/json" } },
+    const tick = async () => {
+      if (Date.now() - start > TIMEOUT_MS) {
+        setPayError(
+          "We haven't seen the payment yet. If you approved it, check back shortly.",
         );
-        const body = await res.json().catch(() => ({}));
-        if (cancelled) return;
-
-        if (res.status === 404) {
-          setState({ s: "notfound" });
-          return;
-        }
-        if (!res.ok) {
-          setState({
-            s: "error",
-            message: body.message ?? "Could not load this payment link.",
-          });
-          return;
-        }
-        setState({ s: "ready", link: body.data });
-      } catch {
-        if (!cancelled) setState({ s: "error", message: "Network error." });
+        return;
       }
-    }
-
-    resolve();
-    return () => {
-      cancelled = true;
+      try {
+        const res = await fetch(`${API}/api/pay/charge/${token}/status`, {
+          headers: { Accept: "application/json" },
+        });
+        const body = await res.json().catch(() => ({}));
+        const status = body.data?.payment_status;
+        if (status === "succeeded") {
+          setPayError(null);
+          // e.g. show a success screen
+        } else if (status === "failed") {
+          setPayError(
+            "The payment failed or was cancelled. You can try again.",
+          );
+          setSubmitting(false);
+        }
+      } catch {
+        // transient, keep polling
+      }
     };
-  }, [slug]);
+
+    const id = setInterval(tick, 4000);
+    tick();
+    return () => clearInterval(id);
+  }, [state]);
 
   async function pay(link: Link) {
     setPayError(null);
@@ -135,14 +137,25 @@ export default function PublicPayPage() {
         return;
       }
 
-      const checkoutUrl = body.data?.checkout_url;
-      if (checkoutUrl) {
-        // Hand off to Selcom's hosted checkout.
-        window.location.href = checkoutUrl;
+      const { checkout_url, charge_token } = body.data ?? {};
+
+      if (checkout_url) {
+        window.location.href = checkout_url;
         return;
       }
 
-      setPayError("No checkout URL was returned. Please try again.");
+      if (charge_token) {
+        // USSD rail — no checkout page. Buyer approves a prompt on their phone.
+        setPayError(null);
+        setState((s) =>
+          s.s === "ready"
+            ? { ...s, awaitingUssd: true, chargeToken: charge_token }
+            : s,
+        );
+        return;
+      }
+
+      setPayError("Payment could not be started. Please try again.");
       setSubmitting(false);
     } catch {
       setPayError("Network error. Please try again.");
