@@ -53,12 +53,24 @@ export const linksApi = {
     create: (b: {
         container_id: string;
         title: string;
+        category?: string;
         description?: string;
         amount?: number | null;
         currency?: string;
         mode?: "reusable" | "single_use";
+        slug?: string;
     }) => api("POST", "payments/links", b),
-    list: (containerId: string) => api("GET", `payments/links?container_id=${containerId}`),
+    list: (
+        containerId: string,
+        filters?: { category?: string; search?: string; sort?: string; direction?: "asc" | "desc" },
+    ) => {
+        const params = new URLSearchParams({ container_id: containerId, ...filters });
+        return api("GET", `payments/links?${params.toString()}`);
+    },
+    categories: (containerId: string) =>
+        api("GET", `payments/links/categories?container_id=${containerId}`),
+    checkSlug: (slug: string) =>
+        api("GET", `payments/links/slug-check?slug=${encodeURIComponent(slug)}`),
     charges: (id: string) => api("GET", `payments/links/${id}/charges`),
     disable: (id: string) => api("POST", `payments/links/${id}/disable`),
 };
@@ -94,3 +106,4 @@ export const marketplaceApi = {
         buyer_phone?: string;
     }) => api("POST", "marketplace/checkout", b),
 };
+

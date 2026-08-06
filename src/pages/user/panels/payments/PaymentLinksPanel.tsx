@@ -1,41 +1,107 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { linksApi, money } from "./payments-api";
 
-/**
- * Merchant view: create shareable payment links and see what's been collected.
- * The public pay page lives at /pay/{slug} (see PayLinkPage).
- */
 export default function PaymentLinksPanel({
   containerId,
 }: {
   containerId: string;
 }) {
   const qc = useQueryClient();
+
+  // ── toolbar state (search/filter/sort) ──────────────────────────
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [sort, setSort] = useState<
+    "created_at" | "title" | "category" | "total_collected" | "payment_count"
+  >("created_at");
+  const [direction, setDirection] = useState<"asc" | "desc">("desc");
+
+  const filters = useMemo(
+    () => ({
+      category: categoryFilter || undefined,
+      search: search || undefined,
+      sort,
+      direction,
+    }),
+    [categoryFilter, search, sort, direction],
+  );
+
   const linksQ = useQuery({
-    queryKey: ["payment-links", containerId],
-    queryFn: () => linksApi.list(containerId),
+    queryKey: ["payment-links", containerId, filters],
+    queryFn: () => linksApi.list(containerId, filters),
   });
   const links: any[] = Array.isArray(linksQ.data) ? linksQ.data : [];
 
+  const categoriesQ = useQuery({
+    queryKey: ["payment-link-categories", containerId],
+    queryFn: () => linksApi.categories(containerId),
+  });
+  const categories: string[] = Array.isArray(categoriesQ.data)
+    ? categoriesQ.data
+    : [];
+
+  // ── create form ───────────────────────────────────────────────
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
-  const [open, setOpen] = useState(false); // open amount = payer chooses
+  const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"reusable" | "single_use">("reusable");
+  const [customSlug, setCustomSlug] = useState(false);
+  const [slug, setSlug] = useState("");
+  const [slugCheck, setSlugCheck] = useState<
+    "idle" | "checking" | "available" | "taken" | "invalid"
+  >("idle");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const payBase =
+    (import.meta.env.VITE_PUBLIC_PAY_URL as string) ??
+    `${window.location.origin}/pay`;
+
+  // debounced slug availability check
+  useEffect(() => {
+    if (!customSlug || !slug.trim()) {
+      setSlugCheck("idle");
+      return;
+    }
+    const normalized = slug.trim().toLowerCase();
+    if (!/^[a-z0-9-]{3,40}$/.test(normalized)) {
+      setSlugCheck("invalid");
+      return;
+    }
+    setSlugCheck("checking");
+    const id = setTimeout(async () => {
+      try {
+        const res: any = await linksApi.checkSlug(normalized);
+        setSlugCheck(res.available ? "available" : "taken");
+      } catch {
+        setSlugCheck("idle");
+      }
+    }, 400);
+    return () => clearTimeout(id);
+  }, [slug, customSlug]);
 
   const create = useMutation({
     mutationFn: () =>
       linksApi.create({
         container_id: containerId,
         title: title.trim(),
+        category: category.trim() || undefined,
         amount: open ? null : Math.round(parseFloat(amount || "0") * 100),
         mode,
+        slug: customSlug && slug.trim() ? slug.trim().toLowerCase() : undefined,
       }),
     onSuccess: () => {
       setTitle("");
+      setCategory("");
       setAmount("");
+      setSlug("");
+      setCustomSlug(false);
+      setSlugCheck("idle");
       qc.invalidateQueries({ queryKey: ["payment-links", containerId] });
+      qc.invalidateQueries({
+        queryKey: ["payment-link-categories", containerId],
+      });
     },
   });
 
@@ -45,9 +111,14 @@ export default function PaymentLinksPanel({
       qc.invalidateQueries({ queryKey: ["payment-links", containerId] }),
   });
 
-  const payBase =
-    (import.meta.env.VITE_PUBLIC_PAY_URL as string) ??
-    `${window.location.origin}/pay`;
+  const canSubmit =
+    title.trim() &&
+    (!open ? !!amount : true) &&
+    !create.isPending &&
+    (!customSlug || !slug.trim() || slugCheck === "available");
+
+  const inputCls =
+    "w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-black dark:text-white";
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -56,12 +127,28 @@ export default function PaymentLinksPanel({
         <p className="text-sm font-semibold text-black dark:text-white m-0">
           New payment link
         </p>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="What's this for? (e.g. Invoice #204)"
-          className="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-black dark:text-white"
-        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="What's this for? (e.g. Invoice #204)"
+            className={inputCls}
+          />
+          <input
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="Category (e.g. Invoices)"
+            list="payment-link-categories"
+            className={inputCls}
+          />
+          <datalist id="payment-link-categories">
+            {categories.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </div>
+
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1 text-[11px] text-neutral-500">
             <input
@@ -82,6 +169,64 @@ export default function PaymentLinksPanel({
             />
           )}
         </div>
+
+        {/* custom link */}
+        <div>
+          <label className="flex items-center gap-1 text-[11px] text-neutral-500 mb-1.5">
+            <input
+              type="checkbox"
+              checked={customSlug}
+              onChange={(e) => {
+                setCustomSlug(e.target.checked);
+                if (!e.target.checked) {
+                  setSlug("");
+                  setSlugCheck("idle");
+                }
+              }}
+            />
+            Use a custom link
+          </label>
+          {customSlug && (
+            <div>
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-neutral-400 whitespace-nowrap">
+                  {payBase}/
+                </span>
+                <input
+                  value={slug}
+                  onChange={(e) =>
+                    setSlug(
+                      e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                    )
+                  }
+                  placeholder="my-invoice"
+                  className="flex-1 px-2 py-1.5 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-black dark:text-white"
+                />
+              </div>
+              {slugCheck === "checking" && (
+                <p className="text-[11px] text-neutral-400 m-0 mt-1">
+                  Checking…
+                </p>
+              )}
+              {slugCheck === "available" && (
+                <p className="text-[11px] text-emerald-600 m-0 mt-1">
+                  ✓ Available
+                </p>
+              )}
+              {slugCheck === "taken" && (
+                <p className="text-[11px] text-red-500 m-0 mt-1">
+                  Already taken — try another.
+                </p>
+              )}
+              {slugCheck === "invalid" && (
+                <p className="text-[11px] text-red-500 m-0 mt-1">
+                  3–40 characters: lowercase letters, numbers, hyphens only.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="flex gap-2">
           {(["reusable", "single_use"] as const).map((m) => (
             <button
@@ -98,7 +243,7 @@ export default function PaymentLinksPanel({
           ))}
           <button
             onClick={() => create.mutate()}
-            disabled={!title.trim() || (!open && !amount) || create.isPending}
+            disabled={!canSubmit}
             className="ml-auto px-4 py-2 text-xs font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black disabled:opacity-40"
           >
             {create.isPending ? "…" : "Create link"}
@@ -106,12 +251,54 @@ export default function PaymentLinksPanel({
         </div>
       </div>
 
+      {/* toolbar: search / filter / sort */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by title…"
+          className="flex-1 min-w-[160px] px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-black dark:text-white"
+        />
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="px-2 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-black dark:text-white"
+        >
+          <option value="">All categories</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as typeof sort)}
+          className="px-2 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-black dark:text-white"
+        >
+          <option value="created_at">Newest</option>
+          <option value="title">Title</option>
+          <option value="category">Category</option>
+          <option value="total_collected">Amount collected</option>
+          <option value="payment_count">Payments</option>
+        </select>
+        <button
+          onClick={() => setDirection((d) => (d === "asc" ? "desc" : "asc"))}
+          className="px-2 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300"
+          title="Toggle sort direction"
+        >
+          {direction === "asc" ? "↑" : "↓"}
+        </button>
+      </div>
+
       {/* list */}
       <div className="space-y-2">
         {linksQ.isLoading ? (
           <p className="text-[11px] text-neutral-400">Loading…</p>
         ) : links.length === 0 ? (
-          <p className="text-[11px] text-neutral-400">No payment links yet.</p>
+          <p className="text-[11px] text-neutral-400">
+            No payment links match.
+          </p>
         ) : (
           links.map((l) => {
             const url = `${payBase}/${l.slug}`;
@@ -123,9 +310,16 @@ export default function PaymentLinksPanel({
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-black dark:text-white m-0">
-                      {l.title}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-black dark:text-white m-0">
+                        {l.title}
+                      </p>
+                      {l.category && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
+                          {l.category}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-neutral-400 m-0 mt-0.5">
                       {l.amount ? money(l.amount, l.currency) : "Open amount"} ·{" "}
                       {l.mode} ·{" "}
@@ -185,8 +379,6 @@ export default function PaymentLinksPanel({
     </div>
   );
 }
-
-/* ── who paid — expandable per link ───────────────────────────────── */
 
 function ChargesTable({
   linkId,
