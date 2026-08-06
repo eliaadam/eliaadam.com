@@ -121,9 +121,9 @@ export default function PublicPayPage() {
           },
           body: JSON.stringify({
             amount: openAmount ? minor : undefined,
-            buyer_name: name.trim(),
-            buyer_email: email.trim(),
-            buyer_phone: phone.trim(),
+            payer_name: name.trim(),
+            payer_email: email.trim(),
+            payer_phone: phone.trim(),
           }),
         },
       );
