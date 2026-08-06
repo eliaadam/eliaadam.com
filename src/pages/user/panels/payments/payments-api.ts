@@ -45,7 +45,7 @@ export const depositApi = {
 export const intentApi = {
     status: (intentId: string) => api("GET", `payments/intents/${intentId}/status`),
     balance: (containerId: string, currency = "TZS") =>
-        api("GET", `payments/containers/${containerId}/balance?currency=${currency}`),
+        api("GET", `payments/wallets/${containerId}?currency=${currency}`),
 };
 
 // ── payment links (merchant, auth) ───────────────────────────────
