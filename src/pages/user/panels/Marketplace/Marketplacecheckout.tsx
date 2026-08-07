@@ -51,7 +51,7 @@ export default function MarketplaceCheckout({
     setBusy(true);
     setMsg(null);
     try {
-      const res = await marketplaceApi.place({
+      const res = await marketplaceApi.place(buyerContainerId, {
         buyer_container_id: buyerContainerId,
         listing_id: listingId,
         quantity: 1,
@@ -59,17 +59,19 @@ export default function MarketplaceCheckout({
         ...(method === "ussd" ? { gateway: "selcom", buyer_phone: phone } : {}),
       });
 
-      if (res.status === "succeeded" || res.status === "not_required") {
+      const payment = res.payment ?? {};
+      if (payment.status === "paid" || payment.status === "not_required") {
         setPaid(true);
         setMsg(
-          res.status === "not_required" ? "Order placed." : "Paid from wallet.",
+          payment.status === "not_required"
+            ? "Order placed."
+            : "Paid from wallet.",
         );
         onPaid?.();
-      } else if (res.checkout_url) {
-        window.location.href = res.checkout_url;
+      } else if (payment.checkout_url) {
+        window.location.href = payment.checkout_url;
       } else {
-        // USSD rail — poll the collection intent.
-        setIntentId(res.intent_id ?? null);
+        setIntentId(payment.intent_id ?? null);
         setMsg(
           `Check your phone (${phone}) and approve the ${money(price, currency)} prompt.`,
         );

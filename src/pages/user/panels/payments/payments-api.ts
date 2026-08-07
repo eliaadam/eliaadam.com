@@ -92,20 +92,24 @@ export const publicPayApi = {
         api("GET", `pay/charge/${chargeToken}/status`, undefined, false),
 };
 
-// ── marketplace checkout (auth) — two-step: create order, then pay it ───
-// NOTE: field names below are inferred from patterns elsewhere in this app
-// (payment_link charge/pay shapes). Confirm against the real OrderController
-// once available and adjust if it expects different keys.
+
 // ── marketplace checkout (auth) — single place-and-pay call ─────
+// NOTE: the route is orders/{orderId}/pay for historical reasons, but the
+// controller behind it (MarketplacePaymentService::checkout) creates a NEW
+// order internally and ignores {orderId} entirely — see backend note below.
+// "new" is a placeholder; any value works since the param isn't read.
 export const marketplaceApi = {
-    place: (b: {
-        buyer_container_id: string;
-        listing_id: string;
-        quantity?: number;
-        payment_method: "wallet" | "ussd";
-        gateway?: "selcom" | "mpesa";
-        buyer_name?: string;
-        buyer_email?: string;
-        buyer_phone?: string;
-    }) => api("POST", "marketplace/orders", b),
+    place: (
+        containerId: string,
+        b: {
+            buyer_container_id: string;
+            listing_id: string;
+            quantity?: number;
+            payment_method: "wallet" | "ussd";
+            gateway?: "selcom" | "mpesa";
+            buyer_name?: string;
+            buyer_email?: string;
+            buyer_phone?: string;
+        },
+    ) => api("POST", `marketplace/containers/${containerId}/orders/new/pay`, b),
 };
