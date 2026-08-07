@@ -51,23 +51,15 @@ export default function MarketplaceCheckout({
     setBusy(true);
     setMsg(null);
     try {
-      // 1. create the order
-      const order = await marketplaceApi.createOrder(buyerContainerId, {
+      const res = await marketplaceApi.place({
+        buyer_container_id: buyerContainerId,
         listing_id: listingId,
         quantity: 1,
+        payment_method: method,
+        ...(method === "ussd" ? { gateway: "selcom", buyer_phone: phone } : {}),
       });
 
-      // 2. pay it
-      const res = await marketplaceApi.pay(buyerContainerId, order.id, {
-        gateway: method === "wallet" ? "wallet" : "selcom",
-        ...(method === "ussd" ? { buyer_phone: phone } : {}),
-      });
-
-      if (
-        method === "wallet" ||
-        res.status === "succeeded" ||
-        res.status === "not_required"
-      ) {
+      if (res.status === "succeeded" || res.status === "not_required") {
         setPaid(true);
         setMsg(
           res.status === "not_required" ? "Order placed." : "Paid from wallet.",
@@ -84,7 +76,9 @@ export default function MarketplaceCheckout({
       }
     } catch (e: any) {
       if (e.body?.insufficient) {
-        setMsg("Not enough wallet balance — pay via USSD instead.");
+        setMsg(
+          e.body.message ?? "Not enough wallet balance — pay via USSD instead.",
+        );
       } else {
         setMsg(e.message);
       }
