@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUxTemplate } from "../../ux/UxTemplateProvider";
-import { NotBuiltList, BackendOnlyList } from "../CapabilityBadgeLists";
+
 import { PANELS, PANEL_SLUG_TO_CODE, FALLBACK_ICON } from "../panels.config";
 import type { Workspace, Capability } from "../types";
 import { WorkspaceHeader } from "../WorkspaceHeader";
@@ -29,13 +29,6 @@ export function WorkspaceBody({
   const renderable = capabilities
     .filter((c) => PANELS[c.code])
     .sort((a, b) => PANELS[a.code].order - PANELS[b.code].order);
-
-  const backendOnly = capabilities.filter(
-    (c) => !PANELS[c.code] && c.has_frontend === false,
-  );
-  const notBuilt = capabilities.filter(
-    (c) => !PANELS[c.code] && c.has_frontend !== false,
-  );
 
   const codeFromUrl = panelSlugFromUrl
     ? PANEL_SLUG_TO_CODE[panelSlugFromUrl]
@@ -130,9 +123,6 @@ export function WorkspaceBody({
           {renderActivePanel()}
         </DashboardShell>
       )}
-
-      <NotBuiltList capabilities={notBuilt} />
-      <BackendOnlyList capabilities={backendOnly} />
     </div>
   );
 }

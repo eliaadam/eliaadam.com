@@ -42,7 +42,7 @@ export default function ProfileSection() {
         </h3>
         <div className="flex flex-col gap-3">
           <DetailRow label="Display Name" value={actor.display_name} />
-          <DetailRow label="User Name" value={actor.code ?? "—"} />
+          <DetailRow label="Email" value={actor.code ?? "—"} />
           <DetailRow label="Status" value={actor.status} />
         </div>
       </div>
