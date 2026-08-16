@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { procurementApi as api, toMajor } from "./procurement-api";
+import {
+  procurementApi as api,
+  scopeBase,
+  toMajor,
+  type OwnerScope,
+} from "./procurement-api";
 
 type Fin = {
   contract_id: string;
@@ -38,15 +43,17 @@ type Valuation = {
   paid_at: string | null;
 };
 
-/** Post-award contract execution (PayTrack): financials, IPCs, retention. */
+/** Post-award contract execution (PayTrack): financials, IPCs, retention.
+ *  canManage/canCertify are always false for an actor-supplier — the
+ *  buttons they gate simply never render, giving a read-only view for free. */
 export default function ContractExecutionPanel({
-  containerId,
+  scope,
   contractId,
   canManage,
   canCertify,
   onClose,
 }: {
-  containerId: string;
+  scope: OwnerScope;
   contractId: string;
   canManage: boolean;
   canCertify: boolean;
@@ -56,31 +63,24 @@ export default function ContractExecutionPanel({
   const [msg, setMsg] = useState<string | null>(null);
   const [gross, setGross] = useState("");
 
+  const base = `${scopeBase(scope)}/contracts/${contractId}`;
+
   const fin = useQuery({
-    queryKey: ["contract", "fin", contractId],
-    queryFn: () =>
-      api(
-        "GET",
-        `/containers/${containerId}/contracts/${contractId}/financials`,
-      ),
+    queryKey: ["contract", "fin", scope, contractId],
+    queryFn: () => api("GET", `${base}/financials`),
   });
   const vals = useQuery({
-    queryKey: ["contract", "vals", contractId],
-    queryFn: () =>
-      api(
-        "GET",
-        `/containers/${containerId}/contracts/${contractId}/valuations`,
-      ),
+    queryKey: ["contract", "vals", scope, contractId],
+    queryFn: () => api("GET", `${base}/valuations`),
   });
 
   const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["contract", "fin", contractId] });
-    qc.invalidateQueries({ queryKey: ["contract", "vals", contractId] });
+    qc.invalidateQueries({ queryKey: ["contract", "fin", scope, contractId] });
+    qc.invalidateQueries({ queryKey: ["contract", "vals", scope, contractId] });
   };
 
   const advance = useMutation({
-    mutationFn: () =>
-      api("POST", `/containers/${containerId}/contracts/${contractId}/advance`),
+    mutationFn: () => api("POST", `${base}/advance`),
     onSuccess: () => {
       setMsg("Advance paid.");
       refresh();
@@ -89,11 +89,9 @@ export default function ContractExecutionPanel({
   });
   const createVal = useMutation({
     mutationFn: () =>
-      api(
-        "POST",
-        `/containers/${containerId}/contracts/${contractId}/valuations`,
-        { gross_work_done: Math.round(parseFloat(gross || "0") * 100) },
-      ),
+      api("POST", `${base}/valuations`, {
+        gross_work_done: Math.round(parseFloat(gross || "0") * 100),
+      }),
     onSuccess: () => {
       setMsg("Draft IPC created.");
       setGross("");
@@ -102,11 +100,7 @@ export default function ContractExecutionPanel({
     onError: (e: any) => setMsg(e.message),
   });
   const certify = useMutation({
-    mutationFn: (id: string) =>
-      api(
-        "POST",
-        `/containers/${containerId}/contracts/${contractId}/valuations/${id}/certify`,
-      ),
+    mutationFn: (id: string) => api("POST", `${base}/valuations/${id}/certify`),
     onSuccess: () => {
       setMsg("IPC certified.");
       refresh();
@@ -114,11 +108,7 @@ export default function ContractExecutionPanel({
     onError: (e: any) => setMsg(e.message),
   });
   const pay = useMutation({
-    mutationFn: (id: string) =>
-      api(
-        "POST",
-        `/containers/${containerId}/contracts/${contractId}/valuations/${id}/pay`,
-      ),
+    mutationFn: (id: string) => api("POST", `${base}/valuations/${id}/pay`),
     onSuccess: () => {
       setMsg("IPC paid — funds transferred to supplier.");
       refresh();
@@ -127,11 +117,10 @@ export default function ContractExecutionPanel({
   });
   const release = useMutation({
     mutationFn: () =>
-      api(
-        "POST",
-        `/containers/${containerId}/contracts/${contractId}/retention/release`,
-        { amount: f!.retention_held, reason: "final" },
-      ),
+      api("POST", `${base}/retention/release`, {
+        amount: f!.retention_held,
+        reason: "final",
+      }),
     onSuccess: () => {
       setMsg("Retention released.");
       refresh();
@@ -173,6 +162,11 @@ export default function ContractExecutionPanel({
         >
           {f.execution_status}
         </span>
+        {scope.type === "actor" && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
+            view only
+          </span>
+        )}
       </div>
       {msg && (
         <div className="text-xs px-3 py-2 rounded-md bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300">
@@ -180,7 +174,6 @@ export default function ContractExecutionPanel({
         </div>
       )}
 
-      {/* Financial position */}
       <div className="border border-neutral-200 dark:border-neutral-800 rounded-md p-3">
         <div className="text-sm font-medium text-black dark:text-white mb-1">
           Financial position ({f.currency})
@@ -245,7 +238,6 @@ export default function ContractExecutionPanel({
         </div>
       )}
 
-      {/* Create IPC */}
       {canManage && f.execution_status === "active" && (
         <div className="flex gap-2 items-end">
           <div className="flex-1">
@@ -271,7 +263,6 @@ export default function ContractExecutionPanel({
         </div>
       )}
 
-      {/* IPCs with the cascade */}
       <div>
         <div className="text-sm font-medium text-black dark:text-white mb-2">
           Payment certificates
@@ -316,7 +307,6 @@ export default function ContractExecutionPanel({
                     )}
                   </div>
                 </div>
-                {/* the cascade */}
                 <div className="mt-2 text-[11px] text-neutral-500 space-y-0.5">
                   <div className="flex justify-between">
                     <span>Work this period</span>

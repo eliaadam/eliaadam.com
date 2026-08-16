@@ -16,7 +16,8 @@ type Tender = {
 };
 type Bid = {
   id: string;
-  tenderer_container_id: string;
+  tenderer_container_id: string | null;
+  tenderer_actor_id: string | null;
   submitted_at: string | null;
   status: string;
   sealed: boolean;
@@ -253,7 +254,7 @@ function TenderDetail({
     onError: (e: any) => setMsg(e.message),
   });
 
-  const t: Tender | undefined = tender.data;
+  const t: Tender | undefined = tender.data as Tender | undefined;
   const bidList: Bid[] = Array.isArray(bids.data) ? bids.data : [];
   if (!t) return <div className="p-6 text-sm text-neutral-500">Loading…</div>;
 
@@ -292,7 +293,19 @@ function TenderDetail({
               >
                 <div>
                   <div className="text-sm text-black dark:text-white flex items-center gap-2">
-                    Tenderer {b.tenderer_container_id.slice(0, 8)}
+                    {b.tenderer_container_id
+                      ? `Tenderer ${b.tenderer_container_id.slice(0, 8)}`
+                      : `Individual bidder ${b.tenderer_actor_id?.slice(0, 8) ?? ""}`}
+                    {b.rank != null && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700">
+                        rank {b.rank}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-black dark:text-white flex items-center gap-2">
+                    {b.tenderer_container_id
+                      ? `Tenderer ${b.tenderer_container_id.slice(0, 8)}`
+                      : `Individual bidder ${b.tenderer_actor_id?.slice(0, 8) ?? ""}`}
                     {b.rank != null && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700">
                         rank {b.rank}
