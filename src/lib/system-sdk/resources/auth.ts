@@ -11,7 +11,7 @@ import type {
 } from "../types.ts";
 
 /**
- * 1. Authentication — /api/identity/ember/auth/*, /api/identity/ember/tokens/*
+ * 1. Authentication — /api/v1/identity/ember/auth/*, /api/v1/identity/ember/tokens/*
  *
  * Login now returns a bearer token directly in the response, eliminating
  * the need for a separate issueToken() call. The SDK auto-stores the token
@@ -25,7 +25,7 @@ export class AuthResource {
   }
 
   /**
-   * POST /api/identity/ember/auth/login (public)
+   * POST /api/v1/identity/ember/auth/login (public)
    *
    * On success, the response includes a bearer token. This method
    * automatically sets it on the HTTP client so all subsequent calls
@@ -39,7 +39,7 @@ export class AuthResource {
     autoSetToken = true
   ): Promise<LoginResult> {
     const result = await this.http.postIdentity<LoginResult>(
-      "/api/identity/ember/auth/login",
+      "/api/v1/identity/ember/auth/login",
       payload
     );
 
@@ -51,20 +51,20 @@ export class AuthResource {
   }
 
   /**
-   * POST /api/identity/ember/auth/register (public)
+   * POST /api/v1/identity/ember/auth/register (public)
    *
    * Returns the created actor. Does NOT authenticate or issue a token.
    * Call login() with the same credentials to sign in.
    */
   register(payload: RegisterRequest): Promise<Actor> {
     return this.http.postIdentity<Actor>(
-      "/api/identity/ember/auth/register",
+      "/api/v1/identity/ember/auth/register",
       payload
     );
   }
 
   /**
-   * POST /api/identity/ember/auth/{driver}/login (public)
+   * POST /api/v1/identity/ember/auth/{driver}/login (public)
    *
    * Same as login() but for a specific auth driver.
    */
@@ -74,7 +74,7 @@ export class AuthResource {
     autoSetToken = true
   ): Promise<LoginResult> {
     const result = await this.http.postIdentity<LoginResult>(
-      `/api/identity/ember/auth/${driver}/login`,
+      `/api/v1/identity/ember/auth/${driver}/login`,
       payload
     );
 
@@ -86,7 +86,7 @@ export class AuthResource {
   }
 
   /**
-   * POST /api/identity/ember/tokens/issue (auth:sanctum)
+   * POST /api/v1/identity/ember/tokens/issue (auth:sanctum)
    *
    * Still available for programmatic token issuance (service accounts,
    * additional tokens). For normal login flows, login() handles this
@@ -94,25 +94,25 @@ export class AuthResource {
    */
   issueToken(payload: IssueTokenRequest): Promise<IssuedToken> {
     return this.http.postIdentity<IssuedToken>(
-      "/api/identity/ember/tokens/issue",
+      "/api/v1/identity/ember/tokens/issue",
       payload
     );
   }
 
-  /** POST /api/identity/ember/tokens/revoke (auth:sanctum) */
+  /** POST /api/v1/identity/ember/tokens/revoke (auth:sanctum) */
   revokeToken(payload: RevokeTokenRequest): Promise<unknown> {
-    return this.http.postIdentity("/api/identity/ember/tokens/revoke", payload);
+    return this.http.postIdentity("/api/v1/identity/ember/tokens/revoke", payload);
   }
 
   /**
-   * POST /api/identity/ember/auth/logout (auth:sanctum)
+   * POST /api/v1/identity/ember/auth/logout (auth:sanctum)
    *
    * Revokes the current bearer token server-side, then clears it from
    * the SDK client.
    */
   async logout(): Promise<void> {
     try {
-      await this.http.postIdentity("/api/identity/ember/auth/logout");
+      await this.http.postIdentity("/api/v1/identity/ember/auth/logout");
     } finally {
       // Always clear local token, even if the server call fails
       this.http.setToken(undefined);

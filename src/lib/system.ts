@@ -185,7 +185,7 @@ export const userApi = {
   getPolicy: (containerId: string) => uFetch("GET", `/api/hierarchy/containers/${containerId}/policy`),
   searchActors: (q?: string) => {
     const qs = q ? `?q=${encodeURIComponent(q)}` : "";
-    return uFetch("GET", `/api/identity/ember/actors${qs}`);
+    return uFetch("GET", `/api/v1/identity/ember/actors${qs}`);
   },
 };
 
