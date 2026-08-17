@@ -35,6 +35,7 @@ import ContainerManagementPage from "./pages/admin/containers/ContainerManagemen
 import { HomeSectionLayout } from "./components/layouts/HomeSectionLayout";
 import { AdminSectionLayout } from "./components/layouts/AdminSectionLayout";
 import CapabilityRegistryWorkspace from "./pages/admin/registry/CapabilityRegistryWorkspace";
+import Home from "./pages/Home";
 
 const PublicSlugPage = lazy(() => import("./pages/PublicSlugPage"));
 
@@ -69,7 +70,7 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Guest routes */}
-            <Route path="/" element={<LoginPage />} />
+            <Route path="/" element={<Home />} />
             <Route element={<GuestGuard />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
