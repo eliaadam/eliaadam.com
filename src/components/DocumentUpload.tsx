@@ -15,14 +15,17 @@ import { useQuery } from "@tanstack/react-query";
  * platform has seeded — no hard-coded type names that might not exist.
  */
 
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 type DocType = { id: string; name: string; description?: string };
 
 async function fetchTypes(): Promise<DocType[]> {
   const token = localStorage.getItem("maicore_token");
   const res = await fetch(`${API}/api/documents/types`, {
-    headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   });
   const j = await res.json().catch(() => ({}));
   return j.data ?? [];
@@ -58,7 +61,9 @@ export function DocumentUpload({
   const effectiveType =
     typeId ||
     (suggestType
-      ? types.find((t) => t.name.toLowerCase().includes(suggestType.toLowerCase()))?.id ?? ""
+      ? (types.find((t) =>
+          t.name.toLowerCase().includes(suggestType.toLowerCase()),
+        )?.id ?? "")
       : "");
 
   async function upload() {
@@ -79,7 +84,10 @@ export function DocumentUpload({
       const token = localStorage.getItem("maicore_token");
       const res = await fetch(`${API}/api/documents`, {
         method: "POST",
-        headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: form, // no Content-Type — the browser sets the multipart boundary
       });
       const j = await res.json().catch(() => ({}));
@@ -89,7 +97,8 @@ export function DocumentUpload({
         return;
       }
       const doc = j.data;
-      const typeName = types.find((t) => t.id === effectiveType)?.name ?? "Document";
+      const typeName =
+        types.find((t) => t.id === effectiveType)?.name ?? "Document";
       const uploaded = { id: doc.id, title: doc.title, typeName };
       setDone(uploaded);
       onUploaded(uploaded);
@@ -103,9 +112,15 @@ export function DocumentUpload({
   if (done) {
     return (
       <div className="flex items-center gap-2 text-[11px] text-emerald-600">
-        <span>✓ {label}: {done.title}</span>
+        <span>
+          ✓ {label}: {done.title}
+        </span>
         <button
-          onClick={() => { setDone(null); setFile(null); setTitle(defaultTitle ?? ""); }}
+          onClick={() => {
+            setDone(null);
+            setFile(null);
+            setTitle(defaultTitle ?? "");
+          }}
           className="text-neutral-400 hover:text-neutral-600 underline"
         >
           replace
@@ -116,7 +131,9 @@ export function DocumentUpload({
 
   return (
     <div className="rounded-md border border-dashed border-neutral-300 dark:border-neutral-700 p-2.5">
-      <p className="text-[11px] font-medium text-neutral-600 dark:text-neutral-300 m-0 mb-1.5">{label}</p>
+      <p className="text-[11px] font-medium text-neutral-600 dark:text-neutral-300 m-0 mb-1.5">
+        {label}
+      </p>
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={effectiveType}
@@ -125,7 +142,9 @@ export function DocumentUpload({
         >
           <option value="">Type…</option>
           {types.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
           ))}
         </select>
         <input
@@ -142,7 +161,9 @@ export function DocumentUpload({
         </button>
       </div>
       {err && <p className="text-[10px] text-red-600 mt-1 m-0">{err}</p>}
-      {typesQ.isLoading && <p className="text-[10px] text-neutral-400 mt-1 m-0">Loading types…</p>}
+      {typesQ.isLoading && (
+        <p className="text-[10px] text-neutral-400 mt-1 m-0">Loading types…</p>
+      )}
     </div>
   );
 }

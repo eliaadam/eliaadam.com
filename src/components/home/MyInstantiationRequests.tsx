@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
  * Reads GET /hierarchy/instantiation-requests/mine.
  */
 
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string) {
   const token = localStorage.getItem("maicore_token");

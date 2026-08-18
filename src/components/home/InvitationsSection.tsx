@@ -422,7 +422,7 @@ function RolePicker({
     queryFn: async () => {
       const token = localStorage.getItem("maicore_token");
       const res = await fetch(
-        `${import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000"}/api/authority/roles`,
+        `${import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000"}/api/authority/roles`,
         {
           headers: {
             Accept: "application/json",

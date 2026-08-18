@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import SubscribePanel from "./SubscribePanel";
 import { QuestionnaireFiller } from "../../pages/user/panels/QuestionnaireFiller";
- 
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");
@@ -154,7 +154,7 @@ function RequestFlow({
   const kycNeeded = preconditions.some((p) => p.kind === "kyc_approved");
   const questionnaire = preconditions.find((p) => p.kind === "questionnaire");
   const questionnaireId = questionnaire?.config?.questionnaire_id;
- 
+
   const needsSubscription =
     Boolean(decision.requires_subscription) &&
     !decision.satisfying_subscription_id;

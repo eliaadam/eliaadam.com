@@ -84,7 +84,7 @@ export default function PluginHost({
 
   const base =
     (apiBase ??
-      import.meta.env.VITE_MAICORE_API_URL ??
+      import.meta.env.VITE_PLATFORM_API_URL ??
       "http://127.0.0.1:8000") + "/api/v1";
 
   const forward = useCallback(

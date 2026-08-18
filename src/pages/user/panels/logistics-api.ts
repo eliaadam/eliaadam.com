@@ -1,6 +1,6 @@
 // Shared fetch helper for the logistics panels. Mirrors the app's api() pattern:
 // Bearer from localStorage, JSON in/out, throws on non-2xx with the server message.
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 export async function logisticsApi(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");

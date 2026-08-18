@@ -259,7 +259,7 @@ interface PaginatedResponse<T> {
 }
 
 const REGISTRY_API =
-  (import.meta as any).env?.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+  (import.meta as any).env?.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function registryFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${REGISTRY_API}/api/registry${path}`, {

@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
  * Approve releases the hold; settle triggers the REAL Selcom disbursement.
  */
 
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function pay(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");

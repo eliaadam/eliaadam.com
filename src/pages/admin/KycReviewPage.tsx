@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
  * uploaded documents (download links) — you can't approve what you can't see.
  */
 
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function kyc(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");

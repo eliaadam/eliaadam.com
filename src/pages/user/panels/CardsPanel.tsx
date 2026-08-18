@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
  * cardholder. SUSPEND is permanent — the UI confirms before doing it.
  */
 
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");
@@ -52,9 +52,13 @@ export default function CardsPanel({
   return (
     <div className="space-y-5 max-w-3xl">
       {can("card.issue") && <IssueCard containerId={containerId} />}
-      {can("card.view") && <CardList containerId={containerId} canManage={can("card.manage")} />}
+      {can("card.view") && (
+        <CardList containerId={containerId} canManage={can("card.manage")} />
+      )}
       {!can("card.view") && !can("card.issue") && (
-        <p className="text-sm text-neutral-400">You don't have access to cards here.</p>
+        <p className="text-sm text-neutral-400">
+          You don't have access to cards here.
+        </p>
       )}
     </div>
   );
@@ -78,7 +82,9 @@ function IssueCard({ containerId }: { containerId: string }) {
         currency: "TZS",
       }),
     onSuccess: () => {
-      setMsg("Card issuance started. It becomes active once Selcom confirms — refresh its status shortly.");
+      setMsg(
+        "Card issuance started. It becomes active once Selcom confirms — refresh its status shortly.",
+      );
       setHolder("");
       setMsisdn("");
       setAccount("");
@@ -89,9 +95,13 @@ function IssueCard({ containerId }: { containerId: string }) {
 
   return (
     <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-1">Issue a virtual card</p>
+      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-1">
+        Issue a virtual card
+      </p>
       <p className="text-[11px] text-neutral-400 m-0 mb-3">
-        The cardholder must have an approved KYC record — issuance is refused otherwise. Card details go to the holder by secure link, never shown here.
+        The cardholder must have an approved KYC record — issuance is refused
+        otherwise. Card details go to the holder by secure link, never shown
+        here.
       </p>
 
       <div className="space-y-2 mb-2">
@@ -130,7 +140,13 @@ function IssueCard({ containerId }: { containerId: string }) {
   );
 }
 
-function CardList({ containerId, canManage }: { containerId: string; canManage: boolean }) {
+function CardList({
+  containerId,
+  canManage,
+}: {
+  containerId: string;
+  canManage: boolean;
+}) {
   const qc = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -140,13 +156,30 @@ function CardList({ containerId, canManage }: { containerId: string; canManage: 
     queryFn: () => api("GET", `/containers/${containerId}/cards`),
   });
 
-  const act = async (id: string, action: "refresh" | "freeze" | "unfreeze" | "suspend" | "show") => {
-    if (action === "suspend" && !confirm("Suspend is permanent — the card can never be used again. Continue?")) return;
+  const act = async (
+    id: string,
+    action: "refresh" | "freeze" | "unfreeze" | "suspend" | "show",
+  ) => {
+    if (
+      action === "suspend" &&
+      !confirm(
+        "Suspend is permanent — the card can never be used again. Continue?",
+      )
+    )
+      return;
     setBusy(id + action);
     setMsg(null);
     try {
-      const res = await api("POST", `/containers/${containerId}/cards/${id}/${action}`);
-      if (action === "show") setMsg(res?.sent ? "Secure link sent to the cardholder." : "Could not send link.");
+      const res = await api(
+        "POST",
+        `/containers/${containerId}/cards/${id}/${action}`,
+      );
+      if (action === "show")
+        setMsg(
+          res?.sent
+            ? "Secure link sent to the cardholder."
+            : "Could not send link.",
+        );
       qc.invalidateQueries({ queryKey: ["cards"] });
     } catch (e: any) {
       setMsg(e.message);
@@ -159,7 +192,9 @@ function CardList({ containerId, canManage }: { containerId: string; canManage: 
 
   return (
     <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-3">Cards</p>
+      <p className="text-sm font-semibold text-black dark:text-white m-0 mb-3">
+        Cards
+      </p>
       {q.isLoading ? (
         <p className="text-[11px] text-neutral-400 m-0">Loading…</p>
       ) : rows.length === 0 ? (
@@ -167,38 +202,60 @@ function CardList({ containerId, canManage }: { containerId: string; canManage: 
       ) : (
         <div className="space-y-2">
           {rows.map((c) => (
-            <div key={c.id} className="py-2 border-b border-neutral-100 dark:border-neutral-900 last:border-0">
+            <div
+              key={c.id}
+              className="py-2 border-b border-neutral-100 dark:border-neutral-900 last:border-0"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-black dark:text-white m-0">
                     {c.holder_name ?? "Cardholder"}
-                    {c.last_four && <span className="text-neutral-400"> ···· {c.last_four}</span>}
+                    {c.last_four && (
+                      <span className="text-neutral-400">
+                        {" "}
+                        ···· {c.last_four}
+                      </span>
+                    )}
                   </p>
-                  <p className="text-[11px] text-neutral-400 m-0">{c.currency ?? ""}</p>
+                  <p className="text-[11px] text-neutral-400 m-0">
+                    {c.currency ?? ""}
+                  </p>
                 </div>
                 <CardStatus status={c.status} />
               </div>
               <div className="flex gap-2 mt-2 flex-wrap">
                 {c.status === "pending" && (
-                  <button onClick={() => act(c.id, "refresh")} disabled={busy !== null}
-                    className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40">
+                  <button
+                    onClick={() => act(c.id, "refresh")}
+                    disabled={busy !== null}
+                    className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40"
+                  >
                     {busy === c.id + "refresh" ? "Checking…" : "Refresh status"}
                   </button>
                 )}
                 {c.status === "active" && (
                   <>
-                    <button onClick={() => act(c.id, "show")} disabled={busy !== null}
-                      className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40">
+                    <button
+                      onClick={() => act(c.id, "show")}
+                      disabled={busy !== null}
+                      className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40"
+                    >
                       Send details
                     </button>
                     {canManage && (
                       <>
-                        <button onClick={() => act(c.id, "freeze")} disabled={busy !== null}
-                          className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40">
+                        <button
+                          onClick={() => act(c.id, "freeze")}
+                          disabled={busy !== null}
+                          className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40"
+                        >
                           Freeze
                         </button>
-                        <button onClick={() => act(c.id, "suspend")} disabled={busy !== null}
-                          className="px-3 py-1 text-[11px] font-semibold rounded-md text-red-600 border border-red-200 dark:border-red-900/40 disabled:opacity-40">
+                        <button
+                          onClick={() => act(c.id, "suspend")}
+                          disabled={busy !== null}
+                          className="px-3 py-1 text-[11px] font-semibold rounded-md text-red-600 border border-red-200 dark:border-red-900/40 disabled:opacity-40"
+                        >
                           Suspend
                         </button>
                       </>
@@ -206,8 +263,11 @@ function CardList({ containerId, canManage }: { containerId: string; canManage: 
                   </>
                 )}
                 {c.status === "blocked" && canManage && (
-                  <button onClick={() => act(c.id, "unfreeze")} disabled={busy !== null}
-                    className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40">
+                  <button
+                    onClick={() => act(c.id, "unfreeze")}
+                    disabled={busy !== null}
+                    className="px-3 py-1 text-[11px] font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 disabled:opacity-40"
+                  >
                     Unfreeze
                   </button>
                 )}
@@ -230,7 +290,9 @@ function CardStatus({ status }: { status: string }) {
     failed: "text-red-600 bg-red-50 dark:bg-red-950/30",
   };
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[status] ?? "text-neutral-500 bg-neutral-100 dark:bg-neutral-900"}`}>
+    <span
+      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[status] ?? "text-neutral-500 bg-neutral-100 dark:bg-neutral-900"}`}
+    >
       {status}
     </span>
   );

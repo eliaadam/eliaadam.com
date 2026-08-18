@@ -27,7 +27,7 @@ export function clearToken(): void {
 }
 
 const config: MaicoreClientConfig = {
-  baseUrl: import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000",
+  baseUrl: import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000",
   token: loadToken(),
   useSanctumCookies: false,
   debug: import.meta.env.DEV,
@@ -69,7 +69,7 @@ export const templateApi = {
   instantiate: (id: string, d: Record<string, unknown>) => tFetch("POST", `/api/hierarchy/hierarchy-templates/${id}/instantiate`, d),
 };
 
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function tFetch(method: string, path: string, body?: Record<string, unknown>) {
   const token = localStorage.getItem("maicore_token");

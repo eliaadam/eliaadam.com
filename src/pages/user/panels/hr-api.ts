@@ -1,5 +1,5 @@
 
-const API = import.meta.env.VITE_MAICORE_API_URL ?? import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
 export async function hrApi(method: string, path: string, body?: unknown) {
   const token = localStorage.getItem("maicore_token");

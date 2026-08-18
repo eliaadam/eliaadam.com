@@ -1,5 +1,5 @@
 
-const API_BASE = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 const COMM_PREFIX = "/api/communications";
 
 export class ApiError extends Error {

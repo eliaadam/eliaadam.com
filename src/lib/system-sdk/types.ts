@@ -648,7 +648,7 @@ export type UpdateAuthorizationPolicyRequest = CreateAuthorizationPolicyRequest;
 // 17. Error Reference
 // ---------------------------------------------------------------------------
 
-export const MAICORE_EXCEPTIONS = [
+export const PLATFORM_EXCEPTIONS = [
   "ContainerException",
   "ContainerNotFoundException",
   "HierarchyPolicyViolationException",
@@ -665,7 +665,7 @@ export const MAICORE_EXCEPTIONS = [
   "ActorNotFoundException",
 ] as const;
 
-export type MaicoreExceptionName = (typeof MAICORE_EXCEPTIONS)[number];
+export type MaicoreExceptionName = (typeof PLATFORM_EXCEPTIONS)[number];
 
 export interface RegisterRequest {
   display_name: string;

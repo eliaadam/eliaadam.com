@@ -2,7 +2,7 @@
 import type { Actor } from "./system-sdk";
 
 const ACTOR_KEY = "maicore_actor";
-const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 export const queryKeys = {
   session: ["session"] as const,

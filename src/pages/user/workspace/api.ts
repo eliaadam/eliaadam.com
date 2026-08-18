@@ -1,6 +1,6 @@
 import type { Workspace } from "./types";
 
-export const API = import.meta.env.VITE_MAICORE_API_URL ?? "http://127.0.0.1:8000";
+export const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 export const UUID_RE =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

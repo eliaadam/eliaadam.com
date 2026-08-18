@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { hrApi as api, toMinor, toMajor } from "./hr-api";
 
-const MAICORE_API =
-  import.meta.env.VITE_MAICORE_API_URL ??
+const PLATFORM_API =
+  import.meta.env.VITE_PLATFORM_API_URL ??
   import.meta.env.VITE_API_URL ??
   "http://127.0.0.1:8000";
 
@@ -12,7 +12,7 @@ const MAICORE_API =
 async function fetchGrantableRoles(containerId: string) {
   const token = localStorage.getItem("maicore_token");
   const res = await fetch(
-    `${MAICORE_API}/api/hierarchy/containers/${containerId}/grantable-roles`,
+    `${PLATFORM_API}/api/hierarchy/containers/${containerId}/grantable-roles`,
     {
       headers: {
         Accept: "application/json",
