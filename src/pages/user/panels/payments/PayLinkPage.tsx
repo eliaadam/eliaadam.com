@@ -28,7 +28,9 @@ export default function PayLinkPage({ slug }: { slug: string }) {
   }, [slug]);
 
   const openAmount = link && link.amount === null;
-  const minor = openAmount ? Math.round(parseFloat(amount || "0") * 100) : (link?.amount ?? 0);
+  const minor = openAmount
+    ? Math.round(parseFloat(amount || "0") * 100)
+    : (link?.amount ?? 0);
   const ready = phone.trim().length >= 9 && minor > 0;
 
   const pollState = usePaymentPoll(
@@ -46,7 +48,9 @@ export default function PayLinkPage({ slug }: { slug: string }) {
         amount: openAmount ? minor : undefined,
       });
       setChargeToken(res.charge_token);
-      setMsg(`Check your phone (${phone}) and approve the ${money(minor, link.currency)} prompt.`);
+      setMsg(
+        `Check your phone (${phone}) and approve the ${money(minor, link.currency)} prompt.`,
+      );
     } catch (e: any) {
       setMsg(e.message);
     } finally {
@@ -57,7 +61,9 @@ export default function PayLinkPage({ slug }: { slug: string }) {
   if (loadErr)
     return (
       <Centered>
-        <p className="text-sm text-neutral-500">This payment link could not be found.</p>
+        <p className="text-sm text-neutral-500">
+          This payment link could not be found.
+        </p>
       </Centered>
     );
   if (!link)
@@ -73,21 +79,31 @@ export default function PayLinkPage({ slug }: { slug: string }) {
     <Centered>
       <div className="w-full max-w-sm rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 space-y-4">
         <div>
-          <p className="text-lg font-semibold text-black dark:text-white m-0">{link.title}</p>
+          <p className="text-lg font-semibold text-black dark:text-white m-0">
+            {link.title}
+          </p>
           {link.description && (
-            <p className="text-[12px] text-neutral-400 m-0 mt-1">{link.description}</p>
+            <p className="text-[12px] text-neutral-400 m-0 mt-1">
+              {link.description}
+            </p>
           )}
           <p className="text-2xl font-bold text-black dark:text-white m-0 mt-3 tabular-nums">
-            {link.amount !== null ? money(link.amount, link.currency) : "Enter amount"}
+            {link.amount !== null
+              ? money(link.amount, link.currency)
+              : "Enter amount"}
           </p>
         </div>
 
         {!link.payable ? (
-          <p className="text-sm text-amber-600">This link is no longer accepting payments.</p>
+          <p className="text-sm text-amber-600">
+            This link is no longer accepting payments.
+          </p>
         ) : done ? (
           <div className="text-center py-6">
             <p className="text-3xl">✓</p>
-            <p className="text-sm text-emerald-600 mt-2">Payment received. Thank you!</p>
+            <p className="text-sm text-emerald-600 mt-2">
+              Payment received. Thank you!
+            </p>
           </div>
         ) : chargeToken ? (
           <div className="text-center py-6 space-y-2">
@@ -118,7 +134,9 @@ export default function PayLinkPage({ slug }: { slug: string }) {
             {openAmount && (
               <input
                 value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                onChange={(e) =>
+                  setAmount(e.target.value.replace(/[^0-9.]/g, ""))
+                }
                 placeholder={`Amount (${link.currency})`}
                 inputMode="decimal"
                 className="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-black dark:text-white"
@@ -141,13 +159,19 @@ export default function PayLinkPage({ slug }: { slug: string }) {
               disabled={!ready || busy}
               className="w-full px-4 py-2.5 text-sm font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black disabled:opacity-40"
             >
-              {busy ? "…" : `Pay ${minor > 0 ? money(minor, link.currency) : ""}`}
+              {busy
+                ? "…"
+                : `Pay ${minor > 0 ? money(minor, link.currency) : ""}`}
             </button>
           </div>
         )}
 
-        {msg && !done && <p className="text-[11px] text-neutral-500 m-0">{msg}</p>}
-        <p className="text-[10px] text-neutral-400 text-center m-0">Secured payment</p>
+        {msg && !done && (
+          <p className="text-[11px] text-neutral-500 m-0">{msg}</p>
+        )}
+        <p className="text-[10px] text-neutral-400 text-center m-0">
+          Secured payment
+        </p>
       </div>
     </Centered>
   );

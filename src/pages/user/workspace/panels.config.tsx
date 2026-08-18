@@ -13,7 +13,6 @@ import {
   Store,
   Package,
   Blocks,
-  Gavel,
   LayoutTemplate,
   Newspaper,
   Brain,
@@ -21,7 +20,7 @@ import {
 import DocumentsPanel from "../panels/DocumentsPanel";
 import ProjectsPanel from "../panels/ProjectsPanel";
 import MembersPanel from "../panels/MembersPanel";
- 
+
 import ContainerManagementPanel from "../panels/ContainerManagementPanel";
 import HrWorkspace from "../panels/HrWorkspace";
 import PaymentsWorkspace from "../panels/payments/PaymentsWorkspace";
@@ -34,12 +33,11 @@ import InvoicingPanel from "../panels/InvoicingPanel";
 import TemplatesWorkspace from "../panels/templates/TemplatesWorkspace";
 import ContentWorkspace from "../panels/content/ContentWorkspace";
 import BrainstormWorkspace from "../panels/brainstorm/BrainstormWorkspace";
-import ProcurementWorkspace from "../procurements/ProcurementWorkspace";
 
 import type { PanelDefinition } from "./types";
-import FaithWorkspace from "../panels/faith/FaithWorkspace";
+
 import CrmWorkspace from "../panels/crm/CrmWorkspace";
-import ChurchCrmWorkspace from "../panels/crm/ChurchCrmWorkspace";
+
 import CommunicationsPanel from "../panels/communications/CommunicationsPanel";
 
 /*
@@ -63,20 +61,7 @@ export const PANELS: Record<string, PanelDefinition> = {
     slug: "crm",
     component: CrmWorkspace,
   },
-  "system.crm.church": {
-    label: "Church Crm",
-    icon: Users,
-    order: 2,
-    slug: "crm_church",
-    component: ChurchCrmWorkspace,
-  },
-  "system.faith": {
-    label: "Faith",
-    icon: Users,
-    order: 3,
-    slug: "faith",
-    component: FaithWorkspace,
-  },
+
   "system.communications": {
     label: "Communications",
     icon: MessageSquare,
@@ -126,13 +111,7 @@ export const PANELS: Record<string, PanelDefinition> = {
     slug: "hr",
     component: HrWorkspace,
   },
-  "system.procurement": {
-    label: "Procurement",
-    icon: Gavel,
-    order: 48,
-    slug: "procurement",
-    component: ProcurementWorkspace,
-  },
+
   "system.logistics": {
     label: "Logistics",
     icon: Truck,
