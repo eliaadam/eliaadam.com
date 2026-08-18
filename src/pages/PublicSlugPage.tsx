@@ -110,7 +110,7 @@ export default function PublicSlugPage() {
   // result.state === "ok" — minimal public stub. Expand later into a real
   // public profile that reads a publish flag on the subject.
   const isContainer = result.type === "container";
-  const token = localStorage.getItem("maicore_token");
+  const token = localStorage.getItem("use_token");
 
   return (
     <div style={wrap}>

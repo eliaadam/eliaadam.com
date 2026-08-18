@@ -79,7 +79,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     headers: {
       Accept: "application/json",
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      Authorization: `Bearer ${localStorage.getItem("maicore_token")}`,
+      Authorization: `Bearer ${localStorage.getItem("use_token")}`,
       ...(init?.headers ?? {}),
     },
   });
@@ -97,7 +97,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 async function apiDownload(path: string): Promise<void> {
   const res = await fetch(`${API}/api/audit${path}`, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("maicore_token")}`,
+      Authorization: `Bearer ${localStorage.getItem("use_token")}`,
     },
   });
 

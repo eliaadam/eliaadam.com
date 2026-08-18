@@ -34,7 +34,7 @@ export function useAuth(): AuthState {
     queryFn: fetchSession,
     retry: false,
     staleTime: Infinity,
-    enabled: !!localStorage.getItem("maicore_token"),
+    enabled: !!localStorage.getItem("use_token"),
   });
 
   const adminQuery = useQuery({
@@ -105,7 +105,7 @@ export function useAuth(): AuthState {
     }
   }
 
-  const hasToken = !!localStorage.getItem("maicore_token");
+  const hasToken = !!localStorage.getItem("use_token");
   const isLoading = hasToken && sessionQuery.isLoading;
   const isAuthenticated = !!sessionQuery.data;
 

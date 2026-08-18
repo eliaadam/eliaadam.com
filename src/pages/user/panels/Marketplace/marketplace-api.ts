@@ -2,7 +2,7 @@
 const API = import.meta.env.VITE_MAICORE_API_URL ?? import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
 export async function marketplaceApi(method: string, path: string, body?: unknown) {
-  const token = localStorage.getItem("maicore_token");
+  const token = localStorage.getItem("use_token");
   const res = await fetch(`${API}/api/marketplace${path}`, {
     method,
     headers: { Accept: "application/json", "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -16,7 +16,7 @@ export async function marketplaceApi(method: string, path: string, body?: unknow
 
 // Authenticated file download (keeps the Authorization header, unlike a raw link).
 export async function marketplaceDownload(path: string, fallbackName = "download") {
-  const token = localStorage.getItem("maicore_token");
+  const token = localStorage.getItem("use_token");
   const res = await fetch(`${API}/api/marketplace${path}`, {
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
   });

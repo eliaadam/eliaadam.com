@@ -131,7 +131,7 @@ function TemplateCard({
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const token = localStorage.getItem("maicore_token");
+      const token = localStorage.getItem("use_token");
       const res = await fetch(
         `${API}/containers/${containerId}/templates/${t.id}/file`,
         {
@@ -152,7 +152,7 @@ function TemplateCard({
   }
 
   function download() {
-    const token = localStorage.getItem("maicore_token");
+    const token = localStorage.getItem("use_token");
     // Simple download via fetch → blob (keeps the Authorization header).
     fetch(`${API}/containers/${containerId}/templates/${t.id}/download`, {
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },

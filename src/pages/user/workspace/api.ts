@@ -11,7 +11,7 @@ export async function fetchWorkspace(containerId: string) {
         {
             headers: {
                 Accept: "application/json",
-                Authorization: `Bearer ${localStorage.getItem("maicore_token")}`,
+                Authorization: `Bearer ${localStorage.getItem("use_token")}`,
             },
         },
     );

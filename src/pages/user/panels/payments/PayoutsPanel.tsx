@@ -13,7 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown) {
-  const token = localStorage.getItem("maicore_token");
+  const token = localStorage.getItem("use_token");
   const res = await fetch(`${API}/api/payments${path}`, {
     method,
     headers: {

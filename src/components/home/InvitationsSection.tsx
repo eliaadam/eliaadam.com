@@ -420,7 +420,7 @@ function RolePicker({
   const rolesQuery = useQuery({
     queryKey: ["user", "availableRoles"],
     queryFn: async () => {
-      const token = localStorage.getItem("maicore_token");
+      const token = localStorage.getItem("use_token");
       const res = await fetch(
         `${import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000"}/api/authority/roles`,
         {

@@ -1,6 +1,6 @@
 import { type MaicoreClientConfig, MaicoreClient } from "./system-sdk";
 
-const STORAGE_KEY = "maicore_token";
+const STORAGE_KEY = "use_token";
 
 function loadToken(): string | undefined {
   try {
@@ -72,7 +72,7 @@ export const templateApi = {
 const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function tFetch(method: string, path: string, body?: Record<string, unknown>) {
-  const token = localStorage.getItem("maicore_token");
+  const token = localStorage.getItem("use_token");
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -102,7 +102,7 @@ async function tFetch(method: string, path: string, body?: Record<string, unknow
 }
 
 function uHeaders(): Record<string, string> {
-  const token = localStorage.getItem("maicore_token");
+  const token = localStorage.getItem("use_token");
   return {
     Accept: "application/json",
     "Content-Type": "application/json",

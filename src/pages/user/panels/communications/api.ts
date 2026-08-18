@@ -11,7 +11,7 @@ export class ApiError extends Error {
 }
 
 export function authHeaders(json = true): HeadersInit {
-  const token = localStorage.getItem("maicore_token");
+  const token = localStorage.getItem("use_token");
   return {
     Accept: "application/json",
     ...(json ? { "Content-Type": "application/json" } : {}),

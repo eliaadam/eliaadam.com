@@ -4,7 +4,7 @@
 const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 async function api(method: string, path: string, body?: unknown, auth = true) {
-    const token = auth ? localStorage.getItem("maicore_token") : null;
+    const token = auth ? localStorage.getItem("use_token") : null;
     const res = await fetch(`${API}/api/${path}`, {
         method,
         headers: {

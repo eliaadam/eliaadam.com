@@ -265,7 +265,7 @@ async function registryFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${REGISTRY_API}/api/registry${path}`, {
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${localStorage.getItem("maicore_token") ?? ""}`,
+      Authorization: `Bearer ${localStorage.getItem("use_token") ?? ""}`,
     },
   });
 
