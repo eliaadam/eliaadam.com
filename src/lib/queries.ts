@@ -23,7 +23,7 @@ export function clearActor(): void {
 }
 
 export async function fetchSession(): Promise<Actor | null> {
-  const token = localStorage.getItem("use_token");
+  const token = localStorage.getItem("sindano_token");
   if (!token) return null;
 
   // Restore from cached actor data — instant, no network.
@@ -40,7 +40,7 @@ export async function fetchSession(): Promise<Actor | null> {
 }
 
 export async function checkIsAdmin(): Promise<boolean> {
-  const token = localStorage.getItem("use_token");
+  const token = localStorage.getItem("sindano_token");
   if (!token) return false;
 
   try {

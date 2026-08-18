@@ -27,7 +27,7 @@ import type { TemplateRole } from "../../lib/template-types";
 const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 function ah(): Record<string, string> {
-  const t = localStorage.getItem("use_token");
+  const t = localStorage.getItem("sindano_token");
   return {
     Accept: "application/json",
     "Content-Type": "application/json",

@@ -2,7 +2,7 @@ const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
 /** Legacy-shaped call used by the capability/RBAC endpoints (Authority + Hierarchy). */
 export async function api(method: string, path: string, body?: unknown) {
-  const token = localStorage.getItem("use_token");
+  const token = localStorage.getItem("sindano_token");
   const res = await fetch(`${API}/api${path}`, {
     method,
     headers: {
@@ -33,7 +33,7 @@ export async function apiFetch<T>(
     headers: {
       Accept: "application/json",
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-      Authorization: `Bearer ${localStorage.getItem("use_token")}`,
+      Authorization: `Bearer ${localStorage.getItem("sindano_token")}`,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });

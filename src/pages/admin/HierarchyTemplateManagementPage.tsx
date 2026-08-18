@@ -672,7 +672,7 @@ function InstantiatedContainers() {
   const containersQuery = useQuery({
     queryKey: ["admin", "containers", "all"],
     queryFn: async () => {
-      const token = localStorage.getItem("use_token");
+      const token = localStorage.getItem("sindano_token");
       const res = await fetch(
         `${import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000"}/api/hierarchy/containers`,
         {

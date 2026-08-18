@@ -1,7 +1,7 @@
 const API = import.meta.env.VITE_PLATFORM_API_URL ?? import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
 export async function contentApi(method: string, path: string, body?: unknown) {
-  const token = localStorage.getItem("use_token");
+  const token = localStorage.getItem("sindano_token");
   const res = await fetch(`${API}/api/content${path}`, {
     method,
     headers: { Accept: "application/json", "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },

@@ -142,7 +142,7 @@ function BundleUpload({
     try {
       const fd = new FormData();
       fd.append("bundle", file);
-      const token = localStorage.getItem("use_token");
+      const token = localStorage.getItem("sindano_token");
       const res = await fetch(
         `${API}/api/apps/containers/${containerId}/apps/${appId}/plugins/${pluginId}/bundle`,
         {

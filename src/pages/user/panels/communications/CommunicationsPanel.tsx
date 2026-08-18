@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { commApi, unwrapList, type Conversation, type Group } from "./api";
 import MessageThread from "./MessageThread";
- 
 import BroadcastsPanel from "./BroadcastsPanel";
 import CommunitiesPanel from "./CommunitiesPanel";
 import MemberPicker from "./MemberPicker";
@@ -266,8 +265,7 @@ function GroupsSurface({
       setName("");
       setError(null);
       qc.invalidateQueries({ queryKey: ["comm", "groups", containerId] });
-      // Same reasoning as broadcasts/communities: a freshly created group
-      // is one you're about to add members to, so open it immediately.
+
       if (created?.id) setOpenId(created.id);
     },
     onError: (e: Error) => setError(e.message),

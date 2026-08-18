@@ -10,7 +10,7 @@ const PLATFORM_API =
 // Fetch the container's grantable roles (the SAME vocabulary the Members panel
 // uses) so a position can only bundle roles the container actually has.
 async function fetchGrantableRoles(containerId: string) {
-  const token = localStorage.getItem("use_token");
+  const token = localStorage.getItem("sindano_token");
   const res = await fetch(
     `${PLATFORM_API}/api/hierarchy/containers/${containerId}/grantable-roles`,
     {

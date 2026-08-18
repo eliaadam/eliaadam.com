@@ -7,6 +7,7 @@ import {
   STATUS_STYLE,
   type OwnerScope,
 } from "./events-api";
+import OwnerScopePicker from "./OwnerScopePicker";
 
 type Event = {
   id: string;
@@ -286,21 +287,26 @@ function EventDetail({
 }
 
 function CreateEventForm({
-  scope,
+  scope: initialScope,
+  containerId,
+  containerName,
   onClose,
   onCreated,
 }: {
-  scope: OwnerScope;
+  scope?: OwnerScope;
+  containerId?: string; // omit entirely if this form is only ever reachable with no org available
+  containerName?: string;
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const [scope, setScope] = useState<OwnerScope>(
+    initialScope ?? { type: "actor" },
+  );
+
   const base = scopeBase(scope);
 
   const categories = useQuery({
     queryKey: ["events", "categories"],
-    // No dedicated categories endpoint was built alongside the service —
-    // if one doesn't exist yet, replace this with a static list or add
-    // GET /api/events/categories to the backend.
     queryFn: () => api("GET", "/categories"),
   });
   const categoryList: Category[] = Array.isArray(categories.data)
@@ -336,6 +342,21 @@ function CreateEventForm({
       <div className="text-lg font-semibold text-black dark:text-white">
         New event
       </div>
+
+      {containerId && containerName && (
+        <div>
+          <label className="text-[11px] text-neutral-500 block mb-1">
+            Who's organizing this?
+          </label>
+          <OwnerScopePicker
+            containerId={containerId}
+            containerName={containerName}
+            value={scope}
+            onChange={setScope}
+          />
+        </div>
+      )}
+
       {scope.type === "actor" && (
         <div className="text-[11px] text-amber-600">
           You're creating this as yourself — no organization is attached.
@@ -368,8 +389,15 @@ function CreateEventForm({
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
           className={`${input} flex-1`}
+          disabled={categories.isLoading || categoryList.length === 0}
         >
-          <option value="">Select category…</option>
+          <option value="">
+            {categories.isLoading
+              ? "Loading categories…"
+              : categoryList.length === 0
+                ? "No categories available"
+                : "Select category…"}
+          </option>
           {categoryList.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
