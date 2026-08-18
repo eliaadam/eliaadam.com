@@ -1,8 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { commApi, unwrapList, type Community } from "./api";
 import MemberPicker from "./MemberPicker";
- 
+import {
+  Avatar,
+  EmptyState,
+  ErrorBanner,
+  GlobeIcon,
+  ListSkeleton,
+  PlusIcon,
+  SearchInput,
+  useDebouncedValue,
+} from "./commShared";
 
 /*
  * UX changes from the original inline version:
@@ -11,6 +20,8 @@ import MemberPicker from "./MemberPicker";
  *    anyway (add members, check groups, etc).
  *  - Public communities get a one-click "Join" right on the list row, so
  *    joining doesn't require opening the detail view first.
+ *  - Added search, skeleton loading, and an error state with retry — the
+ *    original silently rendered nothing if either query failed.
  */
 
 export default function CommunitiesPanel({
@@ -26,6 +37,8 @@ export default function CommunitiesPanel({
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [isPublic, setIsPublic] = useState(false);
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query, 150);
 
   const q = useQuery({
     queryKey: ["comm", "communities"],
@@ -36,6 +49,12 @@ export default function CommunitiesPanel({
     queryFn: () => commApi("GET", "/communities?per_page=25"),
   });
   const communities = unwrapList<Community>(q.data);
+
+  const filtered = useMemo(() => {
+    const term = debouncedQuery.trim().toLowerCase();
+    if (!term) return communities;
+    return communities.filter((c) => c.name.toLowerCase().includes(term));
+  }, [communities, debouncedQuery]);
 
   const create = useMutation({
     mutationFn: () =>
@@ -66,62 +85,96 @@ export default function CommunitiesPanel({
 
   return (
     <div>
-      {can("system.communications.community.create") && (
-        <div className="mb-4">
-          {!creating ? (
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex-1">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder="Search communities…"
+          />
+        </div>
+        {can("system.communications.community.create") && !creating && (
+          <button
+            onClick={() => setCreating(true)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition"
+          >
+            <PlusIcon />
+            New community
+          </button>
+        )}
+      </div>
+
+      {creating && (
+        <div className="mb-4 p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-2">
+          <div className="flex gap-2">
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && name.trim()) create.mutate();
+                if (e.key === "Escape") setCreating(false);
+              }}
+              placeholder="Community name"
+              className="flex-1 px-3 py-2 text-sm rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-black dark:text-white"
+            />
             <button
-              onClick={() => setCreating(true)}
-              className="px-3 py-1.5 text-xs font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black"
+              onClick={() => name.trim() && create.mutate()}
+              disabled={create.isPending || !name.trim()}
+              className="px-3 py-2 text-xs font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black disabled:opacity-40"
             >
-              + New community
+              {create.isPending ? "Creating…" : "Create"}
             </button>
-          ) : (
-            <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-2">
-              <div className="flex gap-2">
-                <input
-                  autoFocus
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && name.trim()) create.mutate();
-                  }}
-                  placeholder="Community name"
-                  className="flex-1 px-3 py-2 text-sm rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-black dark:text-white"
-                />
-                <button
-                  onClick={() => name.trim() && create.mutate()}
-                  disabled={create.isPending || !name.trim()}
-                  className="px-3 py-2 text-xs font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black disabled:opacity-40"
-                >
-                  Create
-                </button>
-                <button
-                  onClick={() => setCreating(false)}
-                  className="px-3 py-2 text-xs text-neutral-500"
-                >
-                  Cancel
-                </button>
-              </div>
-              <label className="flex items-center gap-2 text-[11px] text-neutral-500">
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
-                />
-                Discoverable / public
-              </label>
-            </div>
-          )}
+            <button
+              onClick={() => setCreating(false)}
+              className="px-3 py-2 text-xs text-neutral-500"
+            >
+              Cancel
+            </button>
+          </div>
+          <label className="flex items-center gap-2 text-[11px] text-neutral-500">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+            />
+            Discoverable / public
+          </label>
         </div>
       )}
 
       {q.isLoading ? (
-        <p className="text-sm text-neutral-400">Loading…</p>
-      ) : communities.length === 0 ? (
-        <p className="text-sm text-neutral-400">No communities yet.</p>
+        <ListSkeleton rows={4} />
+      ) : q.isError ? (
+        <ErrorBanner
+          message="Couldn't load communities."
+          onRetry={() => q.refetch()}
+        />
+      ) : filtered.length === 0 && debouncedQuery ? (
+        <EmptyState
+          icon={<GlobeIcon />}
+          title="No matches"
+          description={`Nothing matches "${debouncedQuery}".`}
+        />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={<GlobeIcon />}
+          title="No communities yet"
+          description="Communities group people and channels around a shared topic."
+          action={
+            can("system.communications.community.create") && (
+              <button
+                onClick={() => setCreating(true)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black"
+              >
+                + New community
+              </button>
+            )
+          }
+        />
       ) : (
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
-          {communities.map((c, i) => (
+          {filtered.map((c, i) => (
             <CommunityRow
               key={c.id}
               community={c}
@@ -161,22 +214,24 @@ function CommunityRow({
     >
       <button
         onClick={onOpen}
-        className="flex-1 min-w-0 text-left"
-        title={joinError ?? undefined}
+        className="flex-1 min-w-0 flex items-center gap-3 text-left"
       >
-        <span className="text-sm font-medium text-black dark:text-white">
-          {c.name}
+        <Avatar name={c.name} />
+        <span className="min-w-0">
+          <span className="text-sm font-medium text-black dark:text-white">
+            {c.name}
+          </span>
+          {c.is_public && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-900 text-neutral-500 ml-2">
+              public
+            </span>
+          )}
+          {typeof c.members_count === "number" && (
+            <span className="text-[11px] text-neutral-400 ml-2">
+              {c.members_count} member{c.members_count === 1 ? "" : "s"}
+            </span>
+          )}
         </span>
-        {c.is_public && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-900 text-neutral-500 ml-2">
-            public
-          </span>
-        )}
-        {typeof c.members_count === "number" && (
-          <span className="text-[11px] text-neutral-400 ml-2">
-            {c.members_count} members
-          </span>
-        )}
       </button>
 
       {c.is_public && (
@@ -190,6 +245,9 @@ function CommunityRow({
         >
           {joined ? "Joined ✓" : join.isPending ? "Joining…" : "Join"}
         </button>
+      )}
+      {joinError && (
+        <span className="shrink-0 text-[10px] text-amber-600">{joinError}</span>
       )}
     </div>
   );
@@ -240,10 +298,12 @@ function CommunityDetail({
       <div className="flex items-center gap-3 px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
         <button
           onClick={onBack}
+          aria-label="Back to communities"
           className="text-neutral-400 hover:text-black dark:hover:text-white text-sm"
         >
           ←
         </button>
+        {community && <Avatar name={community.name} size="sm" />}
         <p className="text-sm font-semibold text-black dark:text-white m-0 truncate">
           {community?.name ?? "Community"}
         </p>
@@ -255,10 +315,15 @@ function CommunityDetail({
       </div>
 
       <div className="p-4 space-y-4">
-        {error && <p className="text-[11px] text-amber-600 m-0">{error}</p>}
+        {error && <ErrorBanner message={error} />}
 
         {q.isLoading ? (
-          <p className="text-sm text-neutral-400">Loading…</p>
+          <ListSkeleton rows={3} />
+        ) : q.isError ? (
+          <ErrorBanner
+            message="Couldn't load this community."
+            onRetry={() => q.refetch()}
+          />
         ) : community ? (
           <>
             {community.description && (
@@ -285,7 +350,7 @@ function CommunityDetail({
                 {can("system.communications.community.member.manage") && (
                   <button
                     onClick={() => setAddingMember((v) => !v)}
-                    className="text-xs text-neutral-500 underline"
+                    className="text-xs text-neutral-500 hover:text-black dark:hover:text-white underline"
                   >
                     {addingMember ? "Cancel" : "+ Add"}
                   </button>
@@ -301,13 +366,21 @@ function CommunityDetail({
                 </div>
               )}
               <div className="space-y-1 max-h-40 overflow-y-auto">
+                {/* The community members endpoint returns actor_id only, no
+                    display name — showing the raw id is a stopgap until that
+                    payload includes one (the container /members endpoint
+                    MemberPicker uses already does, for reference). */}
                 {(community.members ?? []).map((m) => (
                   <div
                     key={m.actor_id}
-                    className="text-xs text-neutral-600 dark:text-neutral-400"
+                    className="flex items-center justify-between gap-2 text-xs text-neutral-600 dark:text-neutral-400 py-0.5"
                   >
-                    {m.actor_id}{" "}
-                    <span className="text-neutral-400">· {m.role}</span>
+                    <span className="truncate">{m.actor_id}</span>
+                    {m.role !== "member" && (
+                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-100 dark:bg-neutral-900 px-1.5 py-0.5 rounded">
+                        {m.role.replace("_", " ")}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

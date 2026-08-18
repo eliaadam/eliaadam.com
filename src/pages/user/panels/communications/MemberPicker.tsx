@@ -1,6 +1,14 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { authHeaders } from "./api";
+import {
+  Avatar,
+  EmptyState,
+  ErrorBanner,
+  ListSkeleton,
+  SearchInput,
+  UsersIcon,
+} from "./commShared";
 
 const API = import.meta.env.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:8000";
 
@@ -72,40 +80,55 @@ export default function MemberPicker({
         </button>
       </div>
 
-      <input
-        autoFocus
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search members…"
-        className="w-full px-3 py-2 text-sm rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-black dark:text-white mb-2"
-      />
+      <div className="mb-2">
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search members…"
+          autoFocus
+        />
+      </div>
 
       <div className="max-h-56 overflow-y-auto rounded-md border border-neutral-100 dark:border-neutral-900">
         {q.isLoading ? (
-          <p className="text-xs text-neutral-400 p-3 m-0">Loading members…</p>
+          <ListSkeleton rows={3} />
+        ) : q.isError ? (
+          <div className="p-3">
+            <ErrorBanner
+              message="Couldn't load members."
+              onRetry={() => q.refetch()}
+            />
+          </div>
         ) : members.length === 0 ? (
-          <p className="text-xs text-neutral-400 p-3 m-0">
-            {query ? "No members match." : "No other members here."}
-          </p>
+          <div className="p-2">
+            <EmptyState
+              icon={<UsersIcon />}
+              title={query ? "No matches" : "No other members here"}
+              description={query ? `Nothing matches "${query}".` : undefined}
+            />
+          </div>
         ) : (
           members.map((m, i) => (
             <button
               key={m.actor_id}
               onClick={() => onPick(m.actor_id, m.display_name)}
-              className={`w-full text-left px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition ${
+              className={`w-full flex items-center gap-2 text-left px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition ${
                 i > 0
                   ? "border-t border-neutral-100 dark:border-neutral-900"
                   : ""
               }`}
             >
-              <span className="text-sm text-black dark:text-white">
-                {m.display_name}
-              </span>
-              {m.code && (
-                <span className="text-[11px] text-neutral-400 ml-2">
-                  {m.code}
+              <Avatar name={m.display_name} size="sm" />
+              <span className="min-w-0">
+                <span className="text-sm text-black dark:text-white">
+                  {m.display_name}
                 </span>
-              )}
+                {m.code && (
+                  <span className="text-[11px] text-neutral-400 ml-2">
+                    {m.code}
+                  </span>
+                )}
+              </span>
             </button>
           ))
         )}
