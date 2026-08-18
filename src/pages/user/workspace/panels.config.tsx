@@ -39,13 +39,8 @@ import type { PanelDefinition } from "./types";
 import CrmWorkspace from "../panels/crm/CrmWorkspace";
 
 import CommunicationsPanel from "../panels/communications/CommunicationsPanel";
+import EventsWorkspace from "../panels/Events/EventsWorkspace";
 
-/*
- * One entry per CAPABILITY (keyed by feature code). Orders are unique and
- * ascending so the sidebar sort is deterministic. Procurement is a single
- * capability (system.procurement); its My Tenders / Open Tenders / Contracts
- * tabs live inside ProcurementWorkspace — they are NOT separate capabilities.
- */
 export const PANELS: Record<string, PanelDefinition> = {
   "system.membership": {
     label: "Members",
@@ -54,12 +49,21 @@ export const PANELS: Record<string, PanelDefinition> = {
     slug: "members",
     component: MembersPanel,
   },
+
   "system.crm": {
     label: "CRM",
     icon: Users,
     order: 1,
     slug: "crm",
     component: CrmWorkspace,
+  },
+
+  "system.events": {
+    label: "Events",
+    icon: Users,
+    order: 2,
+    slug: "events",
+    component: EventsWorkspace,
   },
 
   "system.communications": {
