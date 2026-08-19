@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import AppsSection from "../components/home/AppsSection";
+
 import DashboardSection from "../components/home/DashboardSection";
 import HomeSection from "../components/home/HomeSection";
 import ProfileSection from "../components/home/ProfileSection";
@@ -26,7 +26,7 @@ export default function HomePage() {
     <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-5xl mx-auto">
       {tab === "dashboard" && <DashboardSection />}
       {tab === "home" && <HomeSection />}
-      {tab === "apps" && <AppsSection />}
+      {/*tab === "apps" && <AppsSection />*/}
       {tab === "invitations" && <InvitationsSection />}
       {tab === "create" && <CreateSection />}
       {tab === "profile" && <ProfileSection />}

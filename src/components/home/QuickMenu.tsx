@@ -91,11 +91,11 @@ export default function QuickMenu() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-600 px-2 pt-2 pb-1">
               Quick Actions
             </p>
-            <MenuItem
+            {/* <MenuItem
               icon="📦"
               label="Apps"
               onClick={() => go("/home?tab=apps")}
-            />
+            /> */}
             <MenuItem
               icon="✉️"
               label="Invitations"
