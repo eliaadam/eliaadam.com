@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUxTemplate } from "../../ux/UxTemplateProvider";
 
-import { PANELS, PANEL_SLUG_TO_CODE, FALLBACK_ICON } from "../panels.config";
+import { PANELS, PANEL_SLUG_TO_CODE, FALLBACK_ICON } from "../panels.config.tsx";
 import type { Workspace, Capability } from "../types";
 import { WorkspaceHeader } from "../WorkspaceHeader";
 import { DashboardShell } from "./DashboardShell";

@@ -17,7 +17,7 @@ import {
     CreditCard,
     Diamond,
     ScrollText,
-    Boxes,
+
     ArrowLeft,
 } from "lucide-react";
 import type { NavItem } from "./types";
@@ -41,6 +41,6 @@ export const adminNavItems: NavItem[] = [
     { key: "payment-settings", label: "Payment Settings", icon: CreditCard, to: "/admin/payment-settings" },
     { key: "registry", label: "Registry", icon: Diamond, to: "/admin/registry" },
     { key: "audit", label: "Audit", icon: ScrollText, to: "/admin/audit" },
-    { key: "systemspace", label: "System Space", icon: Boxes, to: "/admin/systemspace" },
+    //{ key: "systemspace", label: "System Space", icon: Boxes, to: "/admin/systemspace" },
     { key: "back-home", label: "Back to Dashboard", icon: ArrowLeft, to: "/home" },
 ];

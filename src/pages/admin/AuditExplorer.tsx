@@ -257,7 +257,7 @@ function ChainPanel({ entry }: { entry: AuditEntry }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-3">
           <Label>Chain key</Label>
           <Mono>{entry.chain_key}</Mono>
@@ -268,11 +268,11 @@ function ChainPanel({ entry }: { entry: AuditEntry }) {
             #{entry.sequence}
           </span>
         </div>
-        <div className="col-span-2 rounded-xl border border-neutral-200 dark:border-neutral-800 p-3">
+        <div className="sm:col-span-2 rounded-xl border border-neutral-200 dark:border-neutral-800 p-3">
           <Label>Previous hash</Label>
           <Mono>{entry.previous_hash ?? "—"}</Mono>
         </div>
-        <div className="col-span-2 rounded-xl border border-neutral-200 dark:border-neutral-800 p-3">
+        <div className="sm:col-span-2 rounded-xl border border-neutral-200 dark:border-neutral-800 p-3">
           <Label>Entry hash</Label>
           <Mono>{entry.entry_hash}</Mono>
         </div>
@@ -386,7 +386,7 @@ function RetentionDrawer({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-20 flex justify-end bg-black/20 dark:bg-black/50">
       <div className="flex h-full w-full max-w-md flex-col bg-white dark:bg-black border-l border-neutral-200 dark:border-neutral-800">
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-6">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-6">
           <span className="text-sm font-bold tracking-tight text-black dark:text-white">
             Retention Policies
           </span>
@@ -400,10 +400,10 @@ function RetentionDrawer({ onClose }: { onClose: () => void }) {
 
         <form
           onSubmit={submit}
-          className="space-y-2 border-b border-neutral-200 dark:border-neutral-800 px-6 py-4"
+          className="space-y-2 border-b border-neutral-200 dark:border-neutral-800 px-4 py-4 sm:px-6"
         >
           <Label>New policy</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <select
               value={form.category}
               onChange={(e) =>
@@ -412,7 +412,7 @@ function RetentionDrawer({ onClose }: { onClose: () => void }) {
                   category: e.target.value as AuditCategory | "all",
                 }))
               }
-              className={`flex-1 ${inputCls}`}
+              className={`min-w-[9rem] flex-1 ${inputCls}`}
             >
               <option value="all">All categories</option>
               {CATEGORIES.map((c) => (
@@ -428,7 +428,7 @@ function RetentionDrawer({ onClose }: { onClose: () => void }) {
               onChange={(e) =>
                 setForm((f) => ({ ...f, retain_days: e.target.value }))
               }
-              className={`w-24 ${inputCls}`}
+              className={`w-20 sm:w-24 ${inputCls}`}
               placeholder="Days"
             />
           </div>
@@ -450,7 +450,7 @@ function RetentionDrawer({ onClose }: { onClose: () => void }) {
           </button>
         </form>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
           {loading && (
             <p className="text-xs text-neutral-400 dark:text-neutral-600">
               Loading…
@@ -500,7 +500,13 @@ function RetentionDrawer({ onClose }: { onClose: () => void }) {
 
 // ─── Detail Panel ───────────────────────────────────────────────────
 
-function DetailPanel({ entry }: { entry: AuditEntry }) {
+function DetailPanel({
+  entry,
+  onBack,
+}: {
+  entry: AuditEntry;
+  onBack?: () => void;
+}) {
   const [tab, setTab] = useState<DetailTab>("overview");
 
   useEffect(() => {
@@ -525,15 +531,23 @@ function DetailPanel({ entry }: { entry: AuditEntry }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-neutral-200 dark:border-neutral-800 px-6 pt-5 pb-4">
+      <div className="border-b border-neutral-200 dark:border-neutral-800 px-4 pt-5 pb-4 sm:px-6">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="mb-3 flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white md:hidden"
+          >
+            ← Back to list
+          </button>
+        )}
         <div className="mb-2 flex items-center gap-2">
           <CategoryTag category={entry.category} />
           <Mono dim>seq #{entry.sequence}</Mono>
         </div>
-        <h2 className="text-lg font-bold tracking-tight text-black dark:text-white m-0 font-mono">
+        <h2 className="text-lg font-bold tracking-tight text-black dark:text-white m-0 font-mono break-all">
           {entry.action}
         </h2>
-        <p className="mt-0.5 font-mono text-xs text-neutral-400 dark:text-neutral-600">
+        <p className="mt-0.5 font-mono text-xs text-neutral-400 dark:text-neutral-600 break-all">
           {entry.id}
         </p>
         <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
@@ -542,12 +556,12 @@ function DetailPanel({ entry }: { entry: AuditEntry }) {
         </p>
       </div>
 
-      <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-800 px-6">
+      <div className="flex gap-1 overflow-x-auto border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-6">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
+            className={`shrink-0 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
               tab === t.key
                 ? "border-black dark:border-white text-black dark:text-white"
                 : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white"
@@ -558,10 +572,10 @@ function DetailPanel({ entry }: { entry: AuditEntry }) {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-5">
+      <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
         {tab === "overview" && (
           <div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {fields.map((row) => (
                 <div
                   key={row.label}
@@ -1135,6 +1149,7 @@ function GraphView({
   const [resetSignal, setResetSignal] = useState(0);
   const [params, setParams] = useState<SceneParams>(DEFAULT_SCENE_PARAMS);
   const [showSettings, setShowSettings] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
 
   const updateParam = <K extends keyof SceneParams>(
     key: K,
@@ -1179,232 +1194,261 @@ function GraphView({
       </Canvas>
 
       {/* Floating control panel, Obsidian-graph-view style */}
-      <div className="pointer-events-auto absolute left-4 top-4 w-64 space-y-3 rounded-xl border border-neutral-800 bg-black/80 p-3 backdrop-blur">
-        <input
-          type="text"
-          placeholder="Search action or actor…"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="h-8 w-full rounded-lg border border-neutral-700 bg-black px-2.5 text-xs text-white outline-none focus:border-white transition-colors"
-        />
-
-        <div className="flex gap-2">
+      <div className="pointer-events-auto absolute left-2 right-2 top-2 max-h-[75vh] w-auto space-y-3 overflow-y-auto rounded-xl border border-neutral-800 bg-black/80 p-3 backdrop-blur sm:left-4 sm:right-auto sm:top-4 sm:w-64">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+            Graph controls
+          </span>
           <button
-            onClick={() =>
-              setLocalFocusId((cur) => (cur ? null : (selected?.id ?? null)))
-            }
-            disabled={!selected}
-            className="flex-1 rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-medium text-neutral-300 hover:border-white hover:text-white transition disabled:cursor-not-allowed disabled:opacity-30"
+            onClick={() => setPanelCollapsed((v) => !v)}
+            className="text-[11px] font-medium text-neutral-400 hover:text-white"
           >
-            {localFocusId ? "Show full graph" : "Local graph"}
-          </button>
-          <button
-            onClick={() => setPaused((p) => !p)}
-            className="flex-1 rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-medium text-neutral-300 hover:border-white hover:text-white transition"
-          >
-            {paused ? "Resume" : "Pause"}
+            {panelCollapsed ? "Show" : "Hide"}
           </button>
         </div>
-        <button
-          onClick={() => setResetSignal((s) => s + 1)}
-          className="w-full rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-medium text-neutral-300 hover:border-white hover:text-white transition"
-        >
-          Reheat layout
-        </button>
 
-        {/* Labels */}
-        <div className="space-y-1.5 border-t border-neutral-800 pt-2">
-          <div className="flex items-center justify-between text-[10px] text-neutral-400">
-            <span>Labels</span>
-          </div>
-          <div className="flex gap-1.5">
-            <label className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-neutral-700 px-1.5 py-1 text-[10px] text-neutral-300">
-              <input
-                type="checkbox"
-                checked={params.showNodeLabels}
-                onChange={(e) =>
-                  updateParam("showNodeLabels", e.target.checked)
-                }
-                className="accent-white"
-              />
-              Nodes
-            </label>
-            <label className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-neutral-700 px-1.5 py-1 text-[10px] text-neutral-300">
-              <input
-                type="checkbox"
-                checked={params.showEdgeLabels}
-                onChange={(e) =>
-                  updateParam("showEdgeLabels", e.target.checked)
-                }
-                className="accent-white"
-              />
-              Edges
-            </label>
-          </div>
-          {params.showNodeLabels && (
-            <select
-              value={params.nodeLabelField}
-              onChange={(e) =>
-                updateParam("nodeLabelField", e.target.value as NodeLabelField)
-              }
-              className="h-7 w-full rounded-lg border border-neutral-700 bg-black px-2 text-[10px] text-neutral-200 outline-none focus:border-white"
-            >
-              <option value="action">Label: action</option>
-              <option value="actor">Label: actor</option>
-              <option value="category">Label: category</option>
-            </select>
-          )}
-        </div>
+        {!panelCollapsed && (
+          <>
+            <input
+              type="text"
+              placeholder="Search action or actor…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-8 w-full rounded-lg border border-neutral-700 bg-black px-2.5 text-xs text-white outline-none focus:border-white transition-colors"
+            />
 
-        {/* Scene settings */}
-        <div className="border-t border-neutral-800 pt-2">
-          <button
-            onClick={() => setShowSettings((v) => !v)}
-            className="flex w-full items-center justify-between text-[10px] font-medium uppercase tracking-wide text-neutral-400 hover:text-white"
-          >
-            <span>Scene settings</span>
-            <span>{showSettings ? "−" : "+"}</span>
-          </button>
-
-          {showSettings && (
-            <div className="mt-2 max-h-64 space-y-3 overflow-y-auto pr-1">
-              <label className="flex items-center justify-between text-[10px] text-neutral-400">
-                <span>Fade with distance</span>
-                <input
-                  type="checkbox"
-                  checked={params.fadeEnabled}
-                  onChange={(e) => updateParam("fadeEnabled", e.target.checked)}
-                  className="accent-white"
-                />
-              </label>
-              {params.fadeEnabled && (
-                <>
-                  <SliderRow
-                    label="Fade start distance"
-                    value={params.fadeNear}
-                    min={5}
-                    max={100}
-                    step={1}
-                    onChange={(v) =>
-                      updateParam("fadeNear", Math.min(v, params.fadeFar - 1))
-                    }
-                  />
-                  <SliderRow
-                    label="Fade end distance"
-                    value={params.fadeFar}
-                    min={10}
-                    max={200}
-                    step={1}
-                    onChange={(v) =>
-                      updateParam("fadeFar", Math.max(v, params.fadeNear + 1))
-                    }
-                  />
-                </>
-              )}
-              <SliderRow
-                label="Ambient light"
-                value={params.ambientIntensity}
-                min={0}
-                max={2}
-                step={0.05}
-                onChange={(v) => updateParam("ambientIntensity", v)}
-              />
-              <SliderRow
-                label="Point light"
-                value={params.pointIntensity}
-                min={0}
-                max={3}
-                step={0.05}
-                onChange={(v) => updateParam("pointIntensity", v)}
-              />
-              <SliderRow
-                label="Repulsion"
-                value={params.repulsion}
-                min={0.5}
-                max={20}
-                step={0.5}
-                onChange={(v) => updateParam("repulsion", v)}
-              />
-              <SliderRow
-                label="Spring strength"
-                value={params.springStrength}
-                min={0.1}
-                max={4}
-                step={0.1}
-                onChange={(v) => updateParam("springStrength", v)}
-              />
-              <SliderRow
-                label="Chain edge length"
-                value={params.chainLength}
-                min={0.5}
-                max={6}
-                step={0.1}
-                onChange={(v) => updateParam("chainLength", v)}
-              />
-              <SliderRow
-                label="Correlation edge length"
-                value={params.correlationLength}
-                min={0.5}
-                max={8}
-                step={0.1}
-                onChange={(v) => updateParam("correlationLength", v)}
-              />
-              <SliderRow
-                label="Centering"
-                value={params.centering}
-                min={0}
-                max={0.3}
-                step={0.01}
-                onChange={(v) => updateParam("centering", v)}
-              />
-              <SliderRow
-                label="Damping"
-                value={params.damping}
-                min={0.5}
-                max={0.99}
-                step={0.01}
-                onChange={(v) => updateParam("damping", v)}
-              />
-              <SliderRow
-                label="Node size"
-                value={params.nodeScale}
-                min={0.3}
-                max={3}
-                step={0.1}
-                onChange={(v) => updateParam("nodeScale", v)}
-              />
+            <div className="flex gap-2">
               <button
-                onClick={() => setParams(DEFAULT_SCENE_PARAMS)}
-                className="w-full rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-medium text-neutral-300 hover:border-white hover:text-white transition"
+                onClick={() =>
+                  setLocalFocusId((cur) =>
+                    cur ? null : (selected?.id ?? null),
+                  )
+                }
+                disabled={!selected}
+                className="flex-1 rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-medium text-neutral-300 hover:border-white hover:text-white transition disabled:cursor-not-allowed disabled:opacity-30"
               >
-                Reset to defaults
+                {localFocusId ? "Show full graph" : "Local graph"}
+              </button>
+              <button
+                onClick={() => setPaused((p) => !p)}
+                className="flex-1 rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-medium text-neutral-300 hover:border-white hover:text-white transition"
+              >
+                {paused ? "Resume" : "Pause"}
               </button>
             </div>
-          )}
-        </div>
+            <button
+              onClick={() => setResetSignal((s) => s + 1)}
+              className="w-full rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-medium text-neutral-300 hover:border-white hover:text-white transition"
+            >
+              Reheat layout
+            </button>
 
-        <div className="border-t border-neutral-800 pt-2">
-          <GraphLegend />
-        </div>
+            {/* Labels */}
+            <div className="space-y-1.5 border-t border-neutral-800 pt-2">
+              <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                <span>Labels</span>
+              </div>
+              <div className="flex gap-1.5">
+                <label className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-neutral-700 px-1.5 py-1 text-[10px] text-neutral-300">
+                  <input
+                    type="checkbox"
+                    checked={params.showNodeLabels}
+                    onChange={(e) =>
+                      updateParam("showNodeLabels", e.target.checked)
+                    }
+                    className="accent-white"
+                  />
+                  Nodes
+                </label>
+                <label className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-neutral-700 px-1.5 py-1 text-[10px] text-neutral-300">
+                  <input
+                    type="checkbox"
+                    checked={params.showEdgeLabels}
+                    onChange={(e) =>
+                      updateParam("showEdgeLabels", e.target.checked)
+                    }
+                    className="accent-white"
+                  />
+                  Edges
+                </label>
+              </div>
+              {params.showNodeLabels && (
+                <select
+                  value={params.nodeLabelField}
+                  onChange={(e) =>
+                    updateParam(
+                      "nodeLabelField",
+                      e.target.value as NodeLabelField,
+                    )
+                  }
+                  className="h-7 w-full rounded-lg border border-neutral-700 bg-black px-2 text-[10px] text-neutral-200 outline-none focus:border-white"
+                >
+                  <option value="action">Label: action</option>
+                  <option value="actor">Label: actor</option>
+                  <option value="category">Label: category</option>
+                </select>
+              )}
+            </div>
 
-        {brokenCount > 0 && (
-          <div className="rounded-lg border-2 border-white/70 px-2.5 py-2 text-[11px] font-medium text-white">
-            {brokenCount} of {entries.length} entries on this page have no
-            correlation_id.
-          </div>
+            {/* Scene settings */}
+            <div className="border-t border-neutral-800 pt-2">
+              <button
+                onClick={() => setShowSettings((v) => !v)}
+                className="flex w-full items-center justify-between text-[10px] font-medium uppercase tracking-wide text-neutral-400 hover:text-white"
+              >
+                <span>Scene settings</span>
+                <span>{showSettings ? "−" : "+"}</span>
+              </button>
+
+              {showSettings && (
+                <div className="mt-2 max-h-64 space-y-3 overflow-y-auto pr-1">
+                  <label className="flex items-center justify-between text-[10px] text-neutral-400">
+                    <span>Fade with distance</span>
+                    <input
+                      type="checkbox"
+                      checked={params.fadeEnabled}
+                      onChange={(e) =>
+                        updateParam("fadeEnabled", e.target.checked)
+                      }
+                      className="accent-white"
+                    />
+                  </label>
+                  {params.fadeEnabled && (
+                    <>
+                      <SliderRow
+                        label="Fade start distance"
+                        value={params.fadeNear}
+                        min={5}
+                        max={100}
+                        step={1}
+                        onChange={(v) =>
+                          updateParam(
+                            "fadeNear",
+                            Math.min(v, params.fadeFar - 1),
+                          )
+                        }
+                      />
+                      <SliderRow
+                        label="Fade end distance"
+                        value={params.fadeFar}
+                        min={10}
+                        max={200}
+                        step={1}
+                        onChange={(v) =>
+                          updateParam(
+                            "fadeFar",
+                            Math.max(v, params.fadeNear + 1),
+                          )
+                        }
+                      />
+                    </>
+                  )}
+                  <SliderRow
+                    label="Ambient light"
+                    value={params.ambientIntensity}
+                    min={0}
+                    max={2}
+                    step={0.05}
+                    onChange={(v) => updateParam("ambientIntensity", v)}
+                  />
+                  <SliderRow
+                    label="Point light"
+                    value={params.pointIntensity}
+                    min={0}
+                    max={3}
+                    step={0.05}
+                    onChange={(v) => updateParam("pointIntensity", v)}
+                  />
+                  <SliderRow
+                    label="Repulsion"
+                    value={params.repulsion}
+                    min={0.5}
+                    max={20}
+                    step={0.5}
+                    onChange={(v) => updateParam("repulsion", v)}
+                  />
+                  <SliderRow
+                    label="Spring strength"
+                    value={params.springStrength}
+                    min={0.1}
+                    max={4}
+                    step={0.1}
+                    onChange={(v) => updateParam("springStrength", v)}
+                  />
+                  <SliderRow
+                    label="Chain edge length"
+                    value={params.chainLength}
+                    min={0.5}
+                    max={6}
+                    step={0.1}
+                    onChange={(v) => updateParam("chainLength", v)}
+                  />
+                  <SliderRow
+                    label="Correlation edge length"
+                    value={params.correlationLength}
+                    min={0.5}
+                    max={8}
+                    step={0.1}
+                    onChange={(v) => updateParam("correlationLength", v)}
+                  />
+                  <SliderRow
+                    label="Centering"
+                    value={params.centering}
+                    min={0}
+                    max={0.3}
+                    step={0.01}
+                    onChange={(v) => updateParam("centering", v)}
+                  />
+                  <SliderRow
+                    label="Damping"
+                    value={params.damping}
+                    min={0.5}
+                    max={0.99}
+                    step={0.01}
+                    onChange={(v) => updateParam("damping", v)}
+                  />
+                  <SliderRow
+                    label="Node size"
+                    value={params.nodeScale}
+                    min={0.3}
+                    max={3}
+                    step={0.1}
+                    onChange={(v) => updateParam("nodeScale", v)}
+                  />
+                  <button
+                    onClick={() => setParams(DEFAULT_SCENE_PARAMS)}
+                    className="w-full rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-medium text-neutral-300 hover:border-white hover:text-white transition"
+                  >
+                    Reset to defaults
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-neutral-800 pt-2">
+              <GraphLegend />
+            </div>
+
+            {brokenCount > 0 && (
+              <div className="rounded-lg border-2 border-white/70 px-2.5 py-2 text-[11px] font-medium text-white">
+                {brokenCount} of {entries.length} entries on this page have no
+                correlation_id.
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {hoveredId && !selected && (
-        <div className="pointer-events-none absolute bottom-4 left-4 max-w-sm rounded-lg border border-neutral-800 bg-black/80 px-3 py-2 text-xs text-neutral-300 backdrop-blur">
+        <div className="pointer-events-none absolute bottom-2 left-2 max-w-[80vw] rounded-lg border border-neutral-800 bg-black/80 px-3 py-2 text-xs text-neutral-300 backdrop-blur sm:bottom-4 sm:left-4 sm:max-w-sm">
           {nodes.find((n) => n.id === hoveredId)?.entry.action}
         </div>
       )}
 
       {/* Detail drawer, matching the app's existing overlay pattern */}
       {selected && (
-        <div className="absolute inset-y-0 right-0 flex w-[380px] max-w-[85vw] flex-col border-l border-neutral-200 bg-white dark:border-neutral-800 dark:bg-black">
-          <div className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-200 px-6 dark:border-neutral-800">
+        <div className="absolute inset-y-0 right-0 flex w-full max-w-full flex-col border-l border-neutral-200 bg-white dark:border-neutral-800 dark:bg-black sm:w-[380px] sm:max-w-[85vw]">
+          <div className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800 sm:px-6">
             <span className="text-sm font-bold tracking-tight text-black dark:text-white">
               Entry detail
             </span>
@@ -1416,7 +1460,7 @@ function GraphView({
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <DetailPanel entry={selected} />
+            <DetailPanel entry={selected} onBack={onClearSelection} />
           </div>
         </div>
       )}
@@ -1560,17 +1604,17 @@ export default function AuditExplorer() {
   return (
     <div className="flex h-full flex-col bg-white dark:bg-black text-black dark:text-white">
       {/* Top bar */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-6">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 sm:h-14 sm:px-6 sm:py-0">
+        <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-base font-bold tracking-tight text-black dark:text-white">
             Platform Audit
           </span>
-          <span className="mx-1 h-3.5 w-px bg-neutral-200 dark:bg-neutral-800" />
-          <span className="text-xs text-neutral-400 dark:text-neutral-600">
+          <span className="mx-1 hidden h-3.5 w-px bg-neutral-200 dark:bg-neutral-800 sm:block" />
+          <span className="hidden text-xs text-neutral-400 dark:text-neutral-600 sm:inline">
             immutable trail
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-neutral-400 dark:text-neutral-600">
             {count} {count === 1 ? "entry" : "entries"}
           </span>
@@ -1578,7 +1622,7 @@ export default function AuditExplorer() {
           <div className="flex overflow-hidden rounded-lg border border-neutral-300 dark:border-neutral-700">
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-1.5 text-xs font-medium transition ${
+              className={`px-2.5 py-1.5 text-xs font-medium transition sm:px-3 ${
                 viewMode === "list"
                   ? "bg-black text-white dark:bg-white dark:text-black"
                   : "bg-white text-neutral-600 dark:bg-black dark:text-neutral-400"
@@ -1588,7 +1632,7 @@ export default function AuditExplorer() {
             </button>
             <button
               onClick={() => setViewMode("graph")}
-              className={`px-3 py-1.5 text-xs font-medium transition ${
+              className={`px-2.5 py-1.5 text-xs font-medium transition sm:px-3 ${
                 viewMode === "graph"
                   ? "bg-black text-white dark:bg-white dark:text-black"
                   : "bg-white text-neutral-600 dark:bg-black dark:text-neutral-400"
@@ -1600,20 +1644,20 @@ export default function AuditExplorer() {
 
           <button
             onClick={() => setShowRetention(true)}
-            className="px-4 py-2 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-black hover:bg-neutral-50 dark:hover:bg-neutral-900 transition"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-black hover:bg-neutral-50 dark:hover:bg-neutral-900 transition sm:px-4 sm:py-2"
           >
             Retention
           </button>
           <button
             onClick={() => exportCurrent("csv")}
             disabled={exporting}
-            className="px-4 py-2 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-black hover:bg-neutral-50 dark:hover:bg-neutral-900 transition disabled:cursor-not-allowed disabled:opacity-40"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-black hover:bg-neutral-50 dark:hover:bg-neutral-900 transition disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:py-2"
           >
             {exporting ? "Exporting…" : "Export CSV"}
           </button>
           <button
             onClick={() => setRefreshKey((k) => k + 1)}
-            className="px-4 py-2 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-black hover:bg-neutral-50 dark:hover:bg-neutral-900 transition"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 bg-white dark:bg-black hover:bg-neutral-50 dark:hover:bg-neutral-900 transition sm:px-4 sm:py-2"
           >
             Refresh
           </button>
@@ -1622,7 +1666,11 @@ export default function AuditExplorer() {
 
       <div className="flex flex-1 overflow-hidden">
         {viewMode === "list" && (
-          <aside className="flex w-80 shrink-0 flex-col overflow-hidden border-r border-neutral-200 dark:border-neutral-800">
+          <aside
+            className={`${
+              selected ? "hidden md:flex" : "flex"
+            } w-full shrink-0 flex-col overflow-hidden border-r border-neutral-200 dark:border-neutral-800 md:w-80`}
+          >
             <div className="space-y-2 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
               <input
                 type="text"
@@ -1631,13 +1679,13 @@ export default function AuditExplorer() {
                 onChange={(e) => setAction(e.target.value)}
                 className={`w-full ${inputCls}`}
               />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <select
                   value={filterCategory}
                   onChange={(e) =>
                     setFilterCategory(e.target.value as AuditCategory | "all")
                   }
-                  className={`flex-1 ${inputCls}`}
+                  className={`min-w-[8rem] flex-1 ${inputCls}`}
                 >
                   <option value="all">All categories</option>
                   {CATEGORIES.map((c) => (
@@ -1651,7 +1699,7 @@ export default function AuditExplorer() {
                   placeholder="Actor ID"
                   value={actorId}
                   onChange={(e) => setActorId(e.target.value)}
-                  className={`flex-1 ${inputCls}`}
+                  className={`min-w-[8rem] flex-1 ${inputCls}`}
                 />
               </div>
               <input
@@ -1671,34 +1719,34 @@ export default function AuditExplorer() {
 
               {showMoreFilters && (
                 <div className="space-y-2 pt-1">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <input
                       type="text"
                       placeholder="Resource type"
                       value={resourceType}
                       onChange={(e) => setResourceType(e.target.value)}
-                      className={`flex-1 ${inputCls}`}
+                      className={`min-w-[8rem] flex-1 ${inputCls}`}
                     />
                     <input
                       type="text"
                       placeholder="Resource ID"
                       value={resourceId}
                       onChange={(e) => setResourceId(e.target.value)}
-                      className={`flex-1 ${inputCls}`}
+                      className={`min-w-[8rem] flex-1 ${inputCls}`}
                     />
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <input
                       type="date"
                       value={occurredFrom}
                       onChange={(e) => setOccurredFrom(e.target.value)}
-                      className={`flex-1 ${inputCls}`}
+                      className={`min-w-[8rem] flex-1 ${inputCls}`}
                     />
                     <input
                       type="date"
                       value={occurredTo}
                       onChange={(e) => setOccurredTo(e.target.value)}
-                      className={`flex-1 ${inputCls}`}
+                      className={`min-w-[8rem] flex-1 ${inputCls}`}
                     />
                   </div>
                 </div>
@@ -1745,7 +1793,7 @@ export default function AuditExplorer() {
                         </span>
                         <CategoryTag category={e.category} />
                       </div>
-                      <div className="mt-1 flex items-center gap-2">
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
                         <Mono dim>{e.actor_id ?? "system"}</Mono>
                         <span className="text-neutral-300 dark:text-neutral-700">
                           ·
@@ -1786,10 +1834,14 @@ export default function AuditExplorer() {
         )}
 
         {/* Detail / graph panel */}
-        <main className="flex-1 overflow-hidden">
+        <main
+          className={`flex-1 overflow-hidden ${
+            viewMode === "list" && !selected ? "hidden md:block" : "block"
+          }`}
+        >
           {viewMode === "list" ? (
             selected ? (
-              <DetailPanel entry={selected} />
+              <DetailPanel entry={selected} onBack={() => setSelected(null)} />
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-3 select-none">
                 <div className="grid grid-cols-3 gap-1.5 opacity-10 dark:opacity-20">

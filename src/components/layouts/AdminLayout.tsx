@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
   { to: "/admin/payment-settings", label: "Payment Settings", icon: "💳" },
   { to: "/admin/registry", label: "Registry", icon: "◈" },
   { to: "/admin/audit", label: "Audit", icon: "◈" },
-  { to: "/admin/systemspace", label: "System Space", icon: "◈" },
+  // { to: "/admin/systemspace", label: "System Space", icon: "◈" },
 ];
 
 export function AdminLayout() {

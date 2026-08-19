@@ -163,11 +163,11 @@ const IC =
   "w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-black text-black dark:text-white outline-none focus:border-black dark:focus:border-white transition-colors";
 
 const BTN_PRIMARY =
-  "px-5 py-2 text-sm font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 disabled:opacity-50 transition";
+  "px-5 py-2 text-sm font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 disabled:opacity-50 transition whitespace-nowrap";
 const BTN_GHOST =
-  "px-3 py-1 text-[11px] font-medium rounded-md border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300";
+  "px-3 py-1 text-[11px] font-medium rounded-md border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 whitespace-nowrap";
 const BTN_DANGER =
-  "px-3 py-1 text-[11px] font-medium rounded-md border border-neutral-300 dark:border-neutral-700 text-neutral-500 hover:text-black dark:hover:text-white";
+  "px-3 py-1 text-[11px] font-medium rounded-md border border-neutral-300 dark:border-neutral-700 text-neutral-500 hover:text-black dark:hover:text-white whitespace-nowrap";
 const CARD =
   "bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl";
 
@@ -185,9 +185,9 @@ export default function RolePermissionManagementPage() {
   ] as const;
 
   return (
-    <div className="p-8 max-w-[1200px]">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-black dark:text-white m-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-black dark:text-white m-0">
           Roles & Permissions
         </h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
@@ -196,12 +196,12 @@ export default function RolePermissionManagementPage() {
         </p>
       </header>
 
-      <div className="flex gap-1 mb-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-1.5 w-fit">
+      <div className="flex gap-1 mb-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-1.5 w-full sm:w-fit overflow-x-auto no-scrollbar">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
               tab === t.id
                 ? "bg-black text-white dark:bg-white dark:text-black"
                 : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900"
@@ -225,7 +225,7 @@ function ErrorBox({ error }: { error: unknown }) {
   if (!error) return null;
   const msg = error instanceof Error ? error.message : "Request failed.";
   return (
-    <div className="text-sm font-medium text-black dark:text-white border-2 border-black dark:border-white rounded-lg px-3.5 py-2.5 mb-4">
+    <div className="text-sm font-medium text-black dark:text-white border-2 border-black dark:border-white rounded-lg px-3.5 py-2.5 mb-4 break-words">
       {msg}
     </div>
   );
@@ -285,7 +285,7 @@ function RolesTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h2 className="text-lg font-semibold text-black dark:text-white m-0">
           {roles.length} Roles
         </h2>
@@ -345,13 +345,13 @@ function RoleForm({
   const fe = (mut.error as any)?.errors as Record<string, string[]> | undefined;
 
   return (
-    <div className={`${CARD} p-6 mb-4`}>
+    <div className={`${CARD} p-4 sm:p-6 mb-4`}>
       <h3 className="text-base font-semibold text-black dark:text-white mb-4">
         {existing ? "Edit Role" : "Create Role"}
       </h3>
       {!fe && <ErrorBox error={mut.error} />}
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         {!existing && (
           <div className="flex flex-col gap-1.5">
             <label className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
@@ -415,7 +415,7 @@ function RoleForm({
             type="checkbox"
             checked={isSystem}
             onChange={(e) => setIsSystem(e.target.checked)}
-            className="rounded"
+            className="rounded flex-shrink-0"
           />
           <span className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
             System role (platform-level, e.g. carries{" "}
@@ -424,7 +424,7 @@ function RoleForm({
         </label>
       )}
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           onClick={onDone}
           className="px-4 py-2 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
@@ -464,12 +464,12 @@ function RoleCard({
 
   return (
     <div className={`${CARD} overflow-hidden`}>
-      <div className="px-5 py-4 flex items-center justify-between gap-3">
+      <div className="px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
           onClick={onToggle}
-          className="flex items-center gap-3 text-left flex-1 min-w-0"
+          className="flex items-center gap-3 text-left flex-1 min-w-0 flex-wrap"
         >
-          <span className="text-xs text-neutral-400 dark:text-neutral-600 w-3">
+          <span className="text-xs text-neutral-400 dark:text-neutral-600 w-3 flex-shrink-0">
             {expanded ? "▾" : "▸"}
           </span>
           <span className="text-sm font-semibold text-black dark:text-white">
@@ -485,7 +485,7 @@ function RoleCard({
           )}
         </button>
 
-        <div className="flex gap-1.5 flex-shrink-0">
+        <div className="flex gap-1.5 flex-shrink-0 self-start sm:self-auto">
           <button onClick={onEdit} className={BTN_GHOST}>
             Edit
           </button>
@@ -494,7 +494,7 @@ function RoleCard({
               <button
                 onClick={() => delMut.mutate()}
                 disabled={delMut.isPending}
-                className="px-3 py-1 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black"
+                className="px-3 py-1 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black whitespace-nowrap"
               >
                 {delMut.isPending ? "…" : "Confirm"}
               </button>
@@ -514,7 +514,7 @@ function RoleCard({
       </div>
 
       {delMut.error && (
-        <div className="px-5 pb-3">
+        <div className="px-4 sm:px-5 pb-3">
           <ErrorBox error={delMut.error} />
         </div>
       )}
@@ -556,8 +556,8 @@ function RolePermissionEditor({ roleId }: { roleId: string }) {
   }
 
   return (
-    <div className="border-t border-neutral-200 dark:border-neutral-800 p-5 bg-neutral-50 dark:bg-neutral-900">
-      <div className="flex items-center justify-between mb-3">
+    <div className="border-t border-neutral-200 dark:border-neutral-800 p-4 sm:p-5 bg-neutral-50 dark:bg-neutral-900">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <h5 className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide m-0">
           Permissions — click to attach or detach
         </h5>
@@ -607,7 +607,7 @@ function RolePermissionEditor({ roleId }: { roleId: string }) {
         ))}
       </div>
 
-      <p className="text-[11px] font-mono text-neutral-400 dark:text-neutral-600 mt-3 m-0">
+      <p className="text-[11px] font-mono text-neutral-400 dark:text-neutral-600 mt-3 m-0 break-all">
         Role ID: {roleId}
       </p>
     </div>
@@ -646,7 +646,7 @@ function PermissionsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h2 className="text-lg font-semibold text-black dark:text-white m-0">
           {perms.length} Permissions
         </h2>
@@ -721,7 +721,7 @@ function PermissionForm({
   });
 
   return (
-    <div className={`${CARD} p-6 mb-4`}>
+    <div className={`${CARD} p-4 sm:p-6 mb-4`}>
       <h3 className="text-base font-semibold text-black dark:text-white mb-1">
         Create Permission
       </h3>
@@ -732,7 +732,7 @@ function PermissionForm({
       </p>
       <ErrorBox error={mut.error} />
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
             Resource *
@@ -781,7 +781,7 @@ function PermissionForm({
       </div>
 
       {code && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4 break-all">
           Code:{" "}
           <span className="font-mono font-semibold text-black dark:text-white">
             {code}
@@ -789,7 +789,7 @@ function PermissionForm({
         </p>
       )}
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           onClick={onDone}
           className="px-4 py-2 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
@@ -818,13 +818,15 @@ function PermissionRow({ permission: p }: { permission: Permission }) {
   });
 
   return (
-    <div className={`${CARD} px-4 py-3 flex items-center justify-between`}>
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="text-sm font-mono font-medium text-black dark:text-white">
+    <div
+      className={`${CARD} px-4 py-3 flex flex-wrap items-center justify-between gap-2`}
+    >
+      <div className="flex items-center gap-3 min-w-0 flex-wrap">
+        <span className="text-sm font-mono font-medium text-black dark:text-white break-all">
           {p.code}
         </span>
         {p.display_name && p.display_name !== p.code && (
-          <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
             {p.display_name}
           </span>
         )}
@@ -835,7 +837,7 @@ function PermissionRow({ permission: p }: { permission: Permission }) {
             <button
               onClick={() => delMut.mutate()}
               disabled={delMut.isPending}
-              className="px-3 py-1 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black"
+              className="px-3 py-1 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black whitespace-nowrap"
             >
               {delMut.isPending ? "…" : "Delete"}
             </button>
@@ -874,7 +876,7 @@ function ActionsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h2 className="text-lg font-semibold text-black dark:text-white m-0">
           {actions.length} Actions
         </h2>
@@ -937,13 +939,13 @@ function ActionForm({
   });
 
   return (
-    <div className={`${CARD} p-6 mb-4`}>
+    <div className={`${CARD} p-4 sm:p-6 mb-4`}>
       <h3 className="text-base font-semibold text-black dark:text-white mb-4">
         {existing ? "Edit Action" : "Create Action"}
       </h3>
       <ErrorBox error={mut.error} />
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         {!existing && (
           <div className="flex flex-col gap-1.5">
             <label className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
@@ -985,7 +987,7 @@ function ActionForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           onClick={onDone}
           className="px-4 py-2 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
@@ -1020,8 +1022,10 @@ function ActionRow({
   });
 
   return (
-    <div className={`${CARD} px-4 py-3 flex items-center justify-between`}>
-      <div className="flex items-center gap-3">
+    <div
+      className={`${CARD} px-4 py-3 flex flex-wrap items-center justify-between gap-2`}
+    >
+      <div className="flex items-center gap-3 flex-wrap min-w-0">
         <span className="text-sm font-mono font-semibold text-black dark:text-white">
           {action.code}
         </span>
@@ -1029,7 +1033,7 @@ function ActionRow({
           {action.display_name || action.name}
         </span>
       </div>
-      <div className="flex gap-1.5">
+      <div className="flex gap-1.5 flex-shrink-0">
         <button onClick={onEdit} className={BTN_GHOST}>
           Edit
         </button>
@@ -1038,7 +1042,7 @@ function ActionRow({
             <button
               onClick={() => delMut.mutate()}
               disabled={delMut.isPending}
-              className="px-3 py-1 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black"
+              className="px-3 py-1 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black whitespace-nowrap"
             >
               {delMut.isPending ? "…" : "Delete"}
             </button>
@@ -1070,7 +1074,7 @@ function ResourcesTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-1">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-1">
         <h2 className="text-lg font-semibold text-black dark:text-white m-0">
           {resources.length} Resources
         </h2>
@@ -1128,13 +1132,13 @@ function ResourceForm({ onDone }: { onDone: () => void }) {
   });
 
   return (
-    <div className={`${CARD} p-6 mb-4`}>
+    <div className={`${CARD} p-4 sm:p-6 mb-4`}>
       <h3 className="text-base font-semibold text-black dark:text-white mb-4">
         Create Resource
       </h3>
       <ErrorBox error={mut.error} />
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
             Code *
@@ -1184,7 +1188,7 @@ function ResourceForm({ onDone }: { onDone: () => void }) {
             className={IC}
           />
         </div>
-        <div className="col-span-2 flex flex-col gap-1.5">
+        <div className="sm:col-span-2 flex flex-col gap-1.5">
           <label className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
             Description
           </label>
@@ -1197,7 +1201,7 @@ function ResourceForm({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           onClick={onDone}
           className="px-4 py-2 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
@@ -1226,8 +1230,10 @@ function ResourceRow({ resource: r }: { resource: Resource }) {
   });
 
   return (
-    <div className={`${CARD} px-4 py-3 flex items-center justify-between`}>
-      <div className="flex items-center gap-3 min-w-0">
+    <div
+      className={`${CARD} px-4 py-3 flex flex-wrap items-center justify-between gap-2`}
+    >
+      <div className="flex items-center gap-3 min-w-0 flex-wrap">
         <span className="text-sm font-semibold text-black dark:text-white">
           {r.display_name || r.name}
         </span>
@@ -1250,7 +1256,7 @@ function ResourceRow({ resource: r }: { resource: Resource }) {
             <button
               onClick={() => delMut.mutate()}
               disabled={delMut.isPending}
-              className="px-3 py-1 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black"
+              className="px-3 py-1 text-[11px] font-semibold rounded-md bg-black text-white dark:bg-white dark:text-black whitespace-nowrap"
             >
               {delMut.isPending ? "…" : "Delete"}
             </button>
@@ -1331,20 +1337,20 @@ function AssignmentsTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className={`${CARD} p-6`}>
+      <div className={`${CARD} p-4 sm:p-6`}>
         <h3 className="text-sm font-semibold text-black dark:text-white mb-4">
           Select Actor & Container
         </h3>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Actor */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
               Actor
             </label>
             {actor ? (
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-2 text-sm rounded-lg bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white flex-1 truncate">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-2 text-sm rounded-lg bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white flex-1 min-w-0 truncate">
                   {actor.display_name}
                   <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400 ml-2">
                     {actor.code}
@@ -1355,7 +1361,7 @@ function AssignmentsTab() {
                     setActor(null);
                     setActorSearch("");
                   }}
-                  className="text-xs text-neutral-400 hover:text-black dark:hover:text-white px-2"
+                  className="text-xs text-neutral-400 hover:text-black dark:hover:text-white px-2 whitespace-nowrap"
                 >
                   Change
                 </button>
@@ -1399,8 +1405,8 @@ function AssignmentsTab() {
               Container
             </label>
             {container ? (
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-2 text-sm rounded-lg bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white flex-1 truncate">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-2 text-sm rounded-lg bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white flex-1 min-w-0 truncate">
                   {container.display_name}
                   <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400 ml-2">
                     {container.path}
@@ -1408,7 +1414,7 @@ function AssignmentsTab() {
                 </span>
                 <button
                   onClick={() => setContainer(null)}
-                  className="text-xs text-neutral-400 hover:text-black dark:hover:text-white px-2"
+                  className="text-xs text-neutral-400 hover:text-black dark:hover:text-white px-2 whitespace-nowrap"
                 >
                   Change
                 </button>
@@ -1449,12 +1455,12 @@ function AssignmentsTab() {
       </div>
 
       {actor && container && (
-        <div className={`${CARD} p-6`}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-black dark:text-white m-0">
+        <div className={`${CARD} p-4 sm:p-6`}>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h3 className="text-sm font-semibold text-black dark:text-white m-0 break-words">
               {actor.display_name} → {container.display_name}
             </h3>
-            <span className="text-xs text-neutral-400 dark:text-neutral-600">
+            <span className="text-xs text-neutral-400 dark:text-neutral-600 whitespace-nowrap">
               {assignments.length} active role
               {assignments.length !== 1 ? "s" : ""}
             </span>
@@ -1478,9 +1484,9 @@ function AssignmentsTab() {
               return (
                 <div
                   key={a.id}
-                  className="flex items-center justify-between py-2.5 px-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg"
+                  className="flex flex-wrap items-center justify-between gap-2 py-2.5 px-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap min-w-0">
                     <span className="text-sm font-semibold text-black dark:text-white">
                       {role?.display_name ||
                         role?.name ||
@@ -1513,7 +1519,7 @@ function AssignmentsTab() {
 
           <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
             <ErrorBox error={assignMut.error} />
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <select
                 value={roleId}
                 onChange={(e) => setRoleId(e.target.value)}
@@ -1536,7 +1542,7 @@ function AssignmentsTab() {
               <button
                 onClick={() => assignMut.mutate()}
                 disabled={!roleId || assignMut.isPending}
-                className={BTN_PRIMARY}
+                className={`${BTN_PRIMARY} w-full sm:w-auto`}
               >
                 {assignMut.isPending ? "Assigning…" : "Assign"}
               </button>
