@@ -83,6 +83,7 @@ export default function MyEventsPanel({
     return (
       <CreateEventForm
         scope={scope}
+        containerId={scope.type === "container" ? scope.containerId : undefined}
         onClose={() => setCreating(false)}
         onCreated={() => {
           setCreating(false);
