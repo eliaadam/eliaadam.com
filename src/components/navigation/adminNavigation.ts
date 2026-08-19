@@ -24,15 +24,15 @@ import type { NavItem } from "./types";
 
 export const adminNavItems: NavItem[] = [
     { key: "overview", label: "Overview", icon: LayoutDashboard, to: "/admin" },
-    { key: "actors", label: "Actors", icon: Users, to: "/admin/actors" },
+    { key: "actors", label: "Users", icon: Users, to: "/admin/actors" },
     { key: "containers", label: "Containers", icon: Package, to: "/admin/containers" },
     { key: "container-kinds", label: "Container Kinds", icon: Tags, to: "/admin/container-kinds" },
     { key: "container-templates", label: "Templates", icon: ClipboardList, to: "/admin/container-templates" },
     { key: "hierarchy-templates", label: "Hierarchies", icon: Network, to: "/admin/hierarchy-templates" },
     { key: "roles", label: "Roles & Access", icon: KeyRound, to: "/admin/roles" },
-    { key: "subscription-plans", label: "Plans", icon: Ticket, to: "/admin/subscription-plans" },
+    { key: "subscription-plans", label: "Subscriptions Plans", icon: Ticket, to: "/admin/subscription-plans" },
     { key: "subscriptions", label: "Subscriptions", icon: BarChart3, to: "/admin/subscriptions" },
-    { key: "vouchers", label: "Vouchers", icon: TicketPercent, to: "/admin/vouchers" },
+    { key: "vouchers", label: "Vouchers/Tokens", icon: TicketPercent, to: "/admin/vouchers" },
     { key: "questionnaires", label: "Questionnaires", icon: NotebookPen, to: "/admin/questionnaires" },
     { key: "instantiation-requests", label: "Inst. Requests", icon: Inbox, to: "/admin/instantiation-requests" },
     { key: "instantiation-grants", label: "Inst. Grants", icon: Puzzle, to: "/admin/instantiation-grants" },

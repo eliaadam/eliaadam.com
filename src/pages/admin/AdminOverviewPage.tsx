@@ -9,7 +9,9 @@ export default function AdminOverviewPage() {
         <h1 className="text-neutral-500 dark:text-neutral-400 mt-1">
           Welcome back, {actor?.display_name ?? "Admin"}
         </h1>
-        <p>Use navigation to explore available options.</p>
+        <p text-neutral-500 dark:text-neutral-400 mt-1>
+          Use navigation to explore available options.
+        </p>
       </header>
     </div>
   );
