@@ -101,7 +101,7 @@ export default function DashboardSection() {
       {/* Chip navigation */}
       <div className="flex gap-2">
         <Chip active={subTab === "recent"} onClick={() => setSubTab("recent")}>
-          Recent Apps
+          Recent
         </Chip>
         <Chip
           active={subTab === "discover"}
@@ -132,13 +132,13 @@ export default function DashboardSection() {
               >
                 <div className="min-w-0">
                   <span className="text-sm font-medium text-black dark:text-white block truncate">
-                    {c.code}
-                  </span>
-                  <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-600">
                     {c.display_name}
                   </span>
+                  {/* <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-600">
+                    {c.display_name}
+                  </span> */}
                 </div>
-                <span className="text-neutral-400 dark:text-neutral-600 flex-shrink-0 ml-3">
+                <span className="text-neutral-400 dark:text-white flex-shrink-0 ml-3">
                   →
                 </span>
               </button>
