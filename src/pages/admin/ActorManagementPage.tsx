@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type {
@@ -28,19 +28,22 @@ export default function ActorManagementPage() {
     filter === "all" ? actors : actors.filter((a) => a.status === filter);
 
   return (
-    <div className="p-8 max-w-[1100px]">
-      <header className="flex justify-between items-start mb-6">
+    <div className="p-4 sm:p-8 max-w-[1100px] mx-auto">
+      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-black dark:text-white m-0">
-            Actor Management
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-black dark:text-white m-0">
+              Actor Management
+            </h1>
+            <ActorInfoButton />
+          </div>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             {actors.length} actor{actors.length !== 1 ? "s" : ""} registered
           </p>
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition"
+          className="self-start sm:self-auto px-5 py-2.5 text-sm font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 transition"
         >
           {showCreate ? "Cancel" : "+ New Actor"}
         </button>
@@ -49,12 +52,12 @@ export default function ActorManagementPage() {
       {showCreate && <CreateActorForm onCreated={() => setShowCreate(false)} />}
 
       {/* Filters */}
-      <div className="flex gap-1.5 mb-5">
+      <div className="flex gap-1.5 mb-5 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {(["all", "active", "suspended", "retired"] as const).map((s) => (
           <button
             key={s}
             onClick={() => setFilter(s)}
-            className={`px-3.5 py-1.5 text-[13px] font-medium rounded-md border transition ${
+            className={`shrink-0 px-3.5 py-1.5 text-[13px] font-medium rounded-md border transition whitespace-nowrap ${
               filter === s
                 ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
                 : "bg-white dark:bg-black text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800"
@@ -88,32 +91,34 @@ export default function ActorManagementPage() {
 
       {!actorsQuery.isLoading && filtered.length > 0 && (
         <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-                  Display Name
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-                  Code
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-                  Status
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-                  ID
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((actor) => (
-                <ActorRow key={actor.id} actor={actor} />
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse">
+              <thead>
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                    Display Name
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                    Code
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                    Status
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                    ID
+                  </th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((actor) => (
+                  <ActorRow key={actor.id} actor={actor} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -121,6 +126,61 @@ export default function ActorManagementPage() {
         <p className="text-sm text-neutral-400 dark:text-neutral-600 py-10 text-center">
           {filter === "all" ? "No actors found." : `No ${filter} actors.`}
         </p>
+      )}
+    </div>
+  );
+}
+
+function ActorInfoButton() {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label="What is an actor?"
+        className="flex items-center justify-center w-5 h-5 rounded-full border border-neutral-300 dark:border-neutral-600 text-neutral-500 dark:text-neutral-400 text-[11px] font-semibold hover:border-black dark:hover:border-white hover:text-black dark:hover:text-white transition"
+      >
+        i
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-7 z-10 w-72 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-lg p-4">
+          <p className="text-[13px] font-semibold text-black dark:text-white mb-1">
+            What's an actor?
+          </p>
+          <p className="text-[13px] text-neutral-600 dark:text-neutral-400 leading-relaxed m-0">
+            An actor is anything that participates in the system — a human user,
+            an autonomous agent, or an external service.
+          </p>
+        </div>
       )}
     </div>
   );
@@ -158,21 +218,23 @@ function ActorRow({ actor }: { actor: Actor }) {
           <div className="w-[30px] h-[30px] rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center text-[13px] font-semibold flex-shrink-0">
             {actor.display_name?.charAt(0).toUpperCase() ?? "?"}
           </div>
-          <span className="font-medium">{actor.display_name}</span>
+          <span className="font-medium whitespace-nowrap">
+            {actor.display_name}
+          </span>
         </div>
       </td>
-      <td className="px-4 py-3.5 text-sm font-mono text-neutral-500 dark:text-neutral-400">
+      <td className="px-4 py-3.5 text-sm font-mono text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
         {actor.code ?? "—"}
       </td>
-      <td className="px-4 py-3.5 text-sm">
+      <td className="px-4 py-3.5 text-sm whitespace-nowrap">
         <StatusBadge status={actor.status} />
       </td>
-      <td className="px-4 py-3.5 text-xs font-mono text-neutral-500 dark:text-neutral-400">
+      <td className="px-4 py-3.5 text-xs font-mono text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
         {actor.id.slice(0, 8)}…
       </td>
       <td className="px-4 py-3.5 text-right">
         {confirming ? (
-          <div className="flex gap-2 items-center justify-end">
+          <div className="flex gap-2 items-center justify-end whitespace-nowrap">
             <span className="text-[13px] text-neutral-500 dark:text-neutral-400">
               {confirming} {actor.display_name}?
             </span>
@@ -191,7 +253,7 @@ function ActorRow({ actor }: { actor: Actor }) {
             </button>
           </div>
         ) : (
-          <div className="flex gap-1.5 justify-end">
+          <div className="flex gap-1.5 justify-end whitespace-nowrap">
             {availableActions.map((action) => (
               <button
                 key={action}
@@ -309,7 +371,7 @@ function CreateActorForm({ onCreated }: { onCreated: () => void }) {
     "w-full px-3 py-2 text-sm rounded-lg border bg-white dark:bg-black text-black dark:text-white outline-none focus:border-black dark:focus:border-white transition-colors";
 
   return (
-    <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 mb-6">
+    <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 sm:p-6 mb-6">
       <h3 className="text-base font-semibold text-black dark:text-white mb-4">
         Create New Actor
       </h3>
@@ -320,7 +382,7 @@ function CreateActorForm({ onCreated }: { onCreated: () => void }) {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-[13px] font-medium text-neutral-700 dark:text-neutral-300">
             Display Name *
@@ -381,7 +443,7 @@ function CreateActorForm({ onCreated }: { onCreated: () => void }) {
         <button
           onClick={() => createMutation.mutate()}
           disabled={createMutation.isPending || !displayName || !typeId}
-          className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 disabled:opacity-50 transition"
+          className="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold rounded-lg bg-black text-white dark:bg-white dark:text-black hover:opacity-90 disabled:opacity-50 transition"
         >
           {createMutation.isPending ? "Creating…" : "Create Actor"}
         </button>
