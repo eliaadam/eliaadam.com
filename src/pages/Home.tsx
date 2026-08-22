@@ -7,20 +7,29 @@
  * <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
  *
  * Pure black / white / grayscale, Tailwind CSS only.
- * Supports light and dark mode via Tailwind's `dark:` variant
- * (requires darkMode: 'class' or 'media' in your tailwind.config).
- * No other dependencies required.
+ * Light mode = white background everywhere. Dark mode = black background
+ * everywhere. No section forces the opposite theme's colors — sections are
+ * only ever distinguished with borders and low-opacity tints, not swapped
+ * backgrounds, so nothing goes "dark" while the page is in light mode.
+ *
+ * Interactivity is kept deliberately cheap: transform/opacity-only CSS
+ * animations (GPU-composited), a single rAF-throttled pointer listener for
+ * hero parallax, and IntersectionObserver-driven one-shot reveals — nothing
+ * that recalculates layout on every frame.
  */
 
 import React, { useEffect, useRef, useState } from "react";
 
-function useInView<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null);
+function useInView<T extends Element>() {
+  const [element, setElement] = useState<T | null>(null);
   const [inView, setInView] = useState(false);
 
+  const ref = React.useCallback((node: T | null) => {
+    setElement(node);
+  }, []);
+
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    if (!element) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -30,9 +39,9 @@ function useInView<T extends HTMLElement>() {
       },
       { threshold: 0.15 },
     );
-    observer.observe(el);
+    observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [element]);
 
   return { ref, inView };
 }
@@ -60,37 +69,182 @@ function Reveal({
   );
 }
 
-// A row of tilled-soil furrows — the page's recurring signature motif.
-// Reads as both a farmed field and, at a glance, rows of data.
-function FurrowField({ className = "" }: { className?: string }) {
+// Furrow rows that draw themselves in once scrolled into view — reads as
+// both tilled soil and rows of data. Pure stroke-dashoffset transition,
+// cheap and GPU-friendly.
+function FurrowField({
+  className = "",
+  svgRef,
+}: {
+  className?: string;
+  svgRef?: React.Ref<SVGSVGElement>;
+}) {
+  const { ref, inView } = useInView<SVGSVGElement>();
+  const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
+  const rows = 9;
+
+  React.useImperativeHandle(svgRef, () => svgNode!, [svgNode]);
+
+  const handleRef = React.useCallback(
+    (node: SVGSVGElement | null) => {
+      ref(node);
+      setSvgNode(node);
+    },
+    [ref],
+  );
+
   return (
     <svg
+      ref={handleRef}
       viewBox="0 0 800 200"
       preserveAspectRatio="none"
       className={className}
       aria-hidden="true"
     >
-      {Array.from({ length: 9 }).map((_, i) => (
+      {Array.from({ length: rows }).map((_, i) => (
         <path
           key={i}
           d={`M0 ${20 + i * 20} Q 200 ${5 + i * 20} 400 ${20 + i * 20} T 800 ${20 + i * 20}`}
           fill="none"
           stroke="currentColor"
           strokeWidth="1"
-          opacity={0.5 - i * 0.03}
+          opacity={0.55 - i * 0.03}
+          pathLength={1}
+          strokeDasharray={1}
+          strokeDashoffset={inView ? 0 : 1}
+          style={{
+            transition: "stroke-dashoffset 1.4s ease-out",
+            transitionDelay: `${i * 60}ms`,
+          }}
         />
       ))}
     </svg>
   );
 }
 
-// A plain sun mark — concentric rings, no color, just weight and contrast.
+// A concentric sun mark. The outer ring is a dashed circle that spins
+// slowly and continuously — a single cheap CSS transform: rotate() animation,
+// paused for reduced-motion users.
 function Sun() {
   return (
-    <div className="relative h-16 w-16 shrink-0 sm:h-20 sm:w-20">
-      <div className="absolute inset-0 rounded-full bg-black dark:bg-white" />
-      <div className="absolute inset-[22%] rounded-full bg-white dark:bg-black" />
-      <div className="absolute inset-[38%] rounded-full bg-black dark:bg-white" />
+    <div className="group relative h-16 w-16 shrink-0 sm:h-20 sm:w-20">
+      <svg
+        viewBox="0 0 100 100"
+        className="absolute inset-0 h-full w-full animate-[spin-slow_18s_linear_infinite] text-black/25 transition-colors duration-300 group-hover:text-black/60 motion-reduce:animate-none dark:text-white/25 dark:group-hover:text-white/60"
+        aria-hidden="true"
+      >
+        <circle
+          cx="50"
+          cy="50"
+          r="47"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="6 10"
+        />
+      </svg>
+      <div className="absolute inset-[14%] rounded-full bg-black transition-transform duration-500 group-hover:scale-105 dark:bg-white" />
+      <div className="absolute inset-[34%] rounded-full bg-white dark:bg-black" />
+      <div className="absolute inset-[46%] rounded-full bg-black dark:bg-white" />
+    </div>
+  );
+}
+
+// A hand-drawn ascending line — the "growth" signature. Draws in once,
+// on scroll, via stroke-dashoffset; nodes fade in staggered after.
+function GrowthLine({ className = "" }: { className?: string }) {
+  const { ref, inView } = useInView<SVGSVGElement>();
+  const points = [
+    [0, 90],
+    [60, 78],
+    [130, 82],
+    [200, 55],
+    [270, 60],
+    [340, 30],
+    [400, 15],
+  ];
+  const d = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p[0]} ${p[1]}`)
+    .join(" ");
+  return (
+    <svg
+      ref={ref}
+      viewBox="0 0 400 100"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d={d}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength={1}
+        strokeDasharray={1}
+        strokeDashoffset={inView ? 0 : 1}
+        style={{ transition: "stroke-dashoffset 1.6s ease-out" }}
+      />
+      {points.map(([x, y], i) => (
+        <circle
+          key={i}
+          cx={x}
+          cy={y}
+          r={3}
+          fill="currentColor"
+          style={{
+            opacity: inView ? 1 : 0,
+            transition: "opacity 0.4s ease-out",
+            transitionDelay: `${300 + i * 140}ms`,
+          }}
+        />
+      ))}
+    </svg>
+  );
+}
+
+// A card that tilts gently toward the cursor. Listener is scoped to the
+// card itself and only writes a CSS custom property + transform — no
+// layout reads/writes beyond getBoundingClientRect on move.
+function TiltCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const frame = useRef<number | null>(null);
+
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (!el) return;
+    if (frame.current) cancelAnimationFrame(frame.current);
+    const { clientX, clientY } = e;
+    frame.current = requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect();
+      const px = (clientX - rect.left) / rect.width - 0.5;
+      const py = (clientY - rect.top) / rect.height - 0.5;
+      el.style.setProperty("--tiltX", `${(-py * 6).toFixed(2)}deg`);
+      el.style.setProperty("--tiltY", `${(px * 6).toFixed(2)}deg`);
+    });
+  };
+
+  const handleLeave = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.setProperty("--tiltX", "0deg");
+    el.style.setProperty("--tiltY", "0deg");
+  };
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      className={`[transform:perspective(800px)_rotateX(var(--tiltX,0deg))_rotateY(var(--tiltY,0deg))] transition-transform duration-200 ease-out will-change-transform motion-reduce:!transform-none ${className}`}
+    >
+      {children}
     </div>
   );
 }
@@ -167,11 +321,52 @@ const goals = [
 // ---------------------------------------------------------------------------
 
 export default function Home() {
+  // Subtle hero parallax: furrow field drifts a few px against the cursor.
+  // Single listener, rAF-throttled, transform-only — cheap even on low-end
+  // devices, and skipped entirely for reduced-motion users.
+  const heroRef = useRef<HTMLDivElement>(null);
+  const heroFieldRef = useRef<SVGSVGElement>(null);
+  const heroFrame = useRef<number | null>(null);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (prefersReduced) return;
+
+    const section = heroRef.current;
+    const field = heroFieldRef.current;
+    if (!section || !field) return;
+
+    const onMove = (e: MouseEvent) => {
+      if (heroFrame.current) cancelAnimationFrame(heroFrame.current);
+      heroFrame.current = requestAnimationFrame(() => {
+        const rect = section.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width - 0.5;
+        field.style.transform = `translateX(${(px * 10).toFixed(1)}px)`;
+      });
+    };
+
+    section.addEventListener("mousemove", onMove);
+    return () => {
+      section.removeEventListener("mousemove", onMove);
+      if (heroFrame.current) cancelAnimationFrame(heroFrame.current);
+    };
+  }, []);
+
   return (
     <div
       className="bg-white text-black antialiased dark:bg-black dark:text-white"
       style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
+      {/* Custom keyframes not covered by default Tailwind utilities. */}
+      <style>{`
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+
       {/* ---------------------------------------------------------------- */}
       {/* NAV                                                              */}
       {/* ---------------------------------------------------------------- */}
@@ -184,31 +379,25 @@ export default function Home() {
             MaishaSoft
           </span>
           <nav className="hidden gap-8 text-sm font-medium text-black/70 dark:text-white/70 sm:flex">
-            <a
-              href="#vision"
-              className="hover:text-black dark:hover:text-white"
-            >
-              Vision
-            </a>
-            <a
-              href="#agriculture"
-              className="hover:text-black dark:hover:text-white"
-            >
-              Agriculture
-            </a>
-            <a
-              href="#values"
-              className="hover:text-black dark:hover:text-white"
-            >
-              Values
-            </a>
-            <a href="#story" className="hover:text-black dark:hover:text-white">
-              Our story
-            </a>
+            {[
+              ["#vision", "Vision"],
+              ["#agriculture", "Agriculture"],
+              ["#values", "Values"],
+              ["#story", "Our story"],
+            ].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="group relative py-1 hover:text-black dark:hover:text-white"
+              >
+                {label}
+                <span className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-black transition-transform duration-300 ease-out group-hover:scale-x-100 dark:bg-white" />
+              </a>
+            ))}
           </nav>
           <a
             href="#agriculture"
-            className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 dark:bg-white dark:text-black"
+            className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 dark:bg-white dark:text-black"
           >
             See the mission
           </a>
@@ -218,8 +407,14 @@ export default function Home() {
       {/* ---------------------------------------------------------------- */}
       {/* HERO                                                             */}
       {/* ---------------------------------------------------------------- */}
-      <section className="relative overflow-hidden border-b border-black/10 dark:border-white/10">
-        <FurrowField className="pointer-events-none absolute -bottom-6 left-0 h-40 w-full text-black/10 dark:text-white/10 sm:h-56" />
+      <section
+        ref={heroRef}
+        className="relative overflow-hidden border-b border-black/10 dark:border-white/10"
+      >
+        <FurrowField
+          svgRef={heroFieldRef}
+          className="pointer-events-none absolute -bottom-6 left-0 h-40 w-full text-black/10 transition-transform duration-300 ease-out dark:text-white/10 sm:h-56"
+        />
 
         <div className="relative mx-auto max-w-6xl px-5 pb-24 pt-16 sm:px-8 sm:pt-24 md:pt-28">
           <Reveal>
@@ -298,14 +493,15 @@ export default function Home() {
       {/* ---------------------------------------------------------------- */}
       {/* AGRICULTURE / GOALS                                              */}
       {/* ---------------------------------------------------------------- */}
+      {/* Tinted with low-opacity black/white only — never a hard-coded    */}
+      {/* opposite-theme background, so light mode always stays light.    */}
       <section
         id="agriculture"
-        className="relative border-b border-black/10 bg-black text-white dark:border-white/10 dark:bg-white dark:text-black"
+        className="relative border-b border-black/10 bg-black/[0.03] dark:border-white/10 dark:bg-white/[0.04]"
       >
-        <FurrowField className="pointer-events-none absolute inset-x-0 top-0 h-32 w-full text-white/10 dark:text-black/10" />
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 md:py-28">
           <Reveal>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50 dark:text-black/50">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-black/50 dark:text-white/50">
               Our goal
             </p>
           </Reveal>
@@ -318,19 +514,23 @@ export default function Home() {
             </h2>
           </Reveal>
           <Reveal delay={140}>
-            <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/70 dark:text-black/70 sm:text-lg">
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-black/70 dark:text-white/70 sm:text-lg">
               Agriculture is the backbone of the economy across much of East
               Africa, yet it's often the last sector to benefit from technology.
               MaishaSoft is here to change that.
             </p>
           </Reveal>
 
-          <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-white/15 bg-white/15 dark:border-black/15 dark:bg-black/15 sm:grid-cols-2">
+          <Reveal delay={180}>
+            <GrowthLine className="mt-10 h-20 w-full max-w-md text-black/70 dark:text-white/70" />
+          </Reveal>
+
+          <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-black/10 bg-black/10 dark:border-white/10 dark:bg-white/10 sm:grid-cols-2">
             {goals.map((goal, i) => (
               <Reveal key={i} delay={i * 60}>
-                <div className="h-full bg-black p-6 dark:bg-white sm:p-8">
-                  <span className="mb-4 inline-block h-2 w-2 rounded-full bg-white dark:bg-black" />
-                  <p className="text-sm leading-relaxed text-white/85 dark:text-black/85 sm:text-base">
+                <div className="h-full bg-white p-6 dark:bg-black sm:p-8">
+                  <span className="mb-4 inline-block h-2 w-2 rounded-full bg-black dark:bg-white" />
+                  <p className="text-sm leading-relaxed text-black/80 dark:text-white/80 sm:text-base">
                     {goal}
                   </p>
                 </div>
@@ -362,23 +562,25 @@ export default function Home() {
           <div className="mt-14 grid gap-6 sm:grid-cols-2">
             {strategicVision.map((item, i) => (
               <Reveal key={item.letter} delay={i * 80}>
-                <div className="group h-full rounded-2xl border border-black/10 p-6 transition-colors hover:border-black/30 dark:border-white/10 dark:hover:border-white/30 sm:p-8">
-                  <div className="flex items-start justify-between">
-                    <span className="font-mono text-sm font-semibold text-black/60 dark:text-white/60">
-                      {item.letter}
-                    </span>
-                    <span className="h-1.5 w-1.5 rounded-full bg-black transition-transform group-hover:scale-150 dark:bg-white" />
+                <TiltCard>
+                  <div className="group h-full rounded-2xl border border-black/10 p-6 transition-colors hover:border-black/30 dark:border-white/10 dark:hover:border-white/30 sm:p-8">
+                    <div className="flex items-start justify-between">
+                      <span className="font-mono text-sm font-semibold text-black/60 dark:text-white/60">
+                        {item.letter}
+                      </span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-black transition-transform duration-300 group-hover:scale-150 dark:bg-white" />
+                    </div>
+                    <h3
+                      className="mt-4 text-lg font-semibold leading-snug sm:text-xl"
+                      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                    >
+                      {item.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-black/65 dark:text-white/65 sm:text-base">
+                      {item.body}
+                    </p>
                   </div>
-                  <h3
-                    className="mt-4 text-lg font-semibold leading-snug sm:text-xl"
-                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                  >
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-black/65 dark:text-white/65 sm:text-base">
-                    {item.body}
-                  </p>
-                </div>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -410,22 +612,24 @@ export default function Home() {
           <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {values.map((v, i) => (
               <Reveal key={v.letter} delay={i * 60}>
-                <div className="h-full rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/10 dark:bg-black dark:ring-white/10">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black font-mono text-xs font-semibold text-white dark:bg-white dark:text-black">
-                      {v.letter}
-                    </span>
-                    <h3
-                      className="text-base font-semibold sm:text-lg"
-                      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                    >
-                      {v.title}
-                    </h3>
+                <TiltCard>
+                  <div className="h-full rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/10 transition-shadow duration-300 hover:shadow-md dark:bg-black dark:ring-white/10">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black font-mono text-xs font-semibold text-white transition-transform duration-300 hover:rotate-12 dark:bg-white dark:text-black">
+                        {v.letter}
+                      </span>
+                      <h3
+                        className="text-base font-semibold sm:text-lg"
+                        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                      >
+                        {v.title}
+                      </h3>
+                    </div>
+                    <p className="mt-4 text-sm leading-relaxed text-black/65 dark:text-white/65">
+                      {v.body}
+                    </p>
                   </div>
-                  <p className="mt-4 text-sm leading-relaxed text-black/65 dark:text-white/65">
-                    {v.body}
-                  </p>
-                </div>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
@@ -501,7 +705,7 @@ export default function Home() {
       {/* ---------------------------------------------------------------- */}
       {/* FOOTER                                                           */}
       {/* ---------------------------------------------------------------- */}
-      <footer className="bg-black text-white dark:bg-white dark:text-black">
+      <footer className="bg-white text-black dark:bg-black dark:text-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-16 sm:flex-row sm:items-end sm:justify-between sm:px-8">
           <div>
             <span
@@ -510,26 +714,26 @@ export default function Home() {
             >
               MaishaSoft
             </span>
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/60 dark:text-black/60">
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-black/60 dark:text-white/60">
               Make life simple. Make life safe.
             </p>
           </div>
-          <div className="flex gap-6 text-sm text-white/60 dark:text-black/60">
+          <div className="flex gap-6 text-sm text-black/60 dark:text-white/60">
             <a
               href="#vision"
-              className="hover:text-white dark:hover:text-black"
+              className="hover:text-black dark:hover:text-white"
             >
               Vision
             </a>
             <a
               href="#agriculture"
-              className="hover:text-white dark:hover:text-black"
+              className="hover:text-black dark:hover:text-white"
             >
               Agriculture
             </a>
             <a
               href="#values"
-              className="hover:text-white dark:hover:text-black"
+              className="hover:text-black dark:hover:text-white"
             >
               Values
             </a>
