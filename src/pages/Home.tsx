@@ -18,18 +18,19 @@
  * that recalculates layout on every frame.
  */
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 function useInView<T extends Element>() {
-  const [element, setElement] = useState<T | null>(null);
+  const elementRef = useRef<T | null>(null);
   const [inView, setInView] = useState(false);
 
-  const ref = React.useCallback((node: T | null) => {
-    setElement(node);
+  const ref = useCallback((node: T | null) => {
+    elementRef.current = node;
   }, []);
 
   useEffect(() => {
-    if (!element) return;
+    const el = elementRef.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -39,9 +40,9 @@ function useInView<T extends Element>() {
       },
       { threshold: 0.15 },
     );
-    observer.observe(element);
+    observer.observe(el);
     return () => observer.disconnect();
-  }, [element]);
+  }, []);
 
   return { ref, inView };
 }
@@ -55,10 +56,10 @@ function Reveal({
   className?: string;
   delay?: number;
 }) {
-  const { ref, inView } = useInView<HTMLDivElement>();
+  const { ref: refRef, inView } = useInView<HTMLDivElement>();
   return (
     <div
-      ref={ref}
+      ref={refRef}
       className={`transition-all duration-700 ease-out motion-reduce:transition-none motion-reduce:transform-none ${
         inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
       } ${className}`}
@@ -77,25 +78,18 @@ function FurrowField({
   svgRef,
 }: {
   className?: string;
-  svgRef?: React.Ref<SVGSVGElement>;
+  svgRef?: React.RefCallback<SVGSVGElement>;
 }) {
-  const { ref, inView } = useInView<SVGSVGElement>();
-  const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
+  const { ref: refRef, inView } = useInView<SVGSVGElement>();
   const rows = 9;
-
-  React.useImperativeHandle(svgRef, () => svgNode!, [svgNode]);
-
-  const handleRef = React.useCallback(
-    (node: SVGSVGElement | null) => {
-      ref(node);
-      setSvgNode(node);
-    },
-    [ref],
-  );
-
   return (
     <svg
-      ref={handleRef}
+      ref={(node) => {
+        // Feed the same DOM node to the internal inView tracker and to
+        // any externally-supplied ref (used for the hero parallax).
+        refRef(node);
+        svgRef?.(node);
+      }}
       viewBox="0 0 800 200"
       preserveAspectRatio="none"
       className={className}
@@ -256,23 +250,23 @@ function TiltCard({
 const strategicVision = [
   {
     letter: "a",
-    title: "Strengthen the management of agricultural production",
-    body: "Build systems that give farmers, cooperatives, institutions, and agribusinesses the ability to manage their records accurately, plan production, and follow market trends.",
+    title: "Strengthen the management of everyday operations",
+    body: "Build systems that give teams, cooperatives, institutions, and businesses the ability to manage their records accurately, plan operations, and follow market trends.",
   },
   {
     letter: "b",
-    title: "Add value across the entire agricultural chain",
-    body: "Our solutions are never built for farmers alone — they reach processors, buyers, distributors, and policymakers, strengthening the full value chain.",
+    title: "Add value across the entire chain",
+    body: "Our solutions are never built for one link alone — they reach producers, buyers, distributors, and decision-makers, strengthening the chain end to end.",
   },
   {
     letter: "c",
-    title: "Help agriculture modernize and go digital",
-    body: "We're accelerating the shift from traditional methods toward decisions driven by accurate data — raising yields, cutting costs, and reducing unpredictable risk.",
+    title: "Help every sector modernize and go digital",
+    body: "We're accelerating the shift from manual methods toward decisions driven by accurate data — raising output, cutting costs, and reducing unpredictable risk.",
   },
   {
     letter: "d",
-    title: "Lay the groundwork to expand into new sectors",
-    body: "Agriculture comes first, but the strategy is built to carry the same principles — simplicity, quality, and security — into health, education, commerce, transport, and beyond.",
+    title: "Carry the same standard into every sector we enter",
+    body: "Wherever we build next, the same principles travel with us — simplicity, quality, and security — so the standard never changes, only the industry does.",
   },
 ];
 
@@ -310,10 +304,10 @@ const values = [
 ];
 
 const goals = [
-  "Build and deliver apps that help farmers increase output through timely information — weather, markets, inputs, and best practice.",
-  "Widen access to real data so producers and traders can make sound decisions.",
-  "Help agricultural stakeholders — cooperatives, companies, and farmer groups — use modern systems to manage resources, sales, production, and supply.",
-  "Increase returns for farmers of every size through friendly, secure, affordable systems that make tracking their operations easy.",
+  "Build systems that move goods, services, and information faster and more reliably — cutting the delay out of logistics, wherever it shows up.",
+  "Build secure, transparent financial tools that let businesses and individuals transact, track, and grow with confidence.",
+  "Widen access to real data and real services so decisions get made accurately and on time, no matter where people are.",
+  "Give every organization — small or large, in any sector — friendly, secure, affordable systems that make managing operations easy.",
 ];
 
 // ---------------------------------------------------------------------------
@@ -325,7 +319,10 @@ export default function Home() {
   // Single listener, rAF-throttled, transform-only — cheap even on low-end
   // devices, and skipped entirely for reduced-motion users.
   const heroRef = useRef<HTMLDivElement>(null);
-  const heroFieldRef = useRef<SVGSVGElement>(null);
+  const heroFieldNodeRef = useRef<SVGSVGElement>(null);
+  const heroFieldRef = useCallback((node: SVGSVGElement | null) => {
+    heroFieldNodeRef.current = node;
+  }, []);
   const heroFrame = useRef<number | null>(null);
 
   useEffect(() => {
@@ -335,7 +332,7 @@ export default function Home() {
     if (prefersReduced) return;
 
     const section = heroRef.current;
-    const field = heroFieldRef.current;
+    const field = heroFieldNodeRef.current;
     if (!section || !field) return;
 
     const onMove = (e: MouseEvent) => {
@@ -381,7 +378,7 @@ export default function Home() {
           <nav className="hidden gap-8 text-sm font-medium text-black/70 dark:text-white/70 sm:flex">
             {[
               ["#vision", "Vision"],
-              ["#agriculture", "Agriculture"],
+              ["#focus", "Focus"],
               ["#values", "Values"],
               ["#story", "Our story"],
             ].map(([href, label]) => (
@@ -396,7 +393,7 @@ export default function Home() {
             ))}
           </nav>
           <a
-            href="#agriculture"
+            href="#focus"
             className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 dark:bg-white dark:text-black"
           >
             See the mission
@@ -496,13 +493,13 @@ export default function Home() {
       {/* Tinted with low-opacity black/white only — never a hard-coded    */}
       {/* opposite-theme background, so light mode always stays light.    */}
       <section
-        id="agriculture"
+        id="focus"
         className="relative border-b border-black/10 bg-black/[0.03] dark:border-white/10 dark:bg-white/[0.04]"
       >
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 md:py-28">
           <Reveal>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-black/50 dark:text-white/50">
-              Our goal
+              Our focus
             </p>
           </Reveal>
           <Reveal delay={80}>
@@ -510,14 +507,18 @@ export default function Home() {
               className="mt-4 max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              Helping agriculture grow, one digital solution at a time.
+              Better logistics, finance, and availability — in every sector we
+              touch.
             </h2>
           </Reveal>
           <Reveal delay={140}>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-black/70 dark:text-white/70 sm:text-lg">
-              Agriculture is the backbone of the economy across much of East
-              Africa, yet it's often the last sector to benefit from technology.
-              MaishaSoft is here to change that.
+              Almost every industry runs into the same three frictions: things
+              don't move quickly enough, money doesn't move safely enough, and
+              people can't always reach what they need when they need it.
+              MaishaSoft builds innovative solutions, products, and services
+              that go directly at that — simple, safe, and better, regardless of
+              the industry.
             </p>
           </Reveal>
 
@@ -670,32 +671,33 @@ export default function Home() {
                 efficiency.
               </p>
               <p>
-                In this first stage of the journey, MaishaSoft has built a
-                strategy directed at agriculture — a sector that has long
-                carried the economy, yet has often been left behind when it
-                comes to technology. Here, we see a real opportunity to bring
-                change through digital systems that help farmers, institutions
-                and every stakeholder make decisions from good data, manage
-                production well, reach markets easily, and cut waste.
+                We build innovative solutions, products, and services aimed at
+                what nearly every sector struggles with: moving things
+                efficiently, moving money safely, and making sure people can
+                actually get what they need, when they need it. Whatever
+                industry we're building for — from the smallest operation to the
+                largest institution — the same standard applies: better
+                logistics, better finance, better availability.
               </p>
               <p>
                 These solutions are meant to strip away the everyday difficulty
-                of a farmer's work and add security to their information and
+                of doing business and add security to people's information and
                 operations — a direct line back to our core purpose: to make
                 human life simple and safe.
               </p>
               <p>
                 At the same time, we keep building on a foundation of quality,
-                innovation, security, and simplicity — values that will stay our
-                backbone even as we move into new sectors. Our long-term vision,
-                to make technology simple, good, and safe, is the light guiding
-                MaishaSoft's journey toward solutions that will, in time, reach
-                far beyond agriculture.
+                innovation, security, and simplicity — values that stay our
+                backbone no matter which sector we enter next. Our long-term
+                vision, to make technology simple, good, and safe, is the light
+                guiding MaishaSoft's journey across every industry technology
+                can reach.
               </p>
               <p className="font-medium text-black dark:text-white">
                 Together, our purpose, vision, and goal tell one clear story:
-                MaishaSoft exists to strengthen life, grow production, and build
-                an economic future rooted in knowledge and secure technology.
+                MaishaSoft exists to strengthen everyday life, grow every sector
+                we touch, and build an economic future rooted in knowledge and
+                secure technology.
               </p>
             </div>
           </Reveal>
@@ -725,11 +727,8 @@ export default function Home() {
             >
               Vision
             </a>
-            <a
-              href="#agriculture"
-              className="hover:text-black dark:hover:text-white"
-            >
-              Agriculture
+            <a href="#focus" className="hover:text-black dark:hover:text-white">
+              Focus
             </a>
             <a
               href="#values"
