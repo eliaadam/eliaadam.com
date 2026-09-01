@@ -1,186 +1,93 @@
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthGuard, GuestGuard } from "./components/AuthGuard";
-import { AdminGuard } from "./components/AdminGuard";
-import ContainerKindManagementPage from "./pages/admin/ContainerKindManagementPage";
-import ContainerTemplateManagementPage from "./pages/admin/ContainerTemplateManagementPage";
-import HierarchyTemplateManagementPage from "./pages/admin/HierarchyTemplateManagementPage";
+import "./App.css";
+import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "./components/context/Authcontext";
+import { ThemeProvider, ThemeToggle } from "./components/context/ThemeContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { DashboardLayout } from "./components/layout/Dashboardlayout";
+import { Signin } from "./page/Signin";
+import { Signup } from "./page/Signup";
+import { Recent } from "./page/dashboard/Recent";
+import { Profile } from "./page/dashboard/Profile";
+import { queryClient } from "./lib/query/Queryclient";
 
-const ContainerWorkspacePage = lazy(
-  () => import("./pages/user/ContainerWorkspacePage"),
-);
+const domains = [
+  "Container",
+  "Authority",
+  "Registry",
+  "Capability",
+  "Ownership",
+];
 
-const RolePermissionManagementPage = lazy(
-  () => import("./pages/admin/RolePermissionManagementPage"),
-);
-
-import HomePage from "./pages/HomePage";
-import AuditExplorer from "./pages/admin/AuditExplorer";
-import SystemSpace from "./pages/admin/SystemSpace";
-import PublicPayPage from "./pages/PublicPayPage";
-import { PaymentSettingsPage } from "./pages/user/PaymentSettingsPage";
-import { KycReviewPage } from "./pages/admin/KycReviewPage";
-import { PayoutsAdminPage } from "./pages/admin/PayoutsAdminPage";
-import { InstantiationRulesPage } from "./pages/admin/InstantiationRulesPage";
-import { SubscriptionPlansPage } from "./pages/admin/SubscriptionPlansPage";
-import { VouchersPage } from "./pages/admin/VouchersPage";
-import { SubscriptionsAdminPage } from "./pages/admin/SubscriptionsAdminPage";
-import { QuestionnairesPage } from "./pages/user/panels/QuestionnairesPage";
-import { InstantiationRequestsPage } from "./pages/user/panels/InstantiationRequestsPage";
-import LoginPage from "./pages/LoginPage";
-import ContainerManagementPage from "./pages/admin/containers/ContainerManagementPage";
-import { HomeSectionLayout } from "./components/layouts/HomeSectionLayout";
-import { AdminSectionLayout } from "./components/layouts/AdminSectionLayout";
-import CapabilityRegistryWorkspace from "./pages/admin/registry/CapabilityRegistryWorkspace";
-import Home from "./pages/Home";
-
-const PublicSlugPage = lazy(() => import("./pages/PublicSlugPage"));
-
-const SignupPage = lazy(() => import("./pages/SignupPage"));
-
-const AdminOverviewPage = lazy(() => import("./pages/admin/AdminOverviewPage"));
-const ActorManagementPage = lazy(
-  () => import("./pages/admin/ActorManagementPage"),
-);
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: false,
-    },
-  },
-});
-
-function PageLoader() {
+function Home() {
   return (
-    <div style={styles.loader}>
-      <div style={styles.spinner} />
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
+        <span className="text-sm font-semibold tracking-tight">Maicore</span>
+        <ThemeToggle />
+      </header>
+
+      <main className="mx-auto flex max-w-2xl flex-col items-start px-6 pt-16 pb-24 sm:pt-24">
+        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+          One platform, built domain by domain.
+        </h1>
+        <p className="mt-5 max-w-md text-base leading-relaxed text-slate-600 dark:text-slate-400">
+          Containers, authorization, and a shared catalogue — designed as
+          separate, well-defined pieces instead of one sprawling application.
+        </p>
+
+        <div className="mt-9 flex items-center gap-3">
+          <Link
+            to="/signup"
+            className="rounded-md bg-teal-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400"
+          >
+            Create account
+          </Link>
+          <Link
+            to="/signin"
+            className="rounded-md px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
+          >
+            Sign in
+          </Link>
+        </div>
+
+        <ul className="mt-16 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-500">
+          {domains.map((domain) => (
+            <li key={domain}>{domain}</li>
+          ))}
+        </ul>
+      </main>
     </div>
   );
 }
 
-export default function App() {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Guest routes */}
-            <Route path="/" element={<Home />} />
-            <Route element={<GuestGuard />}>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-            </Route>
-            {/* PUBLIC — pay a link with no account. Keep it out of every guard. */}
-            <Route path="/pay/:slug" element={<PublicPayPage />} />
-            {/* Authenticated routes (inside MainLayout) */}
-            <Route element={<AuthGuard />}>
-              <Route element={<HomeSectionLayout />}>
-                <Route path="/home" element={<HomePage />} />
-
-                <Route
-                  path="/u/workspace/:containerId"
-                  element={<ContainerWorkspacePage />}
-                />
-                <Route
-                  path="/u/workspace/:containerId/:panel"
-                  element={<ContainerWorkspacePage />}
-                />
-                <Route
-                  path="/:slug/:panel"
-                  element={<ContainerWorkspacePage />}
-                />
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/signin" element={<Signin />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Recent />} />
+                <Route path="profile" element={<Profile />} />
               </Route>
-            </Route>
-
-            {/* Admin routes — requires auth + system.admin */}
-            <Route element={<AdminGuard />}>
-              <Route element={<AdminSectionLayout />}>
-                <Route
-                  path="/admin/roles"
-                  element={<RolePermissionManagementPage />}
-                />
-                <Route
-                  path="/admin/questionnaires"
-                  element={<QuestionnairesPage />}
-                />
-                <Route
-                  path="/admin/instantiation-requests"
-                  element={<InstantiationRequestsPage />}
-                />
-                <Route path="/admin" element={<AdminOverviewPage />} />
-                <Route path="/admin/actors" element={<ActorManagementPage />} />
-                <Route
-                  path="/admin/containers"
-                  element={<ContainerManagementPage />}
-                />
-                <Route
-                  path="/admin/container-kinds"
-                  element={<ContainerKindManagementPage />}
-                />
-                <Route
-                  path="/admin/container-templates"
-                  element={<ContainerTemplateManagementPage />}
-                />
-                <Route
-                  path="/admin/hierarchy-templates"
-                  element={<HierarchyTemplateManagementPage />}
-                />
-                <Route
-                  path="/admin/payment-settings"
-                  element={<PaymentSettingsPage />}
-                />
-
-                <Route
-                  path="/admin/registry"
-                  element={<CapabilityRegistryWorkspace />}
-                />
-                <Route path="/admin/audit" element={<AuditExplorer />} />
-                <Route path="/admin/systemspace" element={<SystemSpace />} />
-                <Route path="/admin/payouts" element={<PayoutsAdminPage />} />
-                <Route path="/admin/kyc-review" element={<KycReviewPage />} />
-                <Route
-                  path="/admin/subscription-plans"
-                  element={<SubscriptionPlansPage />}
-                />
-                <Route path="/admin/vouchers" element={<VouchersPage />} />
-                <Route
-                  path="/admin/subscriptions"
-                  element={<SubscriptionsAdminPage />}
-                />
-                <Route
-                  path="/admin/instantiation-grants"
-                  element={<InstantiationRulesPage />}
-                />
-              </Route>
-            </Route>
-
-            <Route path="/:slug" element={<PublicSlugPage />} />
-            <Route path="/pay/:slug" element={<PublicPayPage />} />
-
-            <Route path="*" element={<Navigate to="/home" replace />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  loader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "100vh",
-  },
-  spinner: {
-    width: 32,
-    height: 32,
-    border: "3px solid #e5e7eb",
-    borderTopColor: "#3b82f6",
-    borderRadius: "50%",
-    animation: "spin 0.6s linear infinite",
-  },
-};
+export default App;
