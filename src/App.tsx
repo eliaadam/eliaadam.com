@@ -10,14 +10,7 @@ import { Signup } from "./page/Signup";
 import { Recent } from "./page/dashboard/Recent";
 import { Profile } from "./page/dashboard/Profile";
 import { queryClient } from "./lib/query/Queryclient";
-
-function Home() {
-  return (
-    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      Under Construnction
-    </div>
-  );
-}
+import Home from "./page/Home";
 
 function App() {
   return (
