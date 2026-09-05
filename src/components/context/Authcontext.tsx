@@ -39,7 +39,7 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
 }
 
-const USER_CACHE_KEY = "maicore.auth.user";
+const USER_CACHE_KEY = "sysc.auth.user";
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function loadCachedUser(): User | null {

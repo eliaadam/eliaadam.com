@@ -17,9 +17,9 @@ export function DashboardLayout() {
         <div>
           <div className="mb-8 flex items-center justify-between">
             <span className="text-sm font-semibold tracking-tight">
-              Maicore
+              sysc
             </span>
-            <ThemeToggle />
+       
           </div>
           <nav className="flex flex-col gap-1">
             {navItems.map(({ to, label, icon: Icon, end }) => (

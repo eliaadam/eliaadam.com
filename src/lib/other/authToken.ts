@@ -1,4 +1,4 @@
-const TOKEN_KEY = "maicore.auth.token";
+const TOKEN_KEY = "sysc.auth.token";
 
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);

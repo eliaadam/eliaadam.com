@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "../components/context/Authcontext";
-import { ThemeToggle } from "../components/context/ThemeContext";
+ 
  
 
 export function Signin() {
@@ -29,9 +29,9 @@ export function Signin() {
     <div className="flex min-h-screen flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <header className="flex items-center justify-between px-6 py-6">
         <Link to="/" className="text-sm font-semibold tracking-tight">
-          Maicore
+          sysc
         </Link>
-        <ThemeToggle />
+      
       </header>
 
       <main className="flex flex-1 items-center justify-center px-6 pb-16">

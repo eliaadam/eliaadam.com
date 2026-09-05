@@ -9,7 +9,7 @@ import {
 import { Moon, Sun } from "lucide-react";
 
 type Theme = "light" | "dark";
-const STORAGE_KEY = "maicore.theme";
+const STORAGE_KEY = "sysc.theme";
 
 interface ThemeContextValue {
   theme: Theme;
