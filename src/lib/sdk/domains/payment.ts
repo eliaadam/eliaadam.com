@@ -16,6 +16,20 @@ import { api } from "../../query/Api";
  * `listIntents` return `{"data": [...]}` (auto-unwrapped by
  * `api.get()`); every other endpoint returns the projection flattened
  * directly, no wrapper.
+ *
+ * `payment_method`/`authorization` — see `initiateIntent()` and
+ * `continueAuthorization()`'s own docs below — carry RAW, PLAINTEXT
+ * card/PIN input. That's a deliberate backend design choice (direct
+ * card collection, encrypted server-side before it ever reaches
+ * Flutterwave — see `FlutterwaveCardEncryptor` on the backend), not an
+ * oversight: encrypting client-side would require shipping the
+ * account's symmetric AES key to the browser, which is unsafe. This
+ * frontend is therefore in PCI scope the moment a card number is
+ * typed into `PaymentMethodFields` — treat that input path with the
+ * same care you'd give any other raw-PAN form (no logging it, no
+ * autofill surprises, HTTPS only, and nothing here ever writes it to
+ * localStorage, React Query's cache persistence, or anywhere else
+ * that outlives the single request).
  */
 
 export type WalletOwnerType =
@@ -91,16 +105,91 @@ export interface LedgerTransaction {
   posted_at: string | null;
 }
 
+// -- Payment methods (card / mobile money / saved reference) --------------
+//
+// Shape must match `interface/serializers.py`'s `validate_payment_method()`
+// on the backend exactly.
+
+export interface CardInput {
+  number: string;
+  expiry_month: string;
+  expiry_year: string;
+  cvv: string;
+}
+
+export interface MobileMoneyInput {
+  country_code: string;
+  network: string;
+  phone_number: string;
+}
+
+export type PaymentMethodInput =
+  | { saved_payment_method_id: string }
+  | { type: "card"; card: CardInput; save_for_future?: boolean }
+  | { type: "mobile_money"; mobile_money: MobileMoneyInput; save_for_future?: boolean };
+
+export interface SavedPaymentMethod {
+  id: string;
+  gateway: string;
+  external_payment_method_id: string;
+  method_type: "card" | "mobile_money";
+  display_label: string | null;
+  status: "active" | "removed";
+  created_at: string | null;
+}
+
+// -- next_action / continue-authorization ----------------------------------
+//
+// `next_action` is EPHEMERAL — only ever returned directly from
+// `initiateIntent()`/`continueAuthorization()`'s own response, never
+// persisted on the intent itself and never re-derivable from
+// `getIntent()`. If the page is reloaded mid-flow (e.g. right after a
+// PIN prompt appears), this is lost — "Check status now" (reconcile)
+// will still resolve the underlying charge eventually, but won't
+// re-surface the specific prompt. Known limitation, not a bug: fixing
+// it would mean the backend persisting next_action, which it
+// deliberately doesn't (see `PaymentGateway.initiate()`'s own
+// docstring on the backend).
+
+export type NextAction =
+  | { type: "redirect_url"; redirect_url: { url: string } }
+  | { type: "payment_instruction"; payment_instruction: { note: string } }
+  | { type: "requires_pin" }
+  | { type: "requires_otp" }
+  | { type: "requires_additional_fields"; requires_additional_fields: { fields: string[] } }
+  | { type: "requires_requery" };
+
+export interface AvsAddressInput {
+  city: string;
+  country: string;
+  line1: string;
+  line2?: string;
+  postal_code: string;
+  state: string;
+}
+
+/** PLAINTEXT input — `pin.pin` is the raw digits the buyer typed, NOT
+ * pre-encrypted. Encryption happens server-side; see this file's own
+ * top-level docs. */
+export type AuthorizationInput =
+  | { type: "pin"; pin: { pin: string } }
+  | { type: "otp"; otp: { code: string } }
+  | { type: "avs"; avs: { address: AvsAddressInput } };
+
 export interface InitiateResult {
   intent_id: string;
   status: PaymentIntentStatus;
   checkout_url: string | null;
+  next_action: NextAction | null;
 }
 
 export interface CreateIntentInput {
   destination_wallet_id: string;
   amount: number;
   currency: string;
+  /** Omit entirely to let the backend router pick a gateway for this
+   * currency/method — see `domain/rules.py`'s `select_gateway()`. An
+   * explicit value here always overrides routing. */
   gateway?: Gateway;
   description?: string;
   buyer_name?: string;
@@ -218,8 +307,35 @@ function createIntent(input: CreateIntentInput): Promise<PaymentIntent> {
   return api.post<PaymentIntent>("/api/payment/intents/", input);
 }
 
-function initiateIntent(id: string): Promise<InitiateResult> {
-  return api.post<InitiateResult>(`/api/payment/intents/${id}/initiate/`);
+/** `paymentMethod` is required for `gateway === "flutterwave"` (card,
+ * mobile money, or a saved reference — see `PaymentMethodInput`) and
+ * ignored by "manual"/"selcom", which collect nothing at this step.
+ * Omit it entirely for those two rather than passing an empty object. */
+function initiateIntent(
+  id: string,
+  paymentMethod?: PaymentMethodInput,
+): Promise<InitiateResult> {
+  return api.post<InitiateResult>(
+    `/api/payment/intents/${id}/initiate/`,
+    paymentMethod ? { payment_method: paymentMethod } : undefined,
+  );
+}
+
+/** Submits the second step a card charge sometimes needs after
+ * `initiateIntent()` returns a `next_action` of `requires_pin`,
+ * `requires_otp`, or `requires_additional_fields` (AVS). Returns the
+ * same shape as `initiateIntent()` — including, possibly, ANOTHER
+ * `next_action` (e.g. PIN then OTP in sequence); callers should loop
+ * on this the same way they handle the first response, not assume one
+ * call resolves everything. */
+function continueAuthorization(
+  id: string,
+  authorization: AuthorizationInput,
+): Promise<InitiateResult> {
+  return api.post<InitiateResult>(
+    `/api/payment/intents/${id}/continue-authorization/`,
+    { authorization },
+  );
 }
 
 function refundIntent(id: string, reason: string): Promise<PaymentIntent> {
@@ -238,6 +354,28 @@ function createTransfer(
   return api.post<LedgerTransaction>("/api/payment/transfers/", input);
 }
 
+// -- Saved payment methods --------------------------------------------------
+//
+// Self-service, actor-scoped — always the CALLER's own saved methods;
+// there's no way to list or remove anyone else's.
+
+async function listSavedPaymentMethods(
+  gateway: Gateway,
+): Promise<SavedPaymentMethod[]> {
+  return api.get<SavedPaymentMethod[]>(
+    `/api/payment/gateways/${gateway}/saved-payment-methods/`,
+  );
+}
+
+function removeSavedPaymentMethod(
+  gateway: Gateway,
+  savedId: string,
+): Promise<{ removed: boolean }> {
+  return api.delete<{ removed: boolean }>(
+    `/api/payment/gateways/${gateway}/saved-payment-methods/${savedId}/`,
+  );
+}
+
 export const payment = {
   listWallets,
   getWallet,
@@ -252,7 +390,10 @@ export const payment = {
   getIntent,
   createIntent,
   initiateIntent,
+  continueAuthorization,
   refundIntent,
   reconcileIntent,
   createTransfer,
+  listSavedPaymentMethods,
+  removeSavedPaymentMethod,
 };
