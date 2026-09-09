@@ -1,0 +1,508 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Plus,
+  Archive,
+  ShoppingBag,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
+import { sdk, type Listing } from "../../lib/sdk";
+import { useContainer } from "../../components/context/ContainerContext";
+import { useCanManageMarketplaceListings } from "../../lib/hooks/useCanManageMarketplaceListings";
+
+const inputClass =
+  "rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
+
+const primaryButtonClass =
+  "rounded-md bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black";
+
+function formatPrice(price: number, currency: string) {
+  return `${currency} ${(price / 100).toFixed(2)}`;
+}
+
+export function Marketplace() {
+  const { currentContainerId } = useContainer();
+  const { data: canManage } = useCanManageMarketplaceListings();
+  const [showCreate, setShowCreate] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const { data: myListings } = useQuery({
+    queryKey: ["surfacing", "listings", currentContainerId],
+    queryFn: () =>
+      sdk.surfacing.listListingsForContainer(currentContainerId!, "active"),
+    enabled: Boolean(currentContainerId && canManage),
+  });
+
+  const { data: draftListings } = useQuery({
+    queryKey: ["surfacing", "listings-draft", currentContainerId],
+    queryFn: () =>
+      sdk.surfacing.listListingsForContainer(currentContainerId!, "draft"),
+    enabled: Boolean(currentContainerId && canManage),
+  });
+
+  const { data: browseResults, isLoading: browseLoading } = useQuery({
+    queryKey: ["surfacing", "marketplace", search],
+    queryFn: () => sdk.surfacing.browseMarketplace(search || undefined),
+  });
+
+  return (
+    <div className="max-w-5xl">
+      <h1 className="text-xl font-semibold tracking-tight">Marketplace</h1>
+      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+        Buy and sell anything a capability lets an actor own — templates,
+        access, anything with an id.
+      </p>
+
+      {canManage && currentContainerId && (
+        <section className="mt-6">
+          <div className="flex items-start justify-between">
+            <h2 className="text-sm font-semibold tracking-tight">
+              This container's listings
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowCreate((v) => !v)}
+              className={`flex flex-none items-center gap-1.5 ${primaryButtonClass}`}
+            >
+              <Plus size={15} />
+              New listing
+            </button>
+          </div>
+
+          {showCreate && (
+            <CreateListingForm
+              containerId={currentContainerId}
+              onDone={() => setShowCreate(false)}
+            />
+          )}
+
+          {(draftListings?.length ?? 0) > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+                Drafts — not visible in the marketplace yet
+              </p>
+              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {draftListings!.map((listing) => (
+                  <ManagedListingCard key={listing.id} listing={listing} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(myListings?.length ?? 0) > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+                Active
+              </p>
+              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {myListings!.map((listing) => (
+                  <ManagedListingCard key={listing.id} listing={listing} />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="mt-8">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold tracking-tight">Browse</h2>
+          <input
+            className={`${inputClass} max-w-xs`}
+            placeholder="Search listings…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {browseLoading && (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-56 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-900"
+              />
+            ))}
+          </div>
+        )}
+
+        {browseResults && browseResults.length === 0 && (
+          <div className="mt-6 rounded-lg border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
+            <ShoppingBag
+              className="mx-auto text-neutral-400 dark:text-neutral-600"
+              size={22}
+            />
+            <p className="mt-3 text-sm font-medium">Nothing here yet</p>
+          </div>
+        )}
+
+        {browseResults && browseResults.length > 0 && (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {browseResults.map((listing) => (
+              <BrowseListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function ManagedListingCard({ listing }: { listing: Listing }) {
+  const queryClient = useQueryClient();
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["surfacing"] });
+
+  const publishMutation = useMutation({
+    mutationFn: () => sdk.surfacing.publishListing(listing.id),
+    onSuccess: invalidate,
+  });
+  const archiveMutation = useMutation({
+    mutationFn: () => sdk.surfacing.archiveListing(listing.id),
+    onSuccess: invalidate,
+  });
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-semibold">{listing.title}</p>
+        <button
+          type="button"
+          onClick={() => archiveMutation.mutate()}
+          disabled={archiveMutation.isPending}
+          aria-label="Archive listing"
+          className="text-neutral-400 transition-colors hover:text-red-600 disabled:opacity-60 dark:hover:text-red-400"
+        >
+          <Archive size={14} />
+        </button>
+      </div>
+      <p className="text-xs text-neutral-500 dark:text-neutral-500">
+        {formatPrice(listing.price, listing.currency)} ·{" "}
+        {listing.source_capability}/{listing.source_type}
+      </p>
+      {listing.status === "draft" && (
+        <button
+          type="button"
+          onClick={() => publishMutation.mutate()}
+          disabled={publishMutation.isPending}
+          className="self-start rounded-md bg-black px-2.5 py-1 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black"
+        >
+          {publishMutation.isPending ? "Publishing…" : "Publish"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function BrowseListingCard({ listing }: { listing: Listing }) {
+  const [showBuy, setShowBuy] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+      {listing.images[0] && (
+        <img
+          src={listing.images[0]}
+          alt=""
+          className="h-32 w-full rounded-md object-cover"
+        />
+      )}
+      <p className="text-sm font-semibold">{listing.title}</p>
+      <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+        {formatPrice(listing.price, listing.currency)}
+      </p>
+      {listing.description && (
+        <p className="text-xs text-neutral-600 dark:text-neutral-400">
+          {listing.description}
+        </p>
+      )}
+
+      <div className="mt-auto pt-2">
+        {showBuy ? (
+          <BuyForm listing={listing} onDone={() => setShowBuy(false)} />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowBuy(true)}
+            className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 dark:bg-white dark:text-black"
+          >
+            Buy
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BuyForm({
+  listing,
+  onDone,
+}: {
+  listing: Listing;
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const { currentContainerId } = useContainer();
+  const [walletId, setWalletId] = useState("");
+
+  const { data: wallets } = useQuery({
+    queryKey: ["payment", "wallets", currentContainerId],
+    queryFn: () => sdk.payment.listWallets(currentContainerId!),
+    enabled: Boolean(currentContainerId),
+  });
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      sdk.surfacing.purchase({
+        listing_id: listing.id,
+        paying_wallet_id: walletId,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["surfacing"] });
+    },
+  });
+
+  const result = mutation.data;
+
+  if (result) {
+    if (result.status === "completed") {
+      return (
+        <div className="flex items-start gap-1.5 text-xs text-black dark:text-white">
+          <CheckCircle2 size={14} className="mt-0.5 flex-none" />
+          <span>Purchased. Check your account for access.</span>
+        </div>
+      );
+    }
+    if (result.status === "fulfillment_failed") {
+      return (
+        <div className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+          <AlertTriangle size={14} className="mt-0.5 flex-none" />
+          <span>
+            Payment succeeded, but something went wrong granting access. Contact
+            the seller.
+          </span>
+        </div>
+      );
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {!currentContainerId ? (
+        <p className="text-xs text-neutral-500 dark:text-neutral-500">
+          Select a container first to choose a wallet to pay from.
+        </p>
+      ) : (
+        <>
+          <select
+            className={`${inputClass} w-full`}
+            value={walletId}
+            onChange={(e) => setWalletId(e.target.value)}
+          >
+            <option value="">Pay from…</option>
+            {wallets?.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.label || w.owner_type} ({w.currency}{" "}
+                {(w.balance / 100).toFixed(2)})
+              </option>
+            ))}
+          </select>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => mutation.mutate()}
+              disabled={!walletId || mutation.isPending}
+              className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black"
+            >
+              {mutation.isPending ? "Buying…" : "Confirm"}
+            </button>
+            <button
+              type="button"
+              onClick={onDone}
+              className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+            >
+              Cancel
+            </button>
+          </div>
+        </>
+      )}
+      {mutation.isError && (
+        <p className="text-xs text-red-600 dark:text-red-400">
+          Couldn't complete the purchase — check the wallet has enough balance.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function CreateListingForm({
+  containerId,
+  onDone,
+}: {
+  containerId: string;
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [sourceCapability, setSourceCapability] = useState("");
+  const [sourceType, setSourceType] = useState("");
+  const [sourceId, setSourceId] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [payoutWalletId, setPayoutWalletId] = useState("");
+
+  const { data: wallets } = useQuery({
+    queryKey: ["payment", "wallets", containerId],
+    queryFn: () => sdk.payment.listWallets(containerId),
+  });
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      sdk.surfacing.createListing({
+        container_id: containerId,
+        source_capability: sourceCapability,
+        source_type: sourceType,
+        source_id: sourceId,
+        title,
+        description,
+        price: Math.round(Number(price) * 100),
+        currency: currency.toUpperCase(),
+        payout_wallet_id: payoutWalletId,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["surfacing"] });
+      onDone();
+    },
+  });
+
+  return (
+    <div className="mt-4 flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Title
+        </label>
+        <input
+          className={inputClass}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Description
+        </label>
+        <input
+          className={inputClass}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+            Price
+          </label>
+          <input
+            className={inputClass}
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="9.99"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+            Currency
+          </label>
+          <input
+            className={inputClass}
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+            Payout wallet
+          </label>
+          <select
+            className={inputClass}
+            value={payoutWalletId}
+            onChange={(e) => setPayoutWalletId(e.target.value)}
+          >
+            <option value="">Choose…</option>
+            {wallets?.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.label || w.owner_type} ({w.currency})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="rounded-md bg-neutral-50 p-3 dark:bg-neutral-900">
+        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          What's being sold — a reference into another capability's own data.
+          For example, selling access to a Provisioning template: capability{" "}
+          <code>system.provisioning</code>, type <code>template</code>, id = the
+          template's code.
+        </p>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <input
+            className={inputClass}
+            placeholder="source_capability"
+            value={sourceCapability}
+            onChange={(e) => setSourceCapability(e.target.value)}
+          />
+          <input
+            className={inputClass}
+            placeholder="source_type"
+            value={sourceType}
+            onChange={(e) => setSourceType(e.target.value)}
+          />
+          <input
+            className={inputClass}
+            placeholder="source_id"
+            value={sourceId}
+            onChange={(e) => setSourceId(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => mutation.mutate()}
+          disabled={
+            !title ||
+            !price ||
+            !payoutWalletId ||
+            !sourceCapability ||
+            !sourceType ||
+            !sourceId ||
+            mutation.isPending
+          }
+          className={primaryButtonClass}
+        >
+          {mutation.isPending ? "Creating…" : "Create listing"}
+        </button>
+        <button
+          type="button"
+          onClick={onDone}
+          className="text-sm font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+        >
+          Cancel
+        </button>
+        {mutation.isError && (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            Couldn't create the listing.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
