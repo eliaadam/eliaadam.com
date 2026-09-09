@@ -146,6 +146,13 @@ export function Profile() {
               Remove
             </button>
           )}
+          {avatarUploadMutation.isError && (
+            <p className="max-w-[16rem] text-xs text-red-600 dark:text-red-400">
+              {avatarUploadMutation.error instanceof ApiError
+                ? avatarUploadMutation.error.message
+                : "Couldn't upload that image."}
+            </p>
+          )}
         </div>
       </div>
 
