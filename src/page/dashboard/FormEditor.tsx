@@ -33,6 +33,7 @@ export function FormEditor() {
 
   useEffect(() => {
     if (form) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTitle(form.title);
       setDescription(form.description ?? "");
       setFields(

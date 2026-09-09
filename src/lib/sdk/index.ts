@@ -9,6 +9,7 @@ import { communication } from "./domains/communication";
 import { payment } from "./domains/payment";
 import { subscription } from "./domains/subscription";
 import { surfacing } from "./domains/surfacing";
+import { avatars } from "./domains/avatars";
 
 /**
  * Single entry point for every domain's API client.
@@ -32,6 +33,7 @@ export const sdk = {
   payment,
   subscription,
   surfacing,
+  avatars,
 };
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Camera } from "lucide-react";
 import { sdk, type Visibility } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
+import { Avatar } from "../../components/ui/Avatar";
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
@@ -19,22 +20,33 @@ const POLICY_DEFAULTS = {
 };
 
 /**
- * Every write here (policy changes, activate/suspend/archive/restore)
- * is owner-only server-side — but there's no endpoint to ask "am I
- * the owner" up front, the same situation as `JoinRequests.tsx`. This
- * page shows the form to any member (viewing policy only requires
- * membership) and surfaces a clear message on a 403 from an actual
- * write attempt, rather than trying to predict the answer client-side.
+ * Every write here (policy changes, activate/suspend/archive/restore,
+ * and now the avatar) is owner-only server-side — but there's no
+ * endpoint to ask "am I the owner" up front, the same situation as
+ * `JoinRequests.tsx`. This page shows the form to any member (viewing
+ * policy only requires membership) and surfaces a clear message on a
+ * 403 from an actual write attempt, rather than trying to predict the
+ * answer client-side. The avatar section follows this exact same
+ * philosophy — the upload control is always visible, a 403 from the
+ * actual upload attempt is what tells a non-owner they can't do this.
  */
 export function ContainerSettings() {
   const { containerId } = useParams<{ containerId: string }>();
   const queryClient = useQueryClient();
   const [forbiddenAction, setForbiddenAction] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: container, isLoading: containerLoading } = useQuery({
     queryKey: ["container", "detail", containerId],
     queryFn: () => sdk.container.getContainer(containerId!),
     enabled: Boolean(containerId),
+  });
+
+  const { data: avatarData } = useQuery({
+    queryKey: ["container", "avatar-url", containerId],
+    queryFn: () => sdk.container.getContainerAvatarUrl(containerId!),
+    enabled: Boolean(containerId),
+    staleTime: 5 * 60 * 1000,
   });
 
   const {
@@ -73,6 +85,30 @@ export function ContainerSettings() {
     if (err instanceof ApiError && err.status === 403) {
       setForbiddenAction(action);
     }
+  };
+
+  const avatarMutation = useMutation({
+    mutationFn: (file: File) =>
+      sdk.avatars.setContainerAvatar(containerId!, file),
+    onSuccess: () => {
+      setForbiddenAction(null);
+      queryClient.invalidateQueries({
+        queryKey: ["container", "avatar-url", containerId],
+      });
+      // Any other place a container's avatar is shown (the switcher,
+      // member lists later) shares this same query key shape — this
+      // invalidation only covers THIS container's own cache entry,
+      // matching ContainerAvatar's own per-container queryKey.
+    },
+    onError: handle403("change this container's avatar"),
+  });
+
+  const handleAvatarFileSelected = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) avatarMutation.mutate(file);
+    event.target.value = "";
   };
 
   const saveMutation = useMutation({
@@ -156,12 +192,39 @@ export function ContainerSettings() {
         Back to containers
       </Link>
 
-      <h1 className="text-xl font-semibold tracking-tight">
-        {container.display_name}
-      </h1>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-500">
-        {container.slug} · {container.status}
-      </p>
+      <div className="flex items-center gap-4">
+        <div className="relative">
+          <Avatar
+            src={avatarData?.avatar_url}
+            name={container.display_name}
+            size="lg"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={avatarMutation.isPending}
+            aria-label="Change container avatar"
+            className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black"
+          >
+            <Camera size={12} />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarFileSelected}
+          />
+        </div>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">
+            {container.display_name}
+          </h1>
+          <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-500">
+            {container.slug} · {container.status}
+          </p>
+        </div>
+      </div>
 
       {forbiddenAction && (
         <p className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
