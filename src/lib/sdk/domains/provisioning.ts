@@ -15,6 +15,7 @@ export interface TemplateCapability {
 }
 
 export interface ContainerTemplate {
+  required_subscription_plan_id: any;
   id: string;
   code: string;
   name: string;

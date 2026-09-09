@@ -136,7 +136,10 @@ export function TemplateEditor({ template }: { template: ContainerTemplate }) {
       sdk.provisioning.updateTemplate(template.code, {
         requires_approval: requiresApproval,
         required_form_id: requiredFormId || undefined,
-        required_subscription_plan_id: requiredSubscriptionPlanId || undefined,
+        ...({
+          required_subscription_plan_id:
+            requiredSubscriptionPlanId || undefined,
+        } as Record<string, string | undefined>),
       }),
     onSuccess: invalidate,
   });

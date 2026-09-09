@@ -32,7 +32,10 @@ export function WalletParticipants({
 
   const { data: candidates } = useQuery({
     queryKey: ["actors", "search", search],
-    queryFn: () => sdk.identity.listActors({ search, limit: 10 }),
+    queryFn: () => sdk.identity.listActors({
+      search, limit: 10,
+      containerId: ""
+    }),
     enabled: canManage && search.trim().length > 1,
   });
 

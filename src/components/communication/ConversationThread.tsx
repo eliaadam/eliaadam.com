@@ -40,7 +40,10 @@ export function ConversationThread({
 
   const { data: actors } = useQuery({
     queryKey: ["actors", "all"],
-    queryFn: () => sdk.identity.listActors({ limit: 200 }),
+    queryFn: () => sdk.identity.listActors({
+      limit: 200,
+      containerId: ""
+    }),
   });
 
   const { data: messages } = useQuery({
@@ -294,7 +297,10 @@ function ParticipantPanel({
 
   const { data: candidates } = useQuery({
     queryKey: ["actors", "search", search],
-    queryFn: () => sdk.identity.listActors({ search, limit: 10 }),
+    queryFn: () => sdk.identity.listActors({
+      search, limit: 10,
+      containerId: ""
+    }),
     enabled: isAdmin && search.trim().length > 1,
   });
 
