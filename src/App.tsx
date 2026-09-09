@@ -6,7 +6,6 @@ import { ContainerProvider } from "./components/context/ContainerContext";
 import { ThemeProvider } from "./components/context/ThemeContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/Dashboardlayout";
-import { Home } from "./page/Home";
 import { Signin } from "./page/Signin";
 import { Signup } from "./page/Signup";
 import { PublicFormFill } from "./page/PublicFormFill";
@@ -39,6 +38,7 @@ import { MyPurchases } from "./page/dashboard/MyPurchases";
 import { PaymentWalletDetail } from "./page/dashboard/PaymentWalletDetail";
 import { PaymentIntentDetail } from "./page/dashboard/PaymentIntentDetail";
 import { queryClient } from "./lib/query/Queryclient";
+import Home from "./page/Home";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
