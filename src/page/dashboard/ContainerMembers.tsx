@@ -47,7 +47,10 @@ export function ContainerMembers() {
 
   const actorsQuery = useQuery({
     queryKey: ["actors", "all"],
-    queryFn: () => sdk.identity.listActors({ limit: 200 }),
+    queryFn: () => sdk.identity.listActors({
+      limit: 200,
+      containerId: ""
+    }),
   });
 
   // "container-owner" is a real, base seeded Authority role (spec

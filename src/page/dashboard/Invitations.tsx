@@ -68,7 +68,12 @@ function CreateInvitationForm({ actorId }: { actorId: string }) {
 
   const actorsQuery = useQuery({
     queryKey: ["actors", "search", search],
-    queryFn: () => sdk.identity.listActors({ search, limit: 10 }),
+    queryFn: () =>
+      sdk.identity.listActors({
+        search,
+        limit: 10,
+        containerId: "",
+      }),
     enabled: search.trim().length > 1,
   });
 

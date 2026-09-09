@@ -35,7 +35,12 @@ export function FormEditor() {
     if (form) {
       setTitle(form.title);
       setDescription(form.description ?? "");
-      setFields(form.fields.map((f) => ({ ...f })));
+      setFields(
+        form.fields.map((f) => ({
+          ...f,
+          help_text: f.help_text ?? undefined,
+        })),
+      );
       setAllowMultiple(form.allow_multiple_responses_per_actor);
       setRequireAuth(form.require_authentication);
     }
