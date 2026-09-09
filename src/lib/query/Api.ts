@@ -15,7 +15,12 @@ interface Envelope<T> {
     meta?: Record<string, unknown>;
 }
 
-const API_BASE_URL =
+// Exported so other modules that need to make a raw fetch() call
+// outside the JSON-only api.get()/api.post() shape (e.g. multipart
+// file uploads — see src/lib/sdk/domains/avatars.ts) hit the SAME
+// origin as every other request, instead of duplicating this
+// fallback logic and risking it drifting out of sync.
+export const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "https://sysc.maishasoft.com";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -42,9 +47,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
     if (!response.ok) {
         const message =
-            body &&
-                typeof body === "object" &&
-                "error" in body
+            body && typeof body === "object" && "error" in body
                 ? String((body as { error: unknown }).error)
                 : `Request to ${url} failed with status ${response.status}`;
 
@@ -55,8 +58,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-    get: <T>(path: string) =>
-        request<T>(path),
+    get: <T>(path: string) => request<T>(path),
 
     post: <T>(path: string, body?: unknown) =>
         request<T>(path, {
