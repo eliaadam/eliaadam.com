@@ -7,6 +7,7 @@ import {
   type InventoryItemStatus,
 } from "../../lib/sdk";
 import { API_BASE_URL } from "../../lib/query/Api";
+import { useAuth } from "../../components/context/Authcontext";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageInventory } from "../../lib/hooks/useCanManageInventory";
 
@@ -28,6 +29,7 @@ function statusClasses(status: InventoryItemStatus): string {
 
 export function Inventory() {
   const { currentContainerId } = useContainer();
+  const { user } = useAuth();
   const { data: canManage } = useCanManageInventory();
   const [showCreate, setShowCreate] = useState(false);
 
@@ -75,8 +77,8 @@ export function Inventory() {
 
       {!canManage && (
         <p className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
-          You don't have permission to manage inventory on this container —
-          showing what's here, but the create/edit controls are hidden.
+          You don't have permission to create inventory items on this container
+          — showing what's here, but the "New item" control is hidden.
         </p>
       )}
 
@@ -109,24 +111,16 @@ export function Inventory() {
       )}
 
       {drafts.length > 0 && (
-        <ItemSection
-          title="Drafts"
-          items={drafts}
-          canManage={Boolean(canManage)}
-        />
+        <ItemSection title="Drafts" items={drafts} currentActorId={user?.id} />
       )}
       {active.length > 0 && (
-        <ItemSection
-          title="Active"
-          items={active}
-          canManage={Boolean(canManage)}
-        />
+        <ItemSection title="Active" items={active} currentActorId={user?.id} />
       )}
       {archived.length > 0 && (
         <ItemSection
           title="Archived"
           items={archived}
-          canManage={Boolean(canManage)}
+          currentActorId={user?.id}
         />
       )}
     </div>
@@ -136,11 +130,11 @@ export function Inventory() {
 function ItemSection({
   title,
   items,
-  canManage,
+  currentActorId,
 }: {
   title: string;
   items: InventoryItem[];
-  canManage: boolean;
+  currentActorId: string | undefined;
 }) {
   return (
     <div className="mt-6">
@@ -149,7 +143,7 @@ function ItemSection({
       </p>
       <ul className="mt-2 flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
         {items.map((item) => (
-          <ItemRow key={item.id} item={item} canManage={canManage} />
+          <ItemRow key={item.id} item={item} currentActorId={currentActorId} />
         ))}
       </ul>
     </div>
@@ -158,14 +152,26 @@ function ItemSection({
 
 function ItemRow({
   item,
-  canManage,
+  currentActorId,
 }: {
   item: InventoryItem;
-  canManage: boolean;
+  currentActorId: string | undefined;
 }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [managingBranding, setManagingBranding] = useState(false);
+
+  // Strict ownership, mirroring the backend's own _forbid_unless_owner
+  // check exactly — created_by_actor_id doubles as the owner column
+  // (Ownership's reassign() overwrites it directly, so it reflects
+  // CURRENT ownership, not just who originally created the item), and
+  // owner_status="unassigned" means no one currently owns it, not a
+  // stale previous owner. Computed here rather than via a per-item
+  // is_owned_by() call — the row already carries everything needed.
+  const isOwner =
+    Boolean(currentActorId) &&
+    item.created_by_actor_id === currentActorId &&
+    item.owner_status === "assigned";
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
@@ -212,6 +218,14 @@ function ItemRow({
           >
             {item.status}
           </span>
+          {item.owner_status === "unassigned" && (
+            <span
+              className="flex-none rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+              title="No one currently owns this item — a container admin can reassign it."
+            >
+              unowned
+            </span>
+          )}
           {!item.branding.assets.length ? null : (
             <span className="flex-none text-[11px] text-neutral-400 dark:text-neutral-600">
               {item.branding.assets.length} media
@@ -231,7 +245,7 @@ function ItemRow({
           )}
         </p>
       </div>
-      {canManage && (
+      {isOwner && (
         <div className="flex flex-none items-center gap-2">
           <button
             type="button"

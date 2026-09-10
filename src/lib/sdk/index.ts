@@ -127,6 +127,7 @@ export type {
 } from "./domains/surfacing";
 export type {
   InventoryItemStatus,
+  OwnerStatus,
   InventoryPrice,
   BrandingAsset,
   InventoryItem,

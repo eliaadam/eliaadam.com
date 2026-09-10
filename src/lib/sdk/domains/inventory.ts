@@ -7,6 +7,7 @@ import { api } from "../../query/Api";
  */
 
 export type InventoryItemStatus = "draft" | "active" | "archived";
+export type OwnerStatus = "assigned" | "unassigned" | "shared";
 
 export interface InventoryPrice {
   base_amount: number;
@@ -37,6 +38,7 @@ export interface InventoryItem {
   is_published: boolean;
   metadata: Record<string, unknown>;
   created_by_actor_id: string | null;
+  owner_status: OwnerStatus;
 }
 
 export interface CreateInventoryItemInput {
