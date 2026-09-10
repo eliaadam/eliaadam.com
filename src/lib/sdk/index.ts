@@ -10,6 +10,7 @@ import { payment } from "./domains/payment";
 import { subscription } from "./domains/subscription";
 import { surfacing } from "./domains/surfacing";
 import { avatars } from "./domains/avatars";
+import { inventory } from "./domains/inventory";
 
 /**
  * Single entry point for every domain's API client.
@@ -34,6 +35,7 @@ export const sdk = {
   subscription,
   surfacing,
   avatars,
+  inventory,
 };
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";
@@ -116,9 +118,18 @@ export type {
 } from "./domains/subscription";
 export type {
   ListingStatus,
+  PricingMode,
   PurchaseStatus,
   Listing,
   Purchase,
   CreateListingInput,
   UpdateListingInput,
 } from "./domains/surfacing";
+export type {
+  InventoryItemStatus,
+  InventoryPrice,
+  BrandingAsset,
+  InventoryItem,
+  CreateInventoryItemInput,
+  UpdateInventoryItemInput,
+} from "./domains/inventory";

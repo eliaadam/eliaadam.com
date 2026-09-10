@@ -11,8 +11,13 @@ import { api } from "../../query/Api";
  */
 
 export type ListingStatus = "draft" | "active" | "archived";
+export type PricingMode = "free" | "one_time" | "subscription";
 export type PurchaseStatus =
-  "completed" | "payment_failed" | "fulfillment_failed";
+  | "completed"
+  | "payment_failed"
+  | "fulfillment_failed"
+  | "subscribed"
+  | "subscription_failed";
 
 export interface Listing {
   id: string;
@@ -26,6 +31,8 @@ export interface Listing {
   price: number;
   currency: string;
   payout_wallet_id: string;
+  pricing_mode: PricingMode;
+  subscription_plan_id: string | null;
   images: string[];
   status: ListingStatus;
   metadata: Record<string, unknown>;
@@ -42,19 +49,31 @@ export interface Purchase {
   currency: string;
   status: PurchaseStatus;
   fulfillment_result: Record<string, unknown> | null;
+  subscription_id: string | null;
   created_at: string | null;
 }
 
 export interface CreateListingInput {
   container_id: string;
-  source_capability: string;
-  source_type: string;
-  source_id: string;
-  title: string;
-  description?: string;
-  price: number;
-  currency: string;
   payout_wallet_id: string;
+  pricing_mode?: PricingMode;
+  subscription_plan_id?: string;
+  // Either seed from an existing General Inventory item (snapshot at
+  // creation time — see the backend's own note on why this isn't a
+  // live reference)...
+  inventory_item_id?: string;
+  // ...or supply these manually. Both optional now — required only in
+  // combination (either inventory_item_id, or title+price+currency+
+  // source_capability/type/id; the backend fills in whichever half
+  // wasn't provided from the Inventory item when inventory_item_id is
+  // set, but can't invent them from nothing when it isn't).
+  source_capability?: string;
+  source_type?: string;
+  source_id?: string;
+  title?: string;
+  description?: string;
+  price?: number;
+  currency?: string;
   images?: string[];
 }
 

@@ -210,7 +210,11 @@ function BrowseListingCard({ listing }: { listing: Listing }) {
       )}
       <p className="text-sm font-semibold">{listing.title}</p>
       <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-        {formatPrice(listing.price, listing.currency)}
+        {listing.pricing_mode === "free"
+          ? "Free"
+          : listing.pricing_mode === "subscription"
+            ? `${formatPrice(listing.price, listing.currency)} · Subscription`
+            : formatPrice(listing.price, listing.currency)}
       </p>
       {listing.description && (
         <p className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -270,7 +274,19 @@ function BuyForm({
       return (
         <div className="flex items-start gap-1.5 text-xs text-black dark:text-white">
           <CheckCircle2 size={14} className="mt-0.5 flex-none" />
-          <span>Purchased. Check your account for access.</span>
+          <span>
+            {listing.pricing_mode === "free"
+              ? "It's yours. Check your account for access."
+              : "Purchased. Check your account for access."}
+          </span>
+        </div>
+      );
+    }
+    if (result.status === "subscribed") {
+      return (
+        <div className="flex items-start gap-1.5 text-xs text-black dark:text-white">
+          <CheckCircle2 size={14} className="mt-0.5 flex-none" />
+          <span>Subscribed. You'll be billed on the plan's own schedule.</span>
         </div>
       );
     }
@@ -281,6 +297,17 @@ function BuyForm({
           <span>
             Payment succeeded, but something went wrong granting access. Contact
             the seller.
+          </span>
+        </div>
+      );
+    }
+    if (result.status === "subscription_failed") {
+      return (
+        <div className="flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400">
+          <AlertTriangle size={14} className="mt-0.5 flex-none" />
+          <span>
+            Couldn't set up the subscription — check the wallet has enough
+            balance and try again.
           </span>
         </div>
       );
@@ -300,7 +327,11 @@ function BuyForm({
             value={walletId}
             onChange={(e) => setWalletId(e.target.value)}
           >
-            <option value="">Pay from…</option>
+            <option value="">
+              {listing.pricing_mode === "free"
+                ? "Account to use…"
+                : "Pay from…"}
+            </option>
             {wallets?.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.label || w.owner_type} ({w.currency}{" "}
@@ -315,7 +346,15 @@ function BuyForm({
               disabled={!walletId || mutation.isPending}
               className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black"
             >
-              {mutation.isPending ? "Buying…" : "Confirm"}
+              {mutation.isPending
+                ? listing.pricing_mode === "subscription"
+                  ? "Subscribing…"
+                  : "Buying…"
+                : listing.pricing_mode === "free"
+                  ? "Get it free"
+                  : listing.pricing_mode === "subscription"
+                    ? "Subscribe"
+                    : "Confirm"}
             </button>
             <button
               type="button"
@@ -344,6 +383,17 @@ function CreateListingForm({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
+
+  // Source mode — either seed from an existing General Inventory item
+  // (snapshot at creation time, not a live reference — see the
+  // backend's own note on this) or reference something else manually
+  // (e.g. a Provisioning template, which has no Inventory item behind
+  // it at all).
+  const [sourceMode, setSourceMode] = useState<"inventory" | "manual">(
+    "inventory",
+  );
+  const [inventoryItemId, setInventoryItemId] = useState("");
+
   const [sourceCapability, setSourceCapability] = useState("");
   const [sourceType, setSourceType] = useState("");
   const [sourceId, setSourceId] = useState("");
@@ -353,23 +403,48 @@ function CreateListingForm({
   const [currency, setCurrency] = useState("USD");
   const [payoutWalletId, setPayoutWalletId] = useState("");
 
+  const [pricingMode, setPricingMode] = useState<
+    "free" | "one_time" | "subscription"
+  >("one_time");
+  const [subscriptionPlanId, setSubscriptionPlanId] = useState("");
+
   const { data: wallets } = useQuery({
     queryKey: ["payment", "wallets", containerId],
     queryFn: () => sdk.payment.listWallets(containerId),
+  });
+
+  const { data: inventoryItems } = useQuery({
+    queryKey: ["inventory", "items", containerId],
+    queryFn: () => sdk.inventory.listItems(containerId, "active"),
+    enabled: sourceMode === "inventory",
+  });
+
+  const { data: plans } = useQuery({
+    queryKey: ["subscription", "plans", containerId],
+    queryFn: () => sdk.subscription.listPlansForContainer(containerId),
+    enabled: pricingMode === "subscription",
   });
 
   const mutation = useMutation({
     mutationFn: () =>
       sdk.surfacing.createListing({
         container_id: containerId,
-        source_capability: sourceCapability,
-        source_type: sourceType,
-        source_id: sourceId,
-        title,
-        description,
-        price: Math.round(Number(price) * 100),
-        currency: currency.toUpperCase(),
         payout_wallet_id: payoutWalletId,
+        pricing_mode: pricingMode,
+        subscription_plan_id:
+          pricingMode === "subscription" ? subscriptionPlanId : undefined,
+        ...(sourceMode === "inventory"
+          ? { inventory_item_id: inventoryItemId }
+          : {
+              source_capability: sourceCapability,
+              source_type: sourceType,
+              source_id: sourceId,
+              title,
+              description,
+              price:
+                pricingMode === "free" ? 0 : Math.round(Number(price) * 100),
+              currency: currency.toUpperCase(),
+            }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surfacing"] });
@@ -377,115 +452,238 @@ function CreateListingForm({
     },
   });
 
+  const canSubmit =
+    Boolean(payoutWalletId) &&
+    (pricingMode !== "subscription" || Boolean(subscriptionPlanId)) &&
+    (sourceMode === "inventory"
+      ? Boolean(inventoryItemId)
+      : Boolean(title) &&
+        Boolean(sourceCapability) &&
+        Boolean(sourceType) &&
+        Boolean(sourceId) &&
+        (pricingMode === "free" || Boolean(price)));
+
   return (
     <div className="mt-4 flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-          Title
+      <div>
+        <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          What are you selling?
         </label>
-        <input
-          className={inputClass}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-          Description
-        </label>
-        <input
-          className={inputClass}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setSourceMode("inventory")}
+            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+              sourceMode === "inventory"
+                ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
+            }`}
+          >
+            From your inventory
+          </button>
+          <button
+            type="button"
+            onClick={() => setSourceMode("manual")}
+            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+              sourceMode === "manual"
+                ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
+            }`}
+          >
+            Something else
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      {sourceMode === "inventory" ? (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-            Price
-          </label>
-          <input
-            className={inputClass}
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="9.99"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-            Currency
-          </label>
-          <input
-            className={inputClass}
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-            Payout wallet
+            Inventory item
           </label>
           <select
             className={inputClass}
-            value={payoutWalletId}
-            onChange={(e) => setPayoutWalletId(e.target.value)}
+            value={inventoryItemId}
+            onChange={(e) => setInventoryItemId(e.target.value)}
           >
             <option value="">Choose…</option>
-            {wallets?.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.label || w.owner_type} ({w.currency})
+            {inventoryItems?.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title} ({item.price.currency}{" "}
+                {(item.price.total / 100).toFixed(2)})
               </option>
             ))}
           </select>
+          {inventoryItems && inventoryItems.length === 0 && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+              No published inventory items yet — publish one first, or choose
+              "Something else" to list manually.
+            </p>
+          )}
+          <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            Title, description, price, and images are copied from the item when
+            the listing is created — editing the item later won't change this
+            listing automatically.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+              Title
+            </label>
+            <input
+              className={inputClass}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+              Description
+            </label>
+            <input
+              className={inputClass}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="rounded-md bg-neutral-50 p-3 dark:bg-neutral-900">
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+              What's being sold — a reference into another capability's own
+              data. For example, selling access to a Provisioning template:
+              capability <code>system.provisioning</code>, type{" "}
+              <code>template</code>, id = the template's code.
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              <input
+                className={inputClass}
+                placeholder="source_capability"
+                value={sourceCapability}
+                onChange={(e) => setSourceCapability(e.target.value)}
+              />
+              <input
+                className={inputClass}
+                placeholder="source_type"
+                value={sourceType}
+                onChange={(e) => setSourceType(e.target.value)}
+              />
+              <input
+                className={inputClass}
+                placeholder="source_id"
+                value={sourceId}
+                onChange={(e) => setSourceId(e.target.value)}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Pricing
+        </label>
+        <div className="flex gap-2">
+          {(["free", "one_time", "subscription"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setPricingMode(mode)}
+              className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                pricingMode === mode
+                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                  : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
+              }`}
+            >
+              {mode === "free"
+                ? "Free"
+                : mode === "one_time"
+                  ? "One-time"
+                  : "Subscription"}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="rounded-md bg-neutral-50 p-3 dark:bg-neutral-900">
-        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-          What's being sold — a reference into another capability's own data.
-          For example, selling access to a Provisioning template: capability{" "}
-          <code>system.provisioning</code>, type <code>template</code>, id = the
-          template's code.
-        </p>
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          <input
+      {pricingMode === "subscription" ? (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+            Subscription plan
+          </label>
+          <select
             className={inputClass}
-            placeholder="source_capability"
-            value={sourceCapability}
-            onChange={(e) => setSourceCapability(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="source_type"
-            value={sourceType}
-            onChange={(e) => setSourceType(e.target.value)}
-          />
-          <input
-            className={inputClass}
-            placeholder="source_id"
-            value={sourceId}
-            onChange={(e) => setSourceId(e.target.value)}
-          />
+            value={subscriptionPlanId}
+            onChange={(e) => setSubscriptionPlanId(e.target.value)}
+          >
+            <option value="">Choose…</option>
+            {plans?.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name} ({plan.currency} {(plan.price / 100).toFixed(2)}/
+                {plan.billing_interval})
+              </option>
+            ))}
+          </select>
+          {plans && plans.length === 0 && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+              No subscription plans on this container yet — create one under
+              Subscription first.
+            </p>
+          )}
         </div>
+      ) : (
+        sourceMode === "manual" &&
+        pricingMode !== "free" && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+                Price
+              </label>
+              <input
+                className={inputClass}
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="9.99"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+                Currency
+              </label>
+              <input
+                className={inputClass}
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              />
+            </div>
+          </div>
+        )
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Payout wallet
+        </label>
+        <select
+          className={inputClass}
+          value={payoutWalletId}
+          onChange={(e) => setPayoutWalletId(e.target.value)}
+        >
+          <option value="">Choose…</option>
+          {wallets?.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.label || w.owner_type} ({w.currency})
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => mutation.mutate()}
-          disabled={
-            !title ||
-            !price ||
-            !payoutWalletId ||
-            !sourceCapability ||
-            !sourceType ||
-            !sourceId ||
-            mutation.isPending
-          }
+          disabled={!canSubmit || mutation.isPending}
           className={primaryButtonClass}
         >
           {mutation.isPending ? "Creating…" : "Create listing"}

@@ -4,7 +4,10 @@ import { sdk, type Purchase, type PurchaseStatus } from "../../lib/sdk";
 
 const STATUS_STYLES: Record<PurchaseStatus, string> = {
   completed: "bg-black text-white dark:bg-white dark:text-black",
+  subscribed: "bg-black text-white dark:bg-white dark:text-black",
   payment_failed:
+    "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+  subscription_failed:
     "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
   fulfillment_failed:
     "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
@@ -12,7 +15,9 @@ const STATUS_STYLES: Record<PurchaseStatus, string> = {
 
 const STATUS_LABELS: Record<PurchaseStatus, string> = {
   completed: "completed",
+  subscribed: "subscribed",
   payment_failed: "payment failed",
+  subscription_failed: "subscription failed",
   fulfillment_failed: "needs attention",
 };
 
@@ -26,7 +31,7 @@ export function MyPurchases() {
     <div className="max-w-xl">
       <h1 className="text-xl font-semibold tracking-tight">My purchases</h1>
       <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Everything you've bought from the marketplace.
+        Everything you've bought or subscribed to from the marketplace.
       </p>
 
       {isLoading && (
@@ -71,6 +76,16 @@ function PurchaseRow({ purchase }: { purchase: Purchase }) {
         {purchase.status === "fulfillment_failed" && (
           <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
             Payment went through, but access wasn't granted. Contact the seller.
+          </p>
+        )}
+        {purchase.status === "subscribed" && (
+          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-500">
+            Billed on the plan's own schedule from here on.
+          </p>
+        )}
+        {purchase.status === "subscription_failed" && (
+          <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">
+            Setting up recurring billing didn't go through.
           </p>
         )}
       </div>
