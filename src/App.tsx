@@ -6,6 +6,7 @@ import { ContainerProvider } from "./components/context/ContainerContext";
 import { ThemeProvider } from "./components/context/ThemeContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/Dashboardlayout";
+
 import { Signin } from "./page/Signin";
 import { Signup } from "./page/Signup";
 import { PublicFormFill } from "./page/PublicFormFill";
@@ -38,6 +39,7 @@ import { MyPurchases } from "./page/dashboard/MyPurchases";
 
 import { queryClient } from "./lib/query/Queryclient";
 import Home from "./page/Home";
+import { Inventory } from "./page/dashboard/Inventory";
 import { Payment } from "./page/payment/Payment";
 import { PaymentIntentDetail } from "./page/payment/PaymentIntentDetail";
 import { PaymentWalletDetail } from "./page/payment/PaymentWalletDetail";
@@ -139,6 +141,11 @@ function App() {
                       as "form"/"communication" above. Matches the
                       manifest's own navigation().route exactly. */}
                   <Route path="payment" element={<Payment />} />
+                  {/* Static "inventory" route, same priority reasoning
+                      as "payment"/"form"/"communication" above.
+                      Matches InventoryCapability's own
+                      navigation().route exactly. */}
+                  <Route path="inventory" element={<Inventory />} />
                   <Route path="subscription" element={<Subscription />} />
                   <Route
                     path="my-subscriptions"
