@@ -105,6 +105,101 @@ export interface LedgerTransaction {
   posted_at: string | null;
 }
 
+// -- Payouts ----------------------------------------------------------------
+//
+// A payout is a PARENT record for the total amount requested; it names
+// no single gateway because it may resolve through more than one — see
+// `PayoutLeg` and the backend's `domain/rules.py::allocate_payout()`.
+// `"partially_succeeded"` is a real, first-class status: some (but not
+// all) of the requested amount has already irreversibly left the
+// platform. It can still have a leg in flight — see `PayoutLeg`'s own
+// note — so don't treat it as final on sight.
+
+export type PayoutStatus =
+  "pending" | "processing" | "succeeded" | "partially_succeeded" | "failed";
+export type PayoutLegStatus = "pending" | "processing" | "succeeded" | "failed";
+export type PayoutDestinationType = "bank" | "mobile_money";
+
+/** `account_name` sits at the top level (a sibling of `bank`/
+ * `mobile_money`), not nested inside either — matches the backend's
+ * `FlutterwavePayoutGateway._name_object()`, which reads it that way
+ * regardless of destination type. Field names inside `bank`/
+ * `mobile_money` are payout-specific and DON'T match
+ * `MobileMoneyInput` (collection) — this is a different validator on
+ * the backend (`validate_create_payout`), with its own field names. */
+export interface PayoutDestination {
+  bank?: { code: string; number: string };
+  mobile_money?: { country: string; network: string; msisdn: string };
+  account_name?: string;
+}
+
+export interface Payout {
+  id: string;
+  container_id: string;
+  source_account_id: string;
+  amount: number;
+  currency: string;
+  destination_type: PayoutDestinationType;
+  destination: PayoutDestination;
+  status: PayoutStatus;
+  narration: string;
+  idempotency_key: string | null;
+  requested_by_actor_id: string | null;
+  metadata: Record<string, unknown>;
+  correlation_id: string | null;
+  succeeded_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** One gateway's slice of a (possibly split) payout. `"processing"`
+ * here doesn't necessarily mean the overall payout is still
+ * unresolved — other legs may already be `"succeeded"`; check the
+ * parent `Payout.status` for the aggregate picture. */
+export interface PayoutLeg {
+  id: string;
+  payout_id: string;
+  gateway: string;
+  amount: number;
+  status: PayoutLegStatus;
+  gateway_reference: string | null;
+  ledger_transaction_id: string | null;
+  failure_reason: string | null;
+  attempt_count: number;
+  succeeded_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** What `getPayout()` returns — the parent plus every leg `submit()`
+ * has ever executed for it. Empty `legs` means `submitPayout()`
+ * hasn't been called yet. */
+export interface PayoutDetail extends Payout {
+  legs: PayoutLeg[];
+}
+
+export interface CreatePayoutInput {
+  source_wallet_id: string;
+  amount: number;
+  currency: string;
+  destination_type: PayoutDestinationType;
+  destination: PayoutDestination;
+  narration?: string;
+  idempotency_key?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/** Returned by both `submitPayout()` and `reconcilePayout()` —
+ * `succeeded_amount` may be less than `requested_amount` even on a
+ * "successful" call; that's exactly what `"partially_succeeded"`
+ * means, not an error. */
+export interface SubmitPayoutResult {
+  payout_id: string;
+  status: PayoutStatus;
+  succeeded_amount: number;
+  requested_amount: number;
+}
+
 // -- Payment methods (card / mobile money / saved reference) --------------
 //
 // Shape must match `interface/serializers.py`'s `validate_payment_method()`
@@ -354,6 +449,35 @@ function createTransfer(
   return api.post<LedgerTransaction>("/api/payment/transfers/", input);
 }
 
+// -- Payouts ------------------------------------------------------------
+
+async function listPayouts(containerId: string): Promise<Payout[]> {
+  return api.get<Payout[]>(`/api/payment/payouts/?container_id=${containerId}`);
+}
+
+/** Returns the parent PLUS every leg it's accumulated so far — see
+ * `PayoutDetail`. */
+function getPayout(id: string): Promise<PayoutDetail> {
+  return api.get<PayoutDetail>(`/api/payment/payouts/${id}/`);
+}
+
+function createPayout(input: CreatePayoutInput): Promise<Payout> {
+  return api.post<Payout>("/api/payment/payouts/", input);
+}
+
+/** Covers whatever's left of this payout — first submission, retrying
+ * a failed leg, and topping up a `"partially_succeeded"` payout once
+ * more float exists are all this same call. Can fail outright (no
+ * gateway currently has enough float for the shortfall) without
+ * anything on the payout having changed — safe to retry later. */
+function submitPayout(id: string): Promise<SubmitPayoutResult> {
+  return api.post<SubmitPayoutResult>(`/api/payment/payouts/${id}/submit/`);
+}
+
+function reconcilePayout(id: string): Promise<SubmitPayoutResult> {
+  return api.post<SubmitPayoutResult>(`/api/payment/payouts/${id}/reconcile/`);
+}
+
 // -- Saved payment methods --------------------------------------------------
 //
 // Self-service, actor-scoped — always the CALLER's own saved methods;
@@ -394,6 +518,11 @@ export const payment = {
   refundIntent,
   reconcileIntent,
   createTransfer,
+  listPayouts,
+  getPayout,
+  createPayout,
+  submitPayout,
+  reconcilePayout,
   listSavedPaymentMethods,
   removeSavedPaymentMethod,
 };

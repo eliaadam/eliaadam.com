@@ -30,15 +30,17 @@ import { FormEditor } from "./page/dashboard/FormEditor";
 import { FormResponses } from "./page/dashboard/FormResponses";
 import { FormFill } from "./page/dashboard/FormFill";
 import { Communication } from "./page/dashboard/Communication";
-import { Payment } from "./page/dashboard/Payment";
+
 import { Subscription } from "./page/dashboard/Subscription";
 import { MySubscriptions } from "./page/dashboard/MySubscriptions";
 import { Marketplace } from "./page/dashboard/Marketplace";
 import { MyPurchases } from "./page/dashboard/MyPurchases";
-import { PaymentWalletDetail } from "./page/dashboard/PaymentWalletDetail";
-import { PaymentIntentDetail } from "./page/dashboard/PaymentIntentDetail";
+
 import { queryClient } from "./lib/query/Queryclient";
 import Home from "./page/Home";
+import { Payment } from "./page/payment/Payment";
+import { PaymentIntentDetail } from "./page/payment/PaymentIntentDetail";
+import { PaymentWalletDetail } from "./page/payment/PaymentWalletDetail";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in

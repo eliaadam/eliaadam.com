@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowLeftRight, Plus } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, Banknote, Plus } from "lucide-react";
 import { sdk, type WalletOwnerType } from "../../lib/sdk";
 import { useAuth } from "../../components/context/Authcontext";
 import { CreateIntentForm } from "../../components/payment/CreateIntentForm";
+import { CreatePayoutForm } from "../../components/payment/CreatePayoutForm";
 import { TransferForm } from "../../components/payment/TransferForm";
 import { WalletParticipants } from "../../components/payment/WalletParticipants";
 
@@ -23,7 +24,9 @@ export function PaymentWalletDetail() {
   const { walletId } = useParams<{ walletId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [panel, setPanel] = useState<"none" | "collect" | "transfer">("none");
+  const [panel, setPanel] = useState<"none" | "collect" | "transfer" | "payout">(
+    "none",
+  );
 
   const { data: wallet, isLoading } = useQuery({
     queryKey: ["payment", "wallet", walletId],
@@ -106,6 +109,14 @@ export function PaymentWalletDetail() {
           <ArrowLeftRight size={15} />
           Transfer
         </button>
+        <button
+          type="button"
+          onClick={() => setPanel(panel === "payout" ? "none" : "payout")}
+          className="flex items-center gap-1.5 rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium dark:border-neutral-700"
+        >
+          <Banknote size={15} />
+          Cash out
+        </button>
       </div>
 
       {panel === "collect" && (
@@ -124,6 +135,17 @@ export function PaymentWalletDetail() {
           <TransferForm
             fromWallet={wallet}
             onCompleted={() => setPanel("none")}
+          />
+        </div>
+      )}
+      {panel === "payout" && (
+        <div className="mt-4">
+          <CreatePayoutForm
+            wallet={wallet}
+            onCreated={(id) => {
+              setPanel("none");
+              navigate(`/dashboard/payment/payouts/${id}`);
+            }}
           />
         </div>
       )}
