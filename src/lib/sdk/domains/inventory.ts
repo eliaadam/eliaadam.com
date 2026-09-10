@@ -104,6 +104,22 @@ function setBranding(
   });
 }
 
+/**
+ * Uploads a file to Document's generic upload endpoint and returns
+ * its new file_id. Doesn't itself attach anything — the caller is
+ * responsible for adding {file_id, role} to the item's existing
+ * branding.assets and calling setBranding() with the full updated
+ * list (setBranding replaces the whole assets list, it doesn't
+ * append — matches the backend's own contract).
+ */
+function uploadBrandingAsset(
+  file: File,
+): Promise<{ file_id: string; filename: string; content_type: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api.uploadMultipart("/api/document/files/upload/", formData);
+}
+
 function publishItem(itemId: string): Promise<InventoryItem> {
   return api.post<InventoryItem>(`/api/inventory/items/${itemId}/publish/`);
 }
@@ -118,6 +134,7 @@ export const inventory = {
   createItem,
   updateItem,
   setBranding,
+  uploadBrandingAsset,
   publishItem,
   archiveItem,
 };
