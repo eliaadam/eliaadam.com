@@ -50,6 +50,8 @@ export interface Purchase {
   status: PurchaseStatus;
   fulfillment_result: Record<string, unknown> | null;
   subscription_id: string | null;
+  source_capability: string | null;
+  source_type: string | null;
   created_at: string | null;
 }
 

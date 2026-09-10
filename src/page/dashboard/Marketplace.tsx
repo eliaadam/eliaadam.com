@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { sdk, type Listing, type ListingCategory } from "../../lib/sdk";
 import { API_BASE_URL } from "../../lib/query/Api";
+import { getListingCardBody } from "../../lib/registries/listingCardRegistry";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageMarketplaceListings } from "../../lib/hooks/useCanManageMarketplaceListings";
 
@@ -367,11 +368,9 @@ function ListingImageCarousel({ fileIds }: { fileIds: string[] }) {
   );
 }
 
-function BrowseListingCard({ listing }: { listing: Listing }) {
-  const [showBuy, setShowBuy] = useState(false);
-
+function DefaultListingCardBody({ listing }: { listing: Listing }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+    <>
       {listing.images.length > 0 && (
         <ListingImageCarousel fileIds={listing.images} />
       )}
@@ -387,6 +386,27 @@ function BrowseListingCard({ listing }: { listing: Listing }) {
         <p className="text-xs text-neutral-600 dark:text-neutral-400">
           {listing.description}
         </p>
+      )}
+    </>
+  );
+}
+
+function BrowseListingCard({ listing }: { listing: Listing }) {
+  const [showBuy, setShowBuy] = useState(false);
+
+  // Dispatch to a capability-registered card body if one exists (an
+  // Event, a Ticket, whatever needs to look genuinely different from
+  // a plain product) — falls back to the generic body otherwise. The
+  // Buy flow itself stays the same regardless; see
+  // listingCardRegistry.ts's own docstring on why that's deliberate.
+  const CustomBody = getListingCardBody(listing.source_capability);
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+      {CustomBody ? (
+        <CustomBody listing={listing} />
+      ) : (
+        <DefaultListingCardBody listing={listing} />
       )}
 
       <div className="mt-auto pt-2">

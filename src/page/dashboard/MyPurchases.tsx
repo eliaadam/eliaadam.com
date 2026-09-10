@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingBag } from "lucide-react";
 import { sdk, type Purchase, type PurchaseStatus } from "../../lib/sdk";
+import { getPurchaseDisplay } from "../../lib/registries/purchaseDisplayRegistry";
 
 const STATUS_STYLES: Record<PurchaseStatus, string> = {
   completed: "bg-black text-white dark:bg-white dark:text-black",
@@ -61,17 +62,37 @@ export function MyPurchases() {
   );
 }
 
+function DefaultPurchaseBody({ purchase }: { purchase: Purchase }) {
+  return (
+    <>
+      <p className="truncate text-sm font-medium">
+        {(purchase.price_paid / 100).toFixed(2)} {purchase.currency}
+      </p>
+      {purchase.created_at && (
+        <p className="truncate text-xs text-neutral-500 dark:text-neutral-500">
+          {new Date(purchase.created_at).toLocaleDateString()}
+        </p>
+      )}
+    </>
+  );
+}
+
 function PurchaseRow({ purchase }: { purchase: Purchase }) {
+  // Dispatch to a capability-registered display if one exists (a
+  // Ticket's QR code, an Event's calendar entry) — falls back to the
+  // generic price+date body otherwise. The status badge and
+  // status-specific messages below stay generic regardless of what
+  // was purchased — every purchase has a transaction status,
+  // regardless of what was bought.
+  const CustomBody = getPurchaseDisplay(purchase.source_capability);
+
   return (
     <li className="flex items-center justify-between gap-3 px-4 py-3.5">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">
-          {(purchase.price_paid / 100).toFixed(2)} {purchase.currency}
-        </p>
-        {purchase.created_at && (
-          <p className="truncate text-xs text-neutral-500 dark:text-neutral-500">
-            {new Date(purchase.created_at).toLocaleDateString()}
-          </p>
+        {CustomBody ? (
+          <CustomBody purchase={purchase} />
+        ) : (
+          <DefaultPurchaseBody purchase={purchase} />
         )}
         {purchase.status === "fulfillment_failed" && (
           <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">

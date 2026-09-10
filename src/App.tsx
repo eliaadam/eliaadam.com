@@ -1,4 +1,5 @@
 import "./App.css";
+import "./lib/registries/registrations";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./components/context/Authcontext";
@@ -32,14 +33,14 @@ import { FormResponses } from "./page/dashboard/FormResponses";
 import { FormFill } from "./page/dashboard/FormFill";
 import { Communication } from "./page/dashboard/Communication";
 
+import { Inventory } from "./page/dashboard/Inventory";
 import { Subscription } from "./page/dashboard/Subscription";
 import { MySubscriptions } from "./page/dashboard/MySubscriptions";
 import { Marketplace } from "./page/dashboard/Marketplace";
 import { MyPurchases } from "./page/dashboard/MyPurchases";
 
 import { queryClient } from "./lib/query/Queryclient";
-import Home from "./page/Home";
-import { Inventory } from "./page/dashboard/Inventory";
+import { Home } from "lucide-react";
 import { Payment } from "./page/payment/Payment";
 import { PaymentIntentDetail } from "./page/payment/PaymentIntentDetail";
 import { PaymentWalletDetail } from "./page/payment/PaymentWalletDetail";
