@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Package } from "lucide-react";
-import {
-  sdk,
-  type InventoryItem,
-  type InventoryItemStatus,
-} from "../../lib/sdk";
+import { Plus, Package, X } from "lucide-react";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageInventory } from "../../lib/hooks/useCanManageInventory";
+import { API_BASE_URL } from "../../lib/query/Api";
+import {
+  type InventoryItemStatus,
+  sdk,
+  type InventoryItem,
+} from "../../lib/sdk";
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
@@ -164,6 +165,7 @@ function ItemRow({
 }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const [managingBranding, setManagingBranding] = useState(false);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
@@ -189,6 +191,17 @@ function ItemRow({
     );
   }
 
+  if (managingBranding) {
+    return (
+      <li className="p-4">
+        <BrandingSection
+          item={item}
+          onDone={() => setManagingBranding(false)}
+        />
+      </li>
+    );
+  }
+
   return (
     <li className="flex items-center justify-between gap-4 px-4 py-3.5">
       <div className="min-w-0">
@@ -199,6 +212,11 @@ function ItemRow({
           >
             {item.status}
           </span>
+          {!item.branding.assets.length ? null : (
+            <span className="flex-none text-[11px] text-neutral-400 dark:text-neutral-600">
+              {item.branding.assets.length} media
+            </span>
+          )}
         </div>
         <p className="truncate text-xs text-neutral-500 dark:text-neutral-500">
           {item.item_type}
@@ -215,6 +233,13 @@ function ItemRow({
       </div>
       {canManage && (
         <div className="flex flex-none items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setManagingBranding(true)}
+            className="rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+          >
+            Branding
+          </button>
           <button
             type="button"
             onClick={() => setEditing(true)}
@@ -245,6 +270,152 @@ function ItemRow({
         </div>
       )}
     </li>
+  );
+}
+
+const BRANDING_ROLES = ["logo", "banner", "gallery", "video"] as const;
+
+function BrandingSection({
+  item,
+  onDone,
+}: {
+  item: InventoryItem;
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [role, setRole] = useState<string>("logo");
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const uploaded = await sdk.inventory.uploadBrandingAsset(file);
+      const nextAssets = [
+        ...item.branding.assets,
+        { file_id: uploaded.file_id, role },
+      ];
+      return sdk.inventory.setBranding(item.id, nextAssets);
+    },
+    onSuccess: invalidate,
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (fileId: string) => {
+      const nextAssets = item.branding.assets.filter(
+        (a) => a.file_id !== fileId,
+      );
+      return sdk.inventory.setBranding(item.id, nextAssets);
+    },
+    onSuccess: invalidate,
+  });
+
+  const handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) uploadMutation.mutate(file);
+    event.target.value = "";
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Branding — {item.title}</p>
+        <button
+          type="button"
+          onClick={onDone}
+          className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+        >
+          Done
+        </button>
+      </div>
+
+      {item.branding.assets.length > 0 && (
+        <div className="grid grid-cols-4 gap-2">
+          {item.branding.assets.map((asset) => (
+            <BrandingAssetTile
+              key={asset.file_id}
+              asset={asset}
+              onRemove={() => removeMutation.mutate(asset.file_id)}
+              removing={
+                removeMutation.isPending &&
+                removeMutation.variables === asset.file_id
+              }
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <select
+          className={`${inputClass} max-w-[8rem]`}
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+        >
+          {BRANDING_ROLES.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <label className="cursor-pointer rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900">
+          {uploadMutation.isPending ? "Uploading…" : "Upload file"}
+          <input
+            type="file"
+            accept="image/*,video/*"
+            className="hidden"
+            disabled={uploadMutation.isPending}
+            onChange={handleFileSelected}
+          />
+        </label>
+        {uploadMutation.isError && (
+          <p className="text-xs text-red-600 dark:text-red-400">
+            Couldn't upload that file.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BrandingAssetTile({
+  asset,
+  onRemove,
+  removing,
+}: {
+  asset: { file_id: string; role: string };
+  onRemove: () => void;
+  removing: boolean;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const url = `${API_BASE_URL}/api/document/files/${asset.file_id}/raw/`;
+
+  return (
+    <div className="group relative overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800">
+      {imgFailed ? (
+        <div className="flex h-20 items-center justify-center bg-neutral-100 text-xs text-neutral-500 dark:bg-neutral-900 dark:text-neutral-500">
+          {asset.role}
+        </div>
+      ) : (
+        <img
+          src={url}
+          alt={asset.role}
+          onError={() => setImgFailed(true)}
+          className="h-20 w-full object-cover"
+        />
+      )}
+      <span className="absolute bottom-0 left-0 right-0 truncate bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+        {asset.role}
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={removing}
+        aria-label="Remove"
+        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-600 disabled:opacity-60 group-hover:opacity-100"
+      >
+        <X size={11} />
+      </button>
+    </div>
   );
 }
 
