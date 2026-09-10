@@ -6,6 +6,8 @@ import {
   ShoppingBag,
   CheckCircle2,
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { sdk, type Listing } from "../../lib/sdk";
 import { API_BASE_URL } from "../../lib/query/Api";
@@ -25,6 +27,7 @@ function formatPrice(price: number, currency: string) {
 export function Marketplace() {
   const { currentContainerId } = useContainer();
   const { data: canManage } = useCanManageMarketplaceListings();
+  const [activeTab, setActiveTab] = useState<"manage" | "browse">("browse");
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -47,6 +50,8 @@ export function Marketplace() {
     queryFn: () => sdk.surfacing.browseMarketplace(search || undefined),
   });
 
+  const showManageTab = canManage && currentContainerId;
+
   return (
     <div className="max-w-5xl">
       <h1 className="text-xl font-semibold tracking-tight">Marketplace</h1>
@@ -55,7 +60,34 @@ export function Marketplace() {
         access, anything with an id.
       </p>
 
-      {canManage && currentContainerId && (
+      {showManageTab && (
+        <div className="mt-6 flex gap-1 border-b border-neutral-200 dark:border-neutral-800">
+          <button
+            type="button"
+            onClick={() => setActiveTab("manage")}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "manage"
+                ? "border-black text-black dark:border-white dark:text-white"
+                : "border-transparent text-neutral-500 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            Manage listings
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("browse")}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "browse"
+                ? "border-black text-black dark:border-white dark:text-white"
+                : "border-transparent text-neutral-500 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            Browse
+          </button>
+        </div>
+      )}
+
+      {showManageTab && activeTab === "manage" && (
         <section className="mt-6">
           <div className="flex items-start justify-between">
             <h2 className="text-sm font-semibold tracking-tight">
@@ -103,49 +135,63 @@ export function Marketplace() {
               </div>
             </div>
           )}
+
+          {!draftListings?.length && !myListings?.length && !showCreate && (
+            <div className="mt-6 rounded-lg border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
+              <ShoppingBag
+                className="mx-auto text-neutral-400 dark:text-neutral-600"
+                size={22}
+              />
+              <p className="mt-3 text-sm font-medium">
+                No listings on this container yet
+              </p>
+            </div>
+          )}
         </section>
       )}
 
-      <section className="mt-8">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold tracking-tight">Browse</h2>
-          <input
-            className={`${inputClass} max-w-xs`}
-            placeholder="Search listings…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        {browseLoading && (
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-56 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-900"
-              />
-            ))}
-          </div>
-        )}
-
-        {browseResults && browseResults.length === 0 && (
-          <div className="mt-6 rounded-lg border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
-            <ShoppingBag
-              className="mx-auto text-neutral-400 dark:text-neutral-600"
-              size={22}
+      {(!showManageTab || activeTab === "browse") && (
+        <section className={showManageTab ? "mt-6" : "mt-8"}>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold tracking-tight">Browse</h2>
+            <input
+              className={`${inputClass} max-w-xs`}
+              placeholder="Search listings…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
-            <p className="mt-3 text-sm font-medium">Nothing here yet</p>
           </div>
-        )}
 
-        {browseResults && browseResults.length > 0 && (
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {browseResults.map((listing) => (
-              <BrowseListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
-        )}
-      </section>
+          {browseLoading && (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-56 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-900"
+                />
+              ))}
+            </div>
+          )}
+
+          {browseResults && browseResults.length === 0 && (
+            <div className="mt-6 rounded-lg border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
+              <ShoppingBag
+                className="mx-auto text-neutral-400 dark:text-neutral-600"
+                size={22}
+              />
+              <p className="mt-3 text-sm font-medium">Nothing here yet</p>
+            </div>
+          )}
+
+          {browseResults && browseResults.length > 0 && (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {browseResults.map((listing) => (
+                <BrowseListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
@@ -197,24 +243,80 @@ function ManagedListingCard({ listing }: { listing: Listing }) {
   );
 }
 
-function ListingImage({ fileId }: { fileId: string }) {
-  const [failed, setFailed] = useState(false);
+function ListingImageCarousel({ fileIds }: { fileIds: string[] }) {
+  const [index, setIndex] = useState(0);
+  const [failed, setFailed] = useState<Set<number>>(new Set());
 
   // `listing.images` entries are Document file_ids (opaque references,
   // set by listing_service.py's create() when seeding from a General
   // Inventory item's branding assets), not direct URLs — resolved the
-  // same way Inventory's own branding tiles already do. If this ever
-  // gets a genuine dead/invalid id, fail gracefully rather than show a
-  // broken image icon.
-  if (failed) return null;
+  // same way Inventory's own branding tiles already do. Each image is
+  // tracked independently for failure, so one dead file_id just gets
+  // skipped in the rotation rather than breaking the whole carousel.
+  const validIndices = fileIds.map((_, i) => i).filter((i) => !failed.has(i));
+
+  if (validIndices.length === 0) return null;
+
+  const currentIndex = validIndices.includes(index) ? index : validIndices[0];
+
+  const step = (direction: 1 | -1) => {
+    const pos = validIndices.indexOf(currentIndex);
+    const nextPos =
+      (pos + direction + validIndices.length) % validIndices.length;
+    setIndex(validIndices[nextPos]);
+  };
 
   return (
-    <img
-      src={`${API_BASE_URL}/api/document/files/${fileId}/raw/`}
-      alt=""
-      onError={() => setFailed(true)}
-      className="h-32 w-full rounded-md object-cover"
-    />
+    <div className="group relative">
+      <img
+        src={`${API_BASE_URL}/api/document/files/${fileIds[currentIndex]}/raw/`}
+        alt=""
+        onError={() => setFailed((prev) => new Set(prev).add(currentIndex))}
+        className="h-32 w-full rounded-md object-cover"
+      />
+      {validIndices.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              step(-1);
+            }}
+            aria-label="Previous image"
+            className="absolute left-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              step(1);
+            }}
+            aria-label="Next image"
+            className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+          >
+            <ChevronRight size={14} />
+          </button>
+          <div className="absolute bottom-1.5 left-1/2 flex -translate-x-1/2 gap-1">
+            {validIndices.map((i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIndex(i);
+                }}
+                aria-label={`Go to image ${i + 1}`}
+                className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                  i === currentIndex ? "bg-white" : "bg-white/40"
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -223,7 +325,9 @@ function BrowseListingCard({ listing }: { listing: Listing }) {
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      {listing.images[0] && <ListingImage fileId={listing.images[0]} />}
+      {listing.images.length > 0 && (
+        <ListingImageCarousel fileIds={listing.images} />
+      )}
       <p className="text-sm font-semibold">{listing.title}</p>
       <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
         {listing.pricing_mode === "free"
