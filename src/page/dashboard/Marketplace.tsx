@@ -8,6 +8,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { sdk, type Listing } from "../../lib/sdk";
+import { API_BASE_URL } from "../../lib/query/Api";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageMarketplaceListings } from "../../lib/hooks/useCanManageMarketplaceListings";
 
@@ -196,18 +197,33 @@ function ManagedListingCard({ listing }: { listing: Listing }) {
   );
 }
 
+function ListingImage({ fileId }: { fileId: string }) {
+  const [failed, setFailed] = useState(false);
+
+  // `listing.images` entries are Document file_ids (opaque references,
+  // set by listing_service.py's create() when seeding from a General
+  // Inventory item's branding assets), not direct URLs — resolved the
+  // same way Inventory's own branding tiles already do. If this ever
+  // gets a genuine dead/invalid id, fail gracefully rather than show a
+  // broken image icon.
+  if (failed) return null;
+
+  return (
+    <img
+      src={`${API_BASE_URL}/api/document/files/${fileId}/raw/`}
+      alt=""
+      onError={() => setFailed(true)}
+      className="h-32 w-full rounded-md object-cover"
+    />
+  );
+}
+
 function BrowseListingCard({ listing }: { listing: Listing }) {
   const [showBuy, setShowBuy] = useState(false);
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      {listing.images[0] && (
-        <img
-          src={listing.images[0]}
-          alt=""
-          className="h-32 w-full rounded-md object-cover"
-        />
-      )}
+      {listing.images[0] && <ListingImage fileId={listing.images[0]} />}
       <p className="text-sm font-semibold">{listing.title}</p>
       <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
         {listing.pricing_mode === "free"
