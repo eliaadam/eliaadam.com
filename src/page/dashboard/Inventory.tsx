@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Package, X } from "lucide-react";
-import { useContainer } from "../../components/context/ContainerContext";
-import { useCanManageInventory } from "../../lib/hooks/useCanManageInventory";
-import { API_BASE_URL } from "../../lib/query/Api";
 import {
-  type InventoryItemStatus,
   sdk,
   type InventoryItem,
+  type InventoryItemStatus,
 } from "../../lib/sdk";
+import { API_BASE_URL } from "../../lib/query/Api";
+import { useContainer } from "../../components/context/ContainerContext";
+import { useCanManageInventory } from "../../lib/hooks/useCanManageInventory";
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
@@ -293,7 +293,7 @@ function BrandingSection({
       const uploaded = await sdk.inventory.uploadBrandingAsset(file);
       const nextAssets = [
         ...item.branding.assets,
-        { file_id: uploaded.file_id, role },
+        { file_id: uploaded.id, role },
       ];
       return sdk.inventory.setBranding(item.id, nextAssets);
     },

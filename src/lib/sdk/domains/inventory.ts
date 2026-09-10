@@ -114,10 +114,16 @@ function setBranding(
  */
 function uploadBrandingAsset(
   file: File,
-): Promise<{ file_id: string; filename: string; content_type: string }> {
+): Promise<{ id: string; filename: string; content_type: string }> {
   const formData = new FormData();
   formData.append("file", file);
-  return api.uploadMultipart("/api/document/files/upload/", formData);
+  // The real, pre-existing generic upload endpoint — POST to the bare
+  // "files/" path (files_upload in domains/document/interface/views.py),
+  // NOT a dedicated "files/upload/" route (that never existed; an
+  // earlier attempt built a duplicate that collided with the existing
+  // files/<id>/ pattern). Response is the full FileDTO via
+  // dataclasses.asdict() — the id field is "id", not "file_id".
+  return api.uploadMultipart("/api/document/files/", formData);
 }
 
 function publishItem(itemId: string): Promise<InventoryItem> {
