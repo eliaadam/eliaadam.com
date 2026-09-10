@@ -86,9 +86,27 @@ export interface UpdateListingInput {
 
 // -- Listings -------------------------------------------------------------
 
-async function browseMarketplace(search?: string): Promise<Listing[]> {
-  const query = search ? `?search=${encodeURIComponent(search)}` : "";
+export interface ListingCategory {
+  source_capability: string;
+  source_type: string;
+}
+
+async function browseMarketplace(
+  search?: string,
+  category?: ListingCategory,
+): Promise<Listing[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (category) {
+    params.set("source_capability", category.source_capability);
+    params.set("source_type", category.source_type);
+  }
+  const query = params.toString() ? `?${params.toString()}` : "";
   return api.get<Listing[]>(`/api/surfacing/marketplace/${query}`);
+}
+
+async function listCategories(): Promise<ListingCategory[]> {
+  return api.get<ListingCategory[]>("/api/surfacing/categories/");
 }
 
 async function listListingsForContainer(
@@ -141,6 +159,7 @@ async function listMyPurchases(): Promise<Purchase[]> {
 
 export const surfacing = {
   browseMarketplace,
+  listCategories,
   listListingsForContainer,
   getListing,
   createListing,

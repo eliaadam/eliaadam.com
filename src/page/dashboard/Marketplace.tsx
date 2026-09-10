@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { sdk, type Listing } from "../../lib/sdk";
+import { sdk, type Listing, type ListingCategory } from "../../lib/sdk";
 import { API_BASE_URL } from "../../lib/query/Api";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageMarketplaceListings } from "../../lib/hooks/useCanManageMarketplaceListings";
@@ -30,6 +30,8 @@ export function Marketplace() {
   const [activeTab, setActiveTab] = useState<"manage" | "browse">("browse");
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] =
+    useState<ListingCategory | null>(null);
 
   const { data: myListings } = useQuery({
     queryKey: ["surfacing", "listings", currentContainerId],
@@ -45,9 +47,18 @@ export function Marketplace() {
     enabled: Boolean(currentContainerId && canManage),
   });
 
+  const { data: categories } = useQuery({
+    queryKey: ["surfacing", "categories"],
+    queryFn: () => sdk.surfacing.listCategories(),
+  });
+
   const { data: browseResults, isLoading: browseLoading } = useQuery({
-    queryKey: ["surfacing", "marketplace", search],
-    queryFn: () => sdk.surfacing.browseMarketplace(search || undefined),
+    queryKey: ["surfacing", "marketplace", search, selectedCategory],
+    queryFn: () =>
+      sdk.surfacing.browseMarketplace(
+        search || undefined,
+        selectedCategory ?? undefined,
+      ),
   });
 
   const showManageTab = canManage && currentContainerId;
@@ -161,6 +172,42 @@ export function Marketplace() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
+          {categories && categories.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory(null)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  selectedCategory === null
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                }`}
+              >
+                All
+              </button>
+              {categories.map((cat) => {
+                const isActive =
+                  selectedCategory?.source_capability ===
+                    cat.source_capability &&
+                  selectedCategory?.source_type === cat.source_type;
+                return (
+                  <button
+                    key={`${cat.source_capability}:${cat.source_type}`}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                      isActive
+                        ? "bg-black text-white dark:bg-white dark:text-black"
+                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    {cat.source_type.replace(/_/g, " ")}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {browseLoading && (
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">

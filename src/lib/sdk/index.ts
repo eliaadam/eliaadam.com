@@ -122,6 +122,7 @@ export type {
   PurchaseStatus,
   Listing,
   Purchase,
+  ListingCategory,
   CreateListingInput,
   UpdateListingInput,
 } from "./domains/surfacing";
