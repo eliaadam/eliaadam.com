@@ -4,10 +4,10 @@ import { Users, Wallet as WalletIcon } from "lucide-react";
 import {
   sdk,
   type PaymentIntentStatus,
-  type PayoutStatus,
   type WalletOwnerType,
 } from "../../lib/sdk";
 import { useContainer } from "../../components/context/ContainerContext";
+import type { PayoutStatus } from "../../lib/sdk/domains/payment";
 import { WalletCreateMenu } from "../../components/payment/WalletCreateMenu";
 
 const STATUS_STYLES: Record<PaymentIntentStatus, string> = {

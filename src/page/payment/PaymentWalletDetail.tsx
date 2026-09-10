@@ -4,10 +4,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowLeftRight, Banknote, Plus } from "lucide-react";
 import { sdk, type WalletOwnerType } from "../../lib/sdk";
 import { useAuth } from "../../components/context/Authcontext";
-import { CreateIntentForm } from "../../components/payment/CreateIntentForm";
+
 import { CreatePayoutForm } from "../../components/payment/CreatePayoutForm";
 import { TransferForm } from "../../components/payment/TransferForm";
 import { WalletParticipants } from "../../components/payment/WalletParticipants";
+import { CreateIntentForm } from "../../components/payment/CreateIntentForm";
 
 const OWNER_TYPE_LABELS: Record<WalletOwnerType, string> = {
   container: "Container wallet",
@@ -24,9 +25,9 @@ export function PaymentWalletDetail() {
   const { walletId } = useParams<{ walletId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [panel, setPanel] = useState<"none" | "collect" | "transfer" | "payout">(
-    "none",
-  );
+  const [panel, setPanel] = useState<
+    "none" | "collect" | "transfer" | "payout"
+  >("none");
 
   const { data: wallet, isLoading } = useQuery({
     queryKey: ["payment", "wallet", walletId],

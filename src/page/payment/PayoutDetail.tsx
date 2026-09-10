@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { sdk, type PayoutLegStatus, type PayoutStatus } from "../../lib/sdk";
+import { sdk } from "../../lib/sdk";
+import type {
+  PayoutStatus,
+  PayoutLegStatus,
+} from "../../lib/sdk/domains/payment";
 
 function formatAmount(minor: number, currency: string): string {
   return `${(minor / 100).toFixed(2)} ${currency}`;
@@ -66,7 +70,9 @@ export function PayoutDetail() {
   });
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["payment", "payout", payoutId] });
+    queryClient.invalidateQueries({
+      queryKey: ["payment", "payout", payoutId],
+    });
 
   const submitMutation = useMutation({
     mutationFn: () => sdk.payment.submitPayout(payoutId!),
@@ -87,7 +93,8 @@ export function PayoutDetail() {
   const succeededAmount = payout.legs
     .filter((l) => l.status === "succeeded")
     .reduce((sum, l) => sum + l.amount, 0);
-  const hasShortfall = succeededAmount < payout.amount && payout.status !== "succeeded";
+  const hasShortfall =
+    succeededAmount < payout.amount && payout.status !== "succeeded";
   const hasProcessingLeg = payout.legs.some((l) => l.status === "processing");
 
   return (
@@ -100,7 +107,9 @@ export function PayoutDetail() {
         Back to payments
       </Link>
 
-      <h1 className="text-xl font-semibold tracking-tight">{payout.narration}</h1>
+      <h1 className="text-xl font-semibold tracking-tight">
+        {payout.narration}
+      </h1>
       <p className="mt-1 text-2xl font-semibold">
         {formatAmount(payout.amount, payout.currency)}
       </p>
@@ -122,8 +131,12 @@ export function PayoutDetail() {
           </dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-neutral-500 dark:text-neutral-500">Destination</dt>
-          <dd className="font-medium">{destinationSummary(payout.destination)}</dd>
+          <dt className="text-neutral-500 dark:text-neutral-500">
+            Destination
+          </dt>
+          <dd className="font-medium">
+            {destinationSummary(payout.destination)}
+          </dd>
         </div>
       </dl>
 
@@ -166,8 +179,8 @@ export function PayoutDetail() {
       </h2>
       <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
         A cashout may be split across more than one gateway if a single rail
-        doesn't currently hold enough float to cover it — each row below is
-        one such attempt.
+        doesn't currently hold enough float to cover it — each row below is one
+        such attempt.
       </p>
 
       {payout.legs.length === 0 ? (
