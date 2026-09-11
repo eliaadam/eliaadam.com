@@ -40,10 +40,11 @@ import { Marketplace } from "./page/dashboard/Marketplace";
 import { MyPurchases } from "./page/dashboard/MyPurchases";
 
 import { queryClient } from "./lib/query/Queryclient";
-import { Home } from "lucide-react";
+ 
 import { Payment } from "./page/payment/Payment";
 import { PaymentIntentDetail } from "./page/payment/PaymentIntentDetail";
 import { PaymentWalletDetail } from "./page/payment/PaymentWalletDetail";
+import HomePage from "./page/HomePage";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -72,7 +73,7 @@ function App() {
           <BrowserRouter>
             <ContainerProvider>
               <Routes>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<HomePage />} />
                 <Route path="/signin" element={<Signin />} />
                 <Route path="/signup" element={<Signup />} />
                 {/* Genuinely public — no auth, outside ProtectedRoute

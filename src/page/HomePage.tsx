@@ -942,7 +942,7 @@ function Footer() {
 /*  Page                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export default function Home() {
+export default function HomePage() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
