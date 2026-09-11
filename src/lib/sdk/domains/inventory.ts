@@ -2,12 +2,27 @@ import { api } from "../../query/Api";
 
 /**
  * Typed client for `capabilities.core.inventory`'s REST API
- * (`/api/inventory/...`). Response shapes match `_item_to_dict()`
- * exactly, confirmed against the real backend views.py.
+ * (`/api/inventory/...`). Response shapes match `_item_to_dict()`/
+ * `_participant_to_dict()` exactly, confirmed against the real backend
+ * views.py.
+ *
+ * OWNERSHIP RETROFIT — the old owner_status: "assigned"|"unassigned"|
+ * "shared" field is GONE, replaced by an `ownership` object carrying
+ * the real four-shape model (domains/foundations/ownership_shapes) —
+ * "container"|"personal"|"container_shared"|"shared". Unlike the old
+ * owner_status, current ownership can no longer be derived purely from
+ * fields already on the item (created_by_actor_id is audit-only now) —
+ * ownership.is_owned_by_me is computed SERVER-SIDE and included
+ * directly on every item response specifically so the frontend never
+ * needs a separate per-item request just to know whether to show
+ * management controls.
  */
 
 export type InventoryItemStatus = "draft" | "active" | "archived";
-export type OwnerStatus = "assigned" | "unassigned" | "shared";
+export type OwnershipShape =
+  "container" | "personal" | "container_shared" | "shared";
+export type ParticipantRole = "owner" | "admin" | "member";
+export type ParticipantStatus = "active" | "removed";
 
 export interface InventoryPrice {
   base_amount: number;
@@ -26,6 +41,14 @@ export interface BrandingAsset {
   role: string;
 }
 
+export interface ItemOwnership {
+  shape: OwnershipShape;
+  container_owner_id: string | null;
+  label: string | null;
+  allows_participants: boolean;
+  is_owned_by_me: boolean | null;
+}
+
 export interface InventoryItem {
   id: string;
   container_id: string;
@@ -34,11 +57,21 @@ export interface InventoryItem {
   description: string | null;
   price: InventoryPrice;
   branding: { assets: BrandingAsset[] };
+  ownership: ItemOwnership;
   status: InventoryItemStatus;
   is_published: boolean;
   metadata: Record<string, unknown>;
   created_by_actor_id: string | null;
-  owner_status: OwnerStatus;
+}
+
+export interface Participant {
+  id: string;
+  resource_id: string;
+  actor_id: string;
+  role: ParticipantRole;
+  status: ParticipantStatus;
+  added_by_actor_id: string | null;
+  joined_at: string | null;
 }
 
 export interface CreateInventoryItemInput {
@@ -50,6 +83,14 @@ export interface CreateInventoryItemInput {
   tax_amount?: number;
   transport_amount?: number;
   discount_percent?: number;
+  owner_type?: OwnershipShape;
+  /** Only meaningful for "container"/"container_shared" — defaults to
+   * the item's own container_id server-side if omitted for those two
+   * shapes. */
+  container_owner_id?: string;
+  /** Required by the backend for "personal"/"shared" — there can be
+   * many, and they need a human-readable name to tell apart. */
+  label?: string;
 }
 
 export interface UpdateInventoryItemInput {
@@ -119,12 +160,6 @@ function uploadBrandingAsset(
 ): Promise<{ id: string; filename: string; content_type: string }> {
   const formData = new FormData();
   formData.append("file", file);
-  // The real, pre-existing generic upload endpoint — POST to the bare
-  // "files/" path (files_upload in domains/document/interface/views.py),
-  // NOT a dedicated "files/upload/" route (that never existed; an
-  // earlier attempt built a duplicate that collided with the existing
-  // files/<id>/ pattern). Response is the full FileDTO via
-  // dataclasses.asdict() — the id field is "id", not "file_id".
   return api.uploadMultipart("/api/document/files/", formData);
 }
 
@@ -136,6 +171,34 @@ function archiveItem(itemId: string): Promise<InventoryItem> {
   return api.post<InventoryItem>(`/api/inventory/items/${itemId}/archive/`);
 }
 
+async function listParticipants(itemId: string): Promise<Participant[]> {
+  const result = await api.get<{ results: Participant[] }>(
+    `/api/inventory/items/${itemId}/participants/`,
+  );
+  return result.results;
+}
+
+function addParticipant(
+  itemId: string,
+  actorId: string,
+  role: "admin" | "member" = "member",
+): Promise<Participant> {
+  return api.post<Participant>(
+    `/api/inventory/items/${itemId}/participants/add/`,
+    { actor_id: actorId, role },
+  );
+}
+
+function removeParticipant(
+  itemId: string,
+  actorId: string,
+): Promise<Participant> {
+  return api.post<Participant>(
+    `/api/inventory/items/${itemId}/participants/remove/`,
+    { actor_id: actorId },
+  );
+}
+
 export const inventory = {
   listItems,
   getItem,
@@ -145,4 +208,7 @@ export const inventory = {
   uploadBrandingAsset,
   publishItem,
   archiveItem,
+  listParticipants,
+  addParticipant,
+  removeParticipant,
 };

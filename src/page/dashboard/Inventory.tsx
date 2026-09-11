@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Package, X } from "lucide-react";
+import { Plus, Package, X, Users } from "lucide-react";
 import {
   sdk,
   type InventoryItem,
   type InventoryItemStatus,
+  type OwnershipShape,
+  type InventoryParticipant,
 } from "../../lib/sdk";
 import { API_BASE_URL } from "../../lib/query/Api";
 import { useAuth } from "../../components/context/Authcontext";
@@ -25,6 +27,46 @@ function statusClasses(status: InventoryItemStatus): string {
     return "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400";
   }
   return "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"; // archived
+}
+
+const OWNERSHIP_SHAPE_OPTIONS: {
+  value: OwnershipShape;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "personal",
+    label: "Just me",
+    hint: "Only you can manage this item.",
+  },
+  {
+    value: "container",
+    label: "Container-owned",
+    hint: "Anyone with the inventory role can manage this.",
+  },
+  {
+    value: "shared",
+    label: "Specific people",
+    hint: "Only people you invite — not everyone with the role.",
+  },
+  {
+    value: "container_shared",
+    label: "Container + specific people",
+    hint: "Anyone with the role, plus people you invite.",
+  },
+];
+
+function shapeBadgeLabel(shape: OwnershipShape): string {
+  switch (shape) {
+    case "personal":
+      return "Personal";
+    case "container":
+      return "Container";
+    case "shared":
+      return "Shared";
+    case "container_shared":
+      return "Container + members";
+  }
 }
 
 export function Inventory() {
@@ -78,7 +120,9 @@ export function Inventory() {
       {!canManage && (
         <p className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
           You don't have permission to create inventory items on this container
-          — showing what's here, but the "New item" control is hidden.
+          — showing what's here, but the "New item" control is hidden. You may
+          still see management controls on items you personally own or
+          participate in.
         </p>
       )}
 
@@ -160,18 +204,15 @@ function ItemRow({
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [managingBranding, setManagingBranding] = useState(false);
+  const [managingParticipants, setManagingParticipants] = useState(false);
 
-  // Strict ownership, mirroring the backend's own _forbid_unless_owner
-  // check exactly — created_by_actor_id doubles as the owner column
-  // (Ownership's reassign() overwrites it directly, so it reflects
-  // CURRENT ownership, not just who originally created the item), and
-  // owner_status="unassigned" means no one currently owns it, not a
-  // stale previous owner. Computed here rather than via a per-item
-  // is_owned_by() call — the row already carries everything needed.
-  const isOwner =
-    Boolean(currentActorId) &&
-    item.created_by_actor_id === currentActorId &&
-    item.owner_status === "assigned";
+  // Ownership retrofit — is_owned_by_me is computed SERVER-SIDE now
+  // (see backend views.py's own note on why: current ownership can no
+  // longer be derived purely from fields already on the item, since
+  // ownership lives in a separate participant table). No local
+  // computation needed here anymore, unlike the old owner_status-based
+  // check this replaced.
+  const isOwner = Boolean(item.ownership.is_owned_by_me);
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
@@ -208,6 +249,18 @@ function ItemRow({
     );
   }
 
+  if (managingParticipants) {
+    return (
+      <li className="p-4">
+        <ParticipantsSection
+          item={item}
+          currentActorId={currentActorId}
+          onDone={() => setManagingParticipants(false)}
+        />
+      </li>
+    );
+  }
+
   return (
     <li className="flex items-center justify-between gap-4 px-4 py-3.5">
       <div className="min-w-0">
@@ -218,14 +271,12 @@ function ItemRow({
           >
             {item.status}
           </span>
-          {item.owner_status === "unassigned" && (
-            <span
-              className="flex-none rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
-              title="No one currently owns this item — a container admin can reassign it."
-            >
-              unowned
-            </span>
-          )}
+          <span
+            className="flex-none rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400"
+            title={item.ownership.label ?? undefined}
+          >
+            {shapeBadgeLabel(item.ownership.shape)}
+          </span>
           {!item.branding.assets.length ? null : (
             <span className="flex-none text-[11px] text-neutral-400 dark:text-neutral-600">
               {item.branding.assets.length} media
@@ -247,6 +298,16 @@ function ItemRow({
       </div>
       {isOwner && (
         <div className="flex flex-none items-center gap-2">
+          {item.ownership.allows_participants && (
+            <button
+              type="button"
+              onClick={() => setManagingParticipants(true)}
+              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+            >
+              <Users size={13} />
+              Participants
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setManagingBranding(true)}
@@ -283,6 +344,160 @@ function ItemRow({
           )}
         </div>
       )}
+    </li>
+  );
+}
+
+function ParticipantsSection({
+  item,
+  currentActorId,
+  onDone,
+}: {
+  item: InventoryItem;
+  currentActorId: string | undefined;
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [newActorId, setNewActorId] = useState("");
+  const [newRole, setNewRole] = useState<"admin" | "member">("member");
+
+  const { data: participants, isLoading } = useQuery({
+    queryKey: ["inventory", "participants", item.id],
+    queryFn: () => sdk.inventory.listParticipants(item.id),
+  });
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({
+      queryKey: ["inventory", "participants", item.id],
+    });
+
+  const addMutation = useMutation({
+    mutationFn: () =>
+      sdk.inventory.addParticipant(item.id, newActorId, newRole),
+    onSuccess: () => {
+      setNewActorId("");
+      invalidate();
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (actorId: string) =>
+      sdk.inventory.removeParticipant(item.id, actorId),
+    onSuccess: invalidate,
+  });
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Participants — {item.title}</p>
+        <button
+          type="button"
+          onClick={onDone}
+          className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+        >
+          Done
+        </button>
+      </div>
+
+      {item.ownership.shape === "container_shared" && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-500">
+          This item is container-owned — anyone with the inventory role can
+          already manage it. Adding people here gives them access even without
+          that role.
+        </p>
+      )}
+
+      {isLoading && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-500">
+          Loading…
+        </p>
+      )}
+
+      {participants && participants.length > 0 && (
+        <ul className="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+          {participants.map((p) => (
+            <ParticipantRow
+              key={p.id}
+              participant={p}
+              isSelf={p.actor_id === currentActorId}
+              onRemove={() => removeMutation.mutate(p.actor_id)}
+              removing={
+                removeMutation.isPending &&
+                removeMutation.variables === p.actor_id
+              }
+            />
+          ))}
+        </ul>
+      )}
+
+      <div className="flex items-center gap-2">
+        <input
+          className={inputClass}
+          placeholder="Actor id to add…"
+          value={newActorId}
+          onChange={(e) => setNewActorId(e.target.value)}
+        />
+        <select
+          className={`${inputClass} max-w-[7rem]`}
+          value={newRole}
+          onChange={(e) => setNewRole(e.target.value as "admin" | "member")}
+        >
+          <option value="member">member</option>
+          <option value="admin">admin</option>
+        </select>
+        <button
+          type="button"
+          onClick={() => addMutation.mutate()}
+          disabled={!newActorId || addMutation.isPending}
+          className={`flex-none ${primaryButtonClass}`}
+        >
+          {addMutation.isPending ? "Adding…" : "Add"}
+        </button>
+      </div>
+      {addMutation.isError && (
+        <p className="text-xs text-red-600 dark:text-red-400">
+          Couldn't add that participant.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ParticipantRow({
+  participant,
+  isSelf,
+  onRemove,
+  removing,
+}: {
+  participant: InventoryParticipant;
+  isSelf: boolean;
+  onRemove: () => void;
+  removing: boolean;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-3 px-3 py-2">
+      <div className="min-w-0">
+        <p className="truncate text-xs font-medium">
+          {participant.actor_id}
+          {isSelf && (
+            <span className="ml-1.5 text-neutral-400 dark:text-neutral-600">
+              (you)
+            </span>
+          )}
+        </p>
+        <p className="text-[11px] text-neutral-500 dark:text-neutral-500">
+          {participant.role}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={removing}
+        aria-label="Remove participant"
+        className="flex-none text-neutral-400 transition-colors hover:text-red-600 disabled:opacity-60 dark:hover:text-red-400"
+      >
+        <X size={14} />
+      </button>
     </li>
   );
 }
@@ -463,6 +678,12 @@ function ItemForm({
   const [discountPercent, setDiscountPercent] = useState(
     existing ? String(existing.price.discount_percent) : "0",
   );
+  // Ownership shape — create-time only. The backend has no way to
+  // change a shape once set (UpdateInventoryItemDto carries no
+  // ownership fields at all), so this section is simply omitted when
+  // editing rather than shown disabled.
+  const [ownerType, setOwnerType] = useState<OwnershipShape>("personal");
+  const [label, setLabel] = useState("");
 
   const toCents = (v: string) => Math.round(Number(v || "0") * 100);
 
@@ -487,6 +708,11 @@ function ItemForm({
             tax_amount: toCents(taxAmount),
             transport_amount: toCents(transportAmount),
             discount_percent: Number(discountPercent || "0"),
+            owner_type: ownerType,
+            label:
+              ownerType === "personal" || ownerType === "shared"
+                ? label
+                : undefined,
           }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
@@ -503,6 +729,9 @@ function ItemForm({
     (subtotalCents * Number(discountPercent || "0")) / 100,
   );
   const totalCents = subtotalCents - discountCents;
+
+  const needsLabel = ownerType === "personal" || ownerType === "shared";
+  const canSubmit = Boolean(title) && (isEdit || !needsLabel || Boolean(label));
 
   return (
     <div
@@ -524,17 +753,59 @@ function ItemForm({
       </div>
 
       {!isEdit && (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-            Type
-          </label>
-          <input
-            className={inputClass}
-            placeholder="digital_product, service, …"
-            value={itemType}
-            onChange={(e) => setItemType(e.target.value)}
-          />
-        </div>
+        <>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+              Type
+            </label>
+            <input
+              className={inputClass}
+              placeholder="digital_product, service, …"
+              value={itemType}
+              onChange={(e) => setItemType(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+              Who owns this?
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {OWNERSHIP_SHAPE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setOwnerType(opt.value)}
+                  title={opt.hint}
+                  className={`rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors ${
+                    ownerType === opt.value
+                      ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                      : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-500">
+              {OWNERSHIP_SHAPE_OPTIONS.find((o) => o.value === ownerType)?.hint}
+            </p>
+          </div>
+
+          {needsLabel && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+                Label
+              </label>
+              <input
+                className={inputClass}
+                placeholder="A name to tell this apart from your other items…"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+              />
+            </div>
+          )}
+        </>
       )}
 
       <div className="flex flex-col gap-1.5">
@@ -623,7 +894,7 @@ function ItemForm({
         <button
           type="button"
           onClick={() => mutation.mutate()}
-          disabled={!title || mutation.isPending}
+          disabled={!canSubmit || mutation.isPending}
           className={primaryButtonClass}
         >
           {mutation.isPending

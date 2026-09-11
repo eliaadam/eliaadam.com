@@ -13,6 +13,7 @@ import { avatars } from "./domains/avatars";
 import { inventory } from "./domains/inventory";
 import { events } from "./domains/events";
 
+
 /**
  * Single entry point for every domain's API client.
  *
@@ -130,10 +131,14 @@ export type {
 } from "./domains/surfacing";
 export type {
   InventoryItemStatus,
-  OwnerStatus,
+  OwnershipShape,
+  ParticipantRole as InventoryParticipantRole,
+  ParticipantStatus as InventoryParticipantStatus,
   InventoryPrice,
   BrandingAsset,
+  ItemOwnership,
   InventoryItem,
+  Participant as InventoryParticipant,
   CreateInventoryItemInput,
   UpdateInventoryItemInput,
 } from "./domains/inventory";
