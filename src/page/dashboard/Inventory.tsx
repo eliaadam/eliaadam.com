@@ -155,16 +155,27 @@ export function Inventory() {
       )}
 
       {drafts.length > 0 && (
-        <ItemSection title="Drafts" items={drafts} currentActorId={user?.id} />
+        <ItemSection
+          title="Drafts"
+          items={drafts}
+          currentActorId={user?.id}
+          canManage={Boolean(canManage)}
+        />
       )}
       {active.length > 0 && (
-        <ItemSection title="Active" items={active} currentActorId={user?.id} />
+        <ItemSection
+          title="Active"
+          items={active}
+          currentActorId={user?.id}
+          canManage={Boolean(canManage)}
+        />
       )}
       {archived.length > 0 && (
         <ItemSection
           title="Archived"
           items={archived}
           currentActorId={user?.id}
+          canManage={Boolean(canManage)}
         />
       )}
     </div>
@@ -175,10 +186,12 @@ function ItemSection({
   title,
   items,
   currentActorId,
+  canManage,
 }: {
   title: string;
   items: InventoryItem[];
   currentActorId: string | undefined;
+  canManage: boolean;
 }) {
   return (
     <div className="mt-6">
@@ -187,7 +200,12 @@ function ItemSection({
       </p>
       <ul className="mt-2 flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
         {items.map((item) => (
-          <ItemRow key={item.id} item={item} currentActorId={currentActorId} />
+          <ItemRow
+            key={item.id}
+            item={item}
+            currentActorId={currentActorId}
+            canManage={canManage}
+          />
         ))}
       </ul>
     </div>
@@ -197,22 +215,28 @@ function ItemSection({
 function ItemRow({
   item,
   currentActorId,
+  canManage,
 }: {
   item: InventoryItem;
   currentActorId: string | undefined;
+  canManage: boolean;
 }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [managingBranding, setManagingBranding] = useState(false);
   const [managingParticipants, setManagingParticipants] = useState(false);
 
-  // Ownership retrofit — is_owned_by_me is computed SERVER-SIDE now
-  // (see backend views.py's own note on why: current ownership can no
-  // longer be derived purely from fields already on the item, since
-  // ownership lives in a separate participant table). No local
-  // computation needed here anymore, unlike the old owner_status-based
-  // check this replaced.
-  const isOwner = Boolean(item.ownership.is_owned_by_me);
+  // Ownership retrofit — is_owned_by_me is computed SERVER-SIDE (see
+  // backend views.py's own note on why: current ownership can no
+  // longer be derived purely from fields already on the item). This
+  // alone is NOT sufficient for button visibility though: the backend
+  // gates these same actions with AccessMode.EITHER (participation OR
+  // role), so a role-holder with no participant row — the only way a
+  // "container"-shaped item is ever manageable at all, since it has
+  // zero participants by design — must also see the controls. Mirrors
+  // Events' own canManageThis = isOwner || canManage exactly.
+  const isParticipant = Boolean(item.ownership.is_owned_by_me);
+  const canManageThis = isParticipant || canManage;
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
@@ -296,7 +320,7 @@ function ItemRow({
           )}
         </p>
       </div>
-      {isOwner && (
+      {canManageThis && (
         <div className="flex flex-none items-center gap-2">
           {item.ownership.allows_participants && (
             <button
