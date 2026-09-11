@@ -9,6 +9,7 @@ import {
   type EventParticipant,
   type Attendee,
 } from "../../lib/sdk";
+import { API_BASE_URL } from "../../lib/query/Api";
 import { useAuth } from "../../components/context/Authcontext";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageEvents } from "../../lib/hooks/useCanManageEvents";
@@ -251,6 +252,7 @@ function EventRow({
   const [editing, setEditing] = useState(false);
   const [showAttendees, setShowAttendees] = useState(false);
   const [managingParticipants, setManagingParticipants] = useState(false);
+  const [managingBranding, setManagingBranding] = useState(false);
 
   // Ownership retrofit — is_owned_by_me is computed SERVER-SIDE (see
   // backend views.py's own note on why). Combined with role-holder
@@ -313,6 +315,17 @@ function EventRow({
     );
   }
 
+  if (managingBranding) {
+    return (
+      <li className="p-4">
+        <EventBrandingSection
+          event={event}
+          onDone={() => setManagingBranding(false)}
+        />
+      </li>
+    );
+  }
+
   return (
     <li className="flex items-center justify-between gap-4 px-4 py-3.5">
       <div className="min-w-0">
@@ -363,6 +376,13 @@ function EventRow({
                 Participants
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setManagingBranding(true)}
+              className="rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+            >
+              Branding
+            </button>
             <button
               type="button"
               onClick={() => setEditing(true)}
@@ -557,6 +577,152 @@ function EventParticipantRow({
         <XIcon size={14} />
       </button>
     </li>
+  );
+}
+
+const BRANDING_ROLES = ["logo", "banner", "gallery", "video"] as const;
+
+function EventBrandingSection({
+  event,
+  onDone,
+}: {
+  event: EventItem;
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [role, setRole] = useState<string>("logo");
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["events"] });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const uploaded = await sdk.events.uploadBrandingAsset(file);
+      const nextAssets = [
+        ...event.branding.assets,
+        { file_id: uploaded.id, role },
+      ];
+      return sdk.events.setBranding(event.id, nextAssets);
+    },
+    onSuccess: invalidate,
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (fileId: string) => {
+      const nextAssets = event.branding.assets.filter(
+        (a) => a.file_id !== fileId,
+      );
+      return sdk.events.setBranding(event.id, nextAssets);
+    },
+    onSuccess: invalidate,
+  });
+
+  const handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) uploadMutation.mutate(file);
+    event.target.value = "";
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Branding — {event.title}</p>
+        <button
+          type="button"
+          onClick={onDone}
+          className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+        >
+          Done
+        </button>
+      </div>
+
+      {event.branding.assets.length > 0 && (
+        <div className="grid grid-cols-4 gap-2">
+          {event.branding.assets.map((asset) => (
+            <EventBrandingAssetTile
+              key={asset.file_id}
+              asset={asset}
+              onRemove={() => removeMutation.mutate(asset.file_id)}
+              removing={
+                removeMutation.isPending &&
+                removeMutation.variables === asset.file_id
+              }
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <select
+          className={`${inputClass} max-w-[8rem]`}
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+        >
+          {BRANDING_ROLES.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+        <label className="cursor-pointer rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-900">
+          {uploadMutation.isPending ? "Uploading…" : "Upload file"}
+          <input
+            type="file"
+            accept="image/*,video/*"
+            className="hidden"
+            disabled={uploadMutation.isPending}
+            onChange={handleFileSelected}
+          />
+        </label>
+        {uploadMutation.isError && (
+          <p className="text-xs text-red-600 dark:text-red-400">
+            Couldn't upload that file.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EventBrandingAssetTile({
+  asset,
+  onRemove,
+  removing,
+}: {
+  asset: { file_id: string; role: string };
+  onRemove: () => void;
+  removing: boolean;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const url = `${API_BASE_URL}/api/document/files/${asset.file_id}/raw/`;
+
+  return (
+    <div className="group relative overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-800">
+      {imgFailed ? (
+        <div className="flex h-20 items-center justify-center bg-neutral-100 text-xs text-neutral-500 dark:bg-neutral-900 dark:text-neutral-500">
+          {asset.role}
+        </div>
+      ) : (
+        <img
+          src={url}
+          alt={asset.role}
+          onError={() => setImgFailed(true)}
+          className="h-20 w-full object-cover"
+        />
+      )}
+      <span className="absolute bottom-0 left-0 right-0 truncate bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+        {asset.role}
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={removing}
+        aria-label="Remove"
+        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-600 disabled:opacity-60 group-hover:opacity-100"
+      >
+        <XIcon size={11} />
+      </button>
+    </div>
   );
 }
 

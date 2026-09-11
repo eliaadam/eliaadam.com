@@ -169,6 +169,30 @@ function updateEvent(
   return api.post<EventItem>(`/api/events/events/${eventId}/update/`, input);
 }
 
+function setBranding(
+  eventId: string,
+  assets: EventBrandingAsset[],
+): Promise<EventItem> {
+  return api.post<EventItem>(`/api/events/events/${eventId}/branding/`, {
+    assets,
+  });
+}
+
+/**
+ * Uploads a file to Document's generic upload endpoint and returns
+ * its new file_id. Doesn't itself attach anything — the caller adds
+ * {file_id, role} to the event's existing branding.assets and calls
+ * setBranding() with the full updated list (setBranding replaces the
+ * whole assets list, it doesn't append).
+ */
+function uploadBrandingAsset(
+  file: File,
+): Promise<{ id: string; filename: string; content_type: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api.uploadMultipart("/api/document/files/", formData);
+}
+
 function publishEvent(eventId: string): Promise<EventItem> {
   return api.post<EventItem>(`/api/events/events/${eventId}/publish/`);
 }
@@ -229,6 +253,8 @@ export const events = {
   getEvent,
   createEvent,
   updateEvent,
+  setBranding,
+  uploadBrandingAsset,
   publishEvent,
   cancelEvent,
   archiveEvent,
