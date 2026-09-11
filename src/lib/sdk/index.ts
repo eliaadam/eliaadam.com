@@ -13,7 +13,6 @@ import { avatars } from "./domains/avatars";
 import { inventory } from "./domains/inventory";
 import { events } from "./domains/events";
 
-
 /**
  * Single entry point for every domain's API client.
  *
@@ -122,6 +121,7 @@ export type {
 export type {
   ListingStatus,
   PricingMode,
+  VisibilityScope,
   PurchaseStatus,
   Listing,
   Purchase,

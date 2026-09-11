@@ -12,6 +12,7 @@ import { api } from "../../query/Api";
 
 export type ListingStatus = "draft" | "active" | "archived";
 export type PricingMode = "free" | "one_time" | "subscription";
+export type VisibilityScope = "container_only" | "members" | "system";
 export type PurchaseStatus =
   | "completed"
   | "payment_failed"
@@ -33,6 +34,7 @@ export interface Listing {
   payout_wallet_id: string;
   pricing_mode: PricingMode;
   subscription_plan_id: string | null;
+  visibility_scope: VisibilityScope;
   images: string[];
   status: ListingStatus;
   metadata: Record<string, unknown>;
@@ -60,6 +62,9 @@ export interface CreateListingInput {
   payout_wallet_id: string;
   pricing_mode?: PricingMode;
   subscription_plan_id?: string;
+  /** Who can see this in the global marketplace browse. Defaults to
+   * "system" server-side if omitted. */
+  visibility_scope?: VisibilityScope;
   // THREE ways to supply a listing's content (matches the backend's
   // own CreateListingDto exactly):
   //   1. catalog_capability + catalog_item_id — the general

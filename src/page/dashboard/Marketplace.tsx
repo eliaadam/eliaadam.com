@@ -9,7 +9,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { sdk, type Listing, type ListingCategory } from "../../lib/sdk";
+import {
+  sdk,
+  type Listing,
+  type ListingCategory,
+  type VisibilityScope,
+} from "../../lib/sdk";
 import { API_BASE_URL } from "../../lib/query/Api";
 import { getListingCardBody } from "../../lib/registries/listingCardRegistry";
 import { useContainer } from "../../components/context/ContainerContext";
@@ -562,6 +567,28 @@ function BuyForm({
   );
 }
 
+const VISIBILITY_SCOPE_OPTIONS: {
+  value: VisibilityScope;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "system",
+    label: "System marketplace",
+    hint: "Visible to anyone browsing the global marketplace.",
+  },
+  {
+    value: "members",
+    label: "Container members",
+    hint: "Visible only to actors who are a member of this container.",
+  },
+  {
+    value: "container_only",
+    label: "This container only",
+    hint: "Never shows up in the global marketplace — only visible from this container's own listings.",
+  },
+];
+
 function CreateListingForm({
   containerId,
   onDone,
@@ -595,6 +622,8 @@ function CreateListingForm({
     "free" | "one_time" | "subscription"
   >("one_time");
   const [subscriptionPlanId, setSubscriptionPlanId] = useState("");
+  const [visibilityScope, setVisibilityScope] =
+    useState<VisibilityScope>("system");
 
   const { data: wallets } = useQuery({
     queryKey: ["payment", "wallets", containerId],
@@ -627,6 +656,7 @@ function CreateListingForm({
         pricing_mode: pricingMode,
         subscription_plan_id:
           pricingMode === "subscription" ? subscriptionPlanId : undefined,
+        visibility_scope: visibilityScope,
         ...(sourceMode === "inventory"
           ? { inventory_item_id: inventoryItemId }
           : sourceMode === "events"
@@ -917,6 +947,35 @@ function CreateListingForm({
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Who can see this?
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {VISIBILITY_SCOPE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setVisibilityScope(opt.value)}
+              title={opt.hint}
+              className={`rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors ${
+                visibilityScope === opt.value
+                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                  : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-neutral-500 dark:text-neutral-500">
+          {
+            VISIBILITY_SCOPE_OPTIONS.find((o) => o.value === visibilityScope)
+              ?.hint
+          }
+        </p>
       </div>
 
       <div className="flex items-center gap-3">
