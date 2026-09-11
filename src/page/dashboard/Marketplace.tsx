@@ -1,4 +1,4 @@
-import { createElement, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -66,6 +66,60 @@ export function Marketplace() {
         selectedCategory ?? undefined,
       ),
   });
+
+  const {
+    data: containerStorefrontResults,
+    isLoading: containerStorefrontLoading,
+  } = useQuery({
+    queryKey: [
+      "surfacing",
+      "container-marketplace",
+      currentContainerId,
+      search,
+    ],
+    queryFn: () =>
+      sdk.surfacing.browseContainerMarketplace(
+        currentContainerId!,
+        search || undefined,
+      ),
+    enabled: Boolean(currentContainerId),
+  });
+
+  // Automatically folds the current container's own storefront in
+  // alongside the global browse — the only thing a storefront query
+  // ever adds beyond what's already in the global results is its own
+  // "container_only" listings (everything else overlaps), so merging
+  // and de-duping by id gives one seamless list with no manual
+  // switching. The storefront endpoint has no category param of its
+  // own, so the category filter is applied client-side to the merged
+  // set instead, keeping both sources consistent.
+  const activeResults = useMemo(() => {
+    if (!browseResults && !containerStorefrontResults) return undefined;
+    const seen = new Set<string>();
+    const merged: Listing[] = [];
+    for (const listing of browseResults ?? []) {
+      if (!seen.has(listing.id)) {
+        seen.add(listing.id);
+        merged.push(listing);
+      }
+    }
+    for (const listing of containerStorefrontResults ?? []) {
+      if (!seen.has(listing.id)) {
+        seen.add(listing.id);
+        merged.push(listing);
+      }
+    }
+    if (!selectedCategory) return merged;
+    return merged.filter(
+      (l) =>
+        l.source_capability === selectedCategory.source_capability &&
+        l.source_type === selectedCategory.source_type,
+    );
+  }, [browseResults, containerStorefrontResults, selectedCategory]);
+
+  const activeLoading =
+    browseLoading ||
+    (Boolean(currentContainerId) && containerStorefrontLoading);
 
   const showManageTab = canManage && currentContainerId;
 
@@ -215,7 +269,7 @@ export function Marketplace() {
             </div>
           )}
 
-          {browseLoading && (
+          {activeLoading && (
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[0, 1, 2].map((i) => (
                 <div
@@ -226,7 +280,7 @@ export function Marketplace() {
             </div>
           )}
 
-          {browseResults && browseResults.length === 0 && (
+          {activeResults && activeResults.length === 0 && (
             <div className="mt-6 rounded-lg border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
               <ShoppingBag
                 className="mx-auto text-neutral-400 dark:text-neutral-600"
@@ -236,9 +290,9 @@ export function Marketplace() {
             </div>
           )}
 
-          {browseResults && browseResults.length > 0 && (
+          {activeResults && activeResults.length > 0 && (
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {browseResults.map((listing) => (
+              {activeResults.map((listing) => (
                 <BrowseListingCard key={listing.id} listing={listing} />
               ))}
             </div>
@@ -409,7 +463,7 @@ function BrowseListingCard({ listing }: { listing: Listing }) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
       {CustomBody ? (
-        createElement(CustomBody, { listing })
+        <CustomBody listing={listing} />
       ) : (
         <DefaultListingCardBody listing={listing} />
       )}
@@ -775,14 +829,11 @@ function CreateListingForm({
             onChange={(e) => setEventId(e.target.value)}
           >
             <option value="">Choose…</option>
-            {containerEvents?.map(
-              (event: { id: string; title: string; starts_at: string }) => (
-                <option key={event.id} value={event.id}>
-                  {event.title} (
-                  {new Date(event.starts_at).toLocaleDateString()})
-                </option>
-              ),
-            )}
+            {containerEvents?.map((event) => (
+              <option key={event.id} value={event.id}>
+                {event.title} ({new Date(event.starts_at).toLocaleDateString()})
+              </option>
+            ))}
           </select>
           {containerEvents && containerEvents.length === 0 && (
             <p className="text-xs text-neutral-500 dark:text-neutral-500">

@@ -122,6 +122,24 @@ async function listCategories(): Promise<ListingCategory[]> {
   return api.get<ListingCategory[]>("/api/surfacing/categories/");
 }
 
+/**
+ * A container's own PUBLIC storefront — distinct from
+ * listListingsForContainer(), which is the owner's admin view (every
+ * status, no visibility filtering, requires manage permission). This
+ * is open to any authenticated actor, same as browseMarketplace, and
+ * additionally includes "container_only"-scoped listings that never
+ * appear in the global browse at all.
+ */
+async function browseContainerMarketplace(
+  containerId: string,
+  search?: string,
+): Promise<Listing[]> {
+  const query = search ? `?search=${encodeURIComponent(search)}` : "";
+  return api.get<Listing[]>(
+    `/api/surfacing/containers/${containerId}/marketplace/${query}`,
+  );
+}
+
 async function listListingsForContainer(
   containerId: string,
   status: string = "active",
@@ -172,6 +190,7 @@ async function listMyPurchases(): Promise<Purchase[]> {
 
 export const surfacing = {
   browseMarketplace,
+  browseContainerMarketplace,
   listCategories,
   listListingsForContainer,
   getListing,
