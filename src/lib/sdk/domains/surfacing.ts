@@ -60,15 +60,21 @@ export interface CreateListingInput {
   payout_wallet_id: string;
   pricing_mode?: PricingMode;
   subscription_plan_id?: string;
-  // Either seed from an existing General Inventory item (snapshot at
-  // creation time — see the backend's own note on why this isn't a
-  // live reference)...
+  // THREE ways to supply a listing's content (matches the backend's
+  // own CreateListingDto exactly):
+  //   1. catalog_capability + catalog_item_id — the general
+  //      mechanism, works for ANY capability registered in
+  //      catalog_registry (General Inventory, General Events,
+  //      anything future).
+  //   2. inventory_item_id — legacy sugar for
+  //      catalog_capability="core.inventory", kept for backward
+  //      compatibility.
+  //   3. source_capability/source_type/source_id + title/price/
+  //      currency, supplied manually — for something with no
+  //      catalog item behind it at all.
+  catalog_capability?: string;
+  catalog_item_id?: string;
   inventory_item_id?: string;
-  // ...or supply these manually. Both optional now — required only in
-  // combination (either inventory_item_id, or title+price+currency+
-  // source_capability/type/id; the backend fills in whichever half
-  // wasn't provided from the Inventory item when inventory_item_id is
-  // set, but can't invent them from nothing when it isn't).
   source_capability?: string;
   source_type?: string;
   source_id?: string;

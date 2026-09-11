@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createElement, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -404,7 +404,7 @@ function BrowseListingCard({ listing }: { listing: Listing }) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
       {CustomBody ? (
-        <CustomBody listing={listing} />
+        createElement(CustomBody, { listing })
       ) : (
         <DefaultListingCardBody listing={listing} />
       )}
@@ -571,15 +571,16 @@ function CreateListingForm({
 }) {
   const queryClient = useQueryClient();
 
-  // Source mode — either seed from an existing General Inventory item
-  // (snapshot at creation time, not a live reference — see the
-  // backend's own note on this) or reference something else manually
-  // (e.g. a Provisioning template, which has no Inventory item behind
-  // it at all).
-  const [sourceMode, setSourceMode] = useState<"inventory" | "manual">(
-    "inventory",
-  );
+  // Source mode — seed from an existing General Inventory item or
+  // General Events event (snapshot at creation time, not a live
+  // reference — see the backend's own note on this), or reference
+  // something else manually (e.g. a Provisioning template, which has
+  // no catalog item behind it at all).
+  const [sourceMode, setSourceMode] = useState<
+    "inventory" | "events" | "manual"
+  >("inventory");
   const [inventoryItemId, setInventoryItemId] = useState("");
+  const [eventId, setEventId] = useState("");
 
   const [sourceCapability, setSourceCapability] = useState("");
   const [sourceType, setSourceType] = useState("");
@@ -606,6 +607,12 @@ function CreateListingForm({
     enabled: sourceMode === "inventory",
   });
 
+  const { data: containerEvents } = useQuery({
+    queryKey: ["events", "list", containerId],
+    queryFn: () => sdk.events.listEvents(containerId, "active"),
+    enabled: sourceMode === "events",
+  });
+
   const { data: plans } = useQuery({
     queryKey: ["subscription", "plans", containerId],
     queryFn: () => sdk.subscription.listPlansForContainer(containerId),
@@ -622,16 +629,18 @@ function CreateListingForm({
           pricingMode === "subscription" ? subscriptionPlanId : undefined,
         ...(sourceMode === "inventory"
           ? { inventory_item_id: inventoryItemId }
-          : {
-              source_capability: sourceCapability,
-              source_type: sourceType,
-              source_id: sourceId,
-              title,
-              description,
-              price:
-                pricingMode === "free" ? 0 : Math.round(Number(price) * 100),
-              currency: currency.toUpperCase(),
-            }),
+          : sourceMode === "events"
+            ? { catalog_capability: "core.events", catalog_item_id: eventId }
+            : {
+                source_capability: sourceCapability,
+                source_type: sourceType,
+                source_id: sourceId,
+                title,
+                description,
+                price:
+                  pricingMode === "free" ? 0 : Math.round(Number(price) * 100),
+                currency: currency.toUpperCase(),
+              }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surfacing"] });
@@ -644,11 +653,13 @@ function CreateListingForm({
     (pricingMode !== "subscription" || Boolean(subscriptionPlanId)) &&
     (sourceMode === "inventory"
       ? Boolean(inventoryItemId)
-      : Boolean(title) &&
-        Boolean(sourceCapability) &&
-        Boolean(sourceType) &&
-        Boolean(sourceId) &&
-        (pricingMode === "free" || Boolean(price)));
+      : sourceMode === "events"
+        ? Boolean(eventId)
+        : Boolean(title) &&
+          Boolean(sourceCapability) &&
+          Boolean(sourceType) &&
+          Boolean(sourceId) &&
+          (pricingMode === "free" || Boolean(price)));
 
   return (
     <div className="mt-4 flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
@@ -667,6 +678,17 @@ function CreateListingForm({
             }`}
           >
             From your inventory
+          </button>
+          <button
+            type="button"
+            onClick={() => setSourceMode("events")}
+            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+              sourceMode === "events"
+                ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
+            }`}
+          >
+            From your events
           </button>
           <button
             type="button"
@@ -710,6 +732,37 @@ function CreateListingForm({
             Title, description, price, and images are copied from the item when
             the listing is created — editing the item later won't change this
             listing automatically.
+          </p>
+        </div>
+      ) : sourceMode === "events" ? (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+            Event
+          </label>
+          <select
+            className={inputClass}
+            value={eventId}
+            onChange={(e) => setEventId(e.target.value)}
+          >
+            <option value="">Choose…</option>
+            {containerEvents?.map(
+              (event: { id: string; title: string; starts_at: string }) => (
+                <option key={event.id} value={event.id}>
+                  {event.title} (
+                  {new Date(event.starts_at).toLocaleDateString()})
+                </option>
+              ),
+            )}
+          </select>
+          {containerEvents && containerEvents.length === 0 && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+              No published events yet — publish one under Events first.
+            </p>
+          )}
+          <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            Buying this listing (including a free "Get it free" purchase)
+            registers the buyer as an attendee — there's no separate "join"
+            action; RSVPing and buying a ticket are the same flow.
           </p>
         </div>
       ) : (
