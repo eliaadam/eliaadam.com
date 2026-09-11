@@ -5,6 +5,8 @@ import {
   sdk,
   type EventItem,
   type EventStatus,
+  type EventOwnershipShape,
+  type EventParticipant,
   type Attendee,
 } from "../../lib/sdk";
 import { useAuth } from "../../components/context/Authcontext";
@@ -28,6 +30,46 @@ function statusClasses(status: EventStatus): string {
     return "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400";
   }
   return "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"; // archived
+}
+
+const OWNERSHIP_SHAPE_OPTIONS: {
+  value: EventOwnershipShape;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "personal",
+    label: "Just me",
+    hint: "Only you can manage this event.",
+  },
+  {
+    value: "container",
+    label: "Container-owned",
+    hint: "Anyone with the events role can manage this.",
+  },
+  {
+    value: "shared",
+    label: "Specific people",
+    hint: "Only people you invite — not everyone with the role.",
+  },
+  {
+    value: "container_shared",
+    label: "Container + specific people",
+    hint: "Anyone with the role, plus people you invite.",
+  },
+];
+
+function shapeBadgeLabel(shape: EventOwnershipShape): string {
+  switch (shape) {
+    case "personal":
+      return "Personal";
+    case "container":
+      return "Container";
+    case "shared":
+      return "Shared";
+    case "container_shared":
+      return "Container + members";
+  }
 }
 
 // datetime-local inputs give "2026-12-01T18:00" with no timezone —
@@ -67,14 +109,10 @@ export function Events() {
     );
   }
 
-  const drafts =
-    allEvents?.filter((e: EventItem) => e.status === "draft") ?? [];
-  const active =
-    allEvents?.filter((e: EventItem) => e.status === "active") ?? [];
-  const cancelled =
-    allEvents?.filter((e: EventItem) => e.status === "cancelled") ?? [];
-  const archived =
-    allEvents?.filter((e: EventItem) => e.status === "archived") ?? [];
+  const drafts = allEvents?.filter((e) => e.status === "draft") ?? [];
+  const active = allEvents?.filter((e) => e.status === "active") ?? [];
+  const cancelled = allEvents?.filter((e) => e.status === "cancelled") ?? [];
+  const archived = allEvents?.filter((e) => e.status === "archived") ?? [];
 
   return (
     <div className="max-w-3xl">
@@ -102,7 +140,7 @@ export function Events() {
         <p className="mt-4 rounded-md bg-neutral-100 px-3 py-2 text-sm text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
           You don't have permission to create events on this container — showing
           what's here, but the "New event" control is hidden. You may still see
-          management controls on events you personally own.
+          management controls on events you personally own or participate in.
         </p>
       )}
 
@@ -212,16 +250,17 @@ function EventRow({
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [showAttendees, setShowAttendees] = useState(false);
+  const [managingParticipants, setManagingParticipants] = useState(false);
 
-  // Combined "owner OR role-holder" check, mirroring the backend's
-  // own _forbid_unless_owner_or_manager exactly — genuinely different
-  // from Inventory's strict-ownership-only rule. Either half being
-  // true is enough.
-  const isOwner =
-    Boolean(currentActorId) &&
-    event.created_by_actor_id === currentActorId &&
-    event.owner_status === "assigned";
-  const canManageThis = isOwner || canManage;
+  // Ownership retrofit — is_owned_by_me is computed SERVER-SIDE (see
+  // backend views.py's own note on why). Combined with role-holder
+  // status for button visibility, matching the backend's own
+  // AccessMode.EITHER gate exactly — a role-holder with no
+  // participant row is the ONLY way a "container"-shaped event is
+  // ever manageable at all, since that shape has zero participants by
+  // design. Mirrors Inventory's own identical canManageThis fix.
+  const isParticipant = Boolean(event.ownership.is_owned_by_me);
+  const canManageThis = isParticipant || canManage;
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -262,6 +301,18 @@ function EventRow({
     );
   }
 
+  if (managingParticipants) {
+    return (
+      <li className="p-4">
+        <ParticipantsSection
+          event={event}
+          currentActorId={currentActorId}
+          onDone={() => setManagingParticipants(false)}
+        />
+      </li>
+    );
+  }
+
   return (
     <li className="flex items-center justify-between gap-4 px-4 py-3.5">
       <div className="min-w-0">
@@ -272,16 +323,16 @@ function EventRow({
           >
             {event.status}
           </span>
-          {event.owner_status === "unassigned" && (
-            <span
-              className="flex-none rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
-              title="No one currently owns this event — a container admin can reassign it."
-            >
-              unowned
-            </span>
-          )}
+          <span
+            className="flex-none rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400"
+            title={event.ownership.label ?? undefined}
+          >
+            {shapeBadgeLabel(event.ownership.shape)}
+          </span>
         </div>
         <p className="truncate text-xs text-neutral-500 dark:text-neutral-500">
+          {event.event_type}
+          {" · "}
           {new Date(event.starts_at).toLocaleString()}
           {" · "}
           {event.physical_address || event.virtual_link || "No location set"}
@@ -303,6 +354,15 @@ function EventRow({
         </button>
         {canManageThis && (
           <>
+            {event.ownership.allows_participants && (
+              <button
+                type="button"
+                onClick={() => setManagingParticipants(true)}
+                className="rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+              >
+                Participants
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setEditing(true)}
@@ -347,6 +407,159 @@ function EventRow({
   );
 }
 
+function ParticipantsSection({
+  event,
+  currentActorId,
+  onDone,
+}: {
+  event: EventItem;
+  currentActorId: string | undefined;
+  onDone: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [newActorId, setNewActorId] = useState("");
+  const [newRole, setNewRole] = useState<"admin" | "member">("member");
+
+  const { data: participants, isLoading } = useQuery({
+    queryKey: ["events", "participants", event.id],
+    queryFn: () => sdk.events.listParticipants(event.id),
+  });
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({
+      queryKey: ["events", "participants", event.id],
+    });
+
+  const addMutation = useMutation({
+    mutationFn: () => sdk.events.addParticipant(event.id, newActorId, newRole),
+    onSuccess: () => {
+      setNewActorId("");
+      invalidate();
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (actorId: string) =>
+      sdk.events.removeParticipant(event.id, actorId),
+    onSuccess: invalidate,
+  });
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Participants — {event.title}</p>
+        <button
+          type="button"
+          onClick={onDone}
+          className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+        >
+          Done
+        </button>
+      </div>
+
+      {event.ownership.shape === "container_shared" && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-500">
+          This event is container-owned — anyone with the events role can
+          already manage it. Adding people here gives them access even without
+          that role.
+        </p>
+      )}
+
+      {isLoading && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-500">
+          Loading…
+        </p>
+      )}
+
+      {participants && participants.length > 0 && (
+        <ul className="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+          {participants.map((p) => (
+            <EventParticipantRow
+              key={p.id}
+              participant={p}
+              isSelf={p.actor_id === currentActorId}
+              onRemove={() => removeMutation.mutate(p.actor_id)}
+              removing={
+                removeMutation.isPending &&
+                removeMutation.variables === p.actor_id
+              }
+            />
+          ))}
+        </ul>
+      )}
+
+      <div className="flex items-center gap-2">
+        <input
+          className={inputClass}
+          placeholder="Actor id to add…"
+          value={newActorId}
+          onChange={(e) => setNewActorId(e.target.value)}
+        />
+        <select
+          className={`${inputClass} max-w-[7rem]`}
+          value={newRole}
+          onChange={(e) => setNewRole(e.target.value as "admin" | "member")}
+        >
+          <option value="member">member</option>
+          <option value="admin">admin</option>
+        </select>
+        <button
+          type="button"
+          onClick={() => addMutation.mutate()}
+          disabled={!newActorId || addMutation.isPending}
+          className={`flex-none ${primaryButtonClass}`}
+        >
+          {addMutation.isPending ? "Adding…" : "Add"}
+        </button>
+      </div>
+      {addMutation.isError && (
+        <p className="text-xs text-red-600 dark:text-red-400">
+          Couldn't add that participant.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function EventParticipantRow({
+  participant,
+  isSelf,
+  onRemove,
+  removing,
+}: {
+  participant: EventParticipant;
+  isSelf: boolean;
+  onRemove: () => void;
+  removing: boolean;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-3 px-3 py-2">
+      <div className="min-w-0">
+        <p className="truncate text-xs font-medium">
+          {participant.actor_id}
+          {isSelf && (
+            <span className="ml-1.5 text-neutral-400 dark:text-neutral-600">
+              (you)
+            </span>
+          )}
+        </p>
+        <p className="text-[11px] text-neutral-500 dark:text-neutral-500">
+          {participant.role}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={removing}
+        aria-label="Remove participant"
+        className="flex-none text-neutral-400 transition-colors hover:text-red-600 disabled:opacity-60 dark:hover:text-red-400"
+      >
+        <XIcon size={14} />
+      </button>
+    </li>
+  );
+}
+
 function AttendeesSection({
   event,
   onDone,
@@ -376,7 +589,7 @@ function AttendeesSection({
   });
 
   const registeredCount =
-    attendees?.filter((a: Attendee) => a.status !== "cancelled").length ?? 0;
+    attendees?.filter((a) => a.status !== "cancelled").length ?? 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -412,7 +625,7 @@ function AttendeesSection({
 
       {attendees && attendees.length > 0 && (
         <ul className="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-          {attendees.map((attendee: Attendee) => (
+          {attendees.map((attendee) => (
             <AttendeeRow
               key={attendee.id}
               attendee={attendee}
@@ -499,6 +712,7 @@ function EventForm({
   const isEdit = Boolean(existing);
 
   const [title, setTitle] = useState(existing?.title ?? "");
+  const [eventType, setEventType] = useState(existing?.event_type ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
   const [startsAt, setStartsAt] = useState(
     isoToLocalInput(existing?.starts_at ?? null),
@@ -526,14 +740,18 @@ function EventForm({
   const [discountPercent, setDiscountPercent] = useState(
     existing ? String(existing.price.discount_percent) : "0",
   );
+  // Ownership shape — create-time only, same convention Inventory's
+  // own retrofitted ItemForm already established. The backend has no
+  // way to change a shape (or event_type) once set.
+  const [ownerType, setOwnerType] = useState<EventOwnershipShape>("personal");
+  const [label, setLabel] = useState("");
 
   const toCents = (v: string) => Math.round(Number(v || "0") * 100);
 
-  // Mirrors Price's own subtotal/discount/total computation exactly
-  // (base + tax + transport, discount applied to that whole subtotal,
-  // floored) — the same formula verified against the backend for
-  // Inventory's own price preview; NOT base*(1-discount/100), which
-  // can differ by a cent from the backend's floor-based result.
+  // Mirrors Price's own subtotal/discount/total computation exactly —
+  // the same verified formula Inventory's own price preview uses, NOT
+  // base*(1-discount/100), which can differ by a cent from the
+  // backend's floor-based result.
   const subtotalCents =
     toCents(baseAmount) + toCents(taxAmount) + toCents(transportAmount);
   const discountCents = Math.floor(
@@ -564,7 +782,13 @@ function EventForm({
       }
       return sdk.events.createEvent(containerId, {
         ...common,
+        event_type: eventType,
         starts_at: toIsoOrUndefined(startsAt) ?? new Date().toISOString(),
+        owner_type: ownerType,
+        label:
+          ownerType === "personal" || ownerType === "shared"
+            ? label
+            : undefined,
       });
     },
     onSuccess: () => {
@@ -573,10 +797,13 @@ function EventForm({
     },
   });
 
+  const needsLabel = ownerType === "personal" || ownerType === "shared";
   const canSubmit =
     Boolean(title) &&
     Boolean(startsAt) &&
-    Boolean(physicalAddress || virtualLink);
+    Boolean(physicalAddress || virtualLink) &&
+    (isEdit || Boolean(eventType)) &&
+    (isEdit || !needsLabel || Boolean(label));
 
   return (
     <div
@@ -596,6 +823,62 @@ function EventForm({
           onChange={(e) => setTitle(e.target.value)}
         />
       </div>
+
+      {!isEdit && (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+              Type
+            </label>
+            <input
+              className={inputClass}
+              placeholder="conference, concert, workshop, …"
+              value={eventType}
+              onChange={(e) => setEventType(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+              Who owns this?
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {OWNERSHIP_SHAPE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setOwnerType(opt.value)}
+                  title={opt.hint}
+                  className={`rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors ${
+                    ownerType === opt.value
+                      ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                      : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-neutral-500 dark:text-neutral-500">
+              {OWNERSHIP_SHAPE_OPTIONS.find((o) => o.value === ownerType)?.hint}
+            </p>
+          </div>
+
+          {needsLabel && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+                Label
+              </label>
+              <input
+                className={inputClass}
+                placeholder="A name to tell this apart from your other events…"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+              />
+            </div>
+          )}
+        </>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">

@@ -145,10 +145,15 @@ export type {
 export type {
   EventStatus,
   AttendeeStatus,
-  OwnerStatus as EventOwnerStatus,
+  EventOwnershipShape,
+  EventParticipantRole,
+  EventParticipantStatus,
   EventPrice,
+  EventBrandingAsset,
+  EventOwnership,
   EventItem,
   Attendee,
+  EventParticipant,
   CreateEventInput,
   UpdateEventInput,
 } from "./domains/events";
