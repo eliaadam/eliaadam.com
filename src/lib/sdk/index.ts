@@ -11,6 +11,7 @@ import { subscription } from "./domains/subscription";
 import { surfacing } from "./domains/surfacing";
 import { avatars } from "./domains/avatars";
 import { inventory } from "./domains/inventory";
+import { events } from "./domains/events";
 
 /**
  * Single entry point for every domain's API client.
@@ -36,6 +37,7 @@ export const sdk = {
   surfacing,
   avatars,
   inventory,
+  events,
 };
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";
@@ -135,3 +137,13 @@ export type {
   CreateInventoryItemInput,
   UpdateInventoryItemInput,
 } from "./domains/inventory";
+export type {
+  EventStatus,
+  AttendeeStatus,
+  OwnerStatus as EventOwnerStatus,
+  EventPrice,
+  EventItem,
+  Attendee,
+  CreateEventInput,
+  UpdateEventInput,
+} from "./domains/events";

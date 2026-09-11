@@ -34,17 +34,18 @@ import { FormFill } from "./page/dashboard/FormFill";
 import { Communication } from "./page/dashboard/Communication";
 
 import { Inventory } from "./page/dashboard/Inventory";
+
 import { Subscription } from "./page/dashboard/Subscription";
 import { MySubscriptions } from "./page/dashboard/MySubscriptions";
 import { Marketplace } from "./page/dashboard/Marketplace";
 import { MyPurchases } from "./page/dashboard/MyPurchases";
 
 import { queryClient } from "./lib/query/Queryclient";
- 
+import HomePage from "./page/HomePage";
 import { Payment } from "./page/payment/Payment";
 import { PaymentIntentDetail } from "./page/payment/PaymentIntentDetail";
 import { PaymentWalletDetail } from "./page/payment/PaymentWalletDetail";
-import HomePage from "./page/HomePage";
+import { Events } from "./page/dashboard/Events";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -148,6 +149,11 @@ function App() {
                       Matches InventoryCapability's own
                       navigation().route exactly. */}
                   <Route path="inventory" element={<Inventory />} />
+                  {/* Static "events" route, same priority reasoning as
+                      "inventory"/"payment"/"form" above. Matches
+                      EventsCapability's own navigation().route
+                      exactly. */}
+                  <Route path="events" element={<Events />} />
                   <Route path="subscription" element={<Subscription />} />
                   <Route
                     path="my-subscriptions"

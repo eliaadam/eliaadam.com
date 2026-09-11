@@ -7,7 +7,7 @@
  * module-level side effect just by being imported.
  *
  * Add a new capability's own registration import here when it needs
- * one. Remove the example import once a real capability replaces it.
+ * one.
  */
 
-import "./examples/exampleEventCard";
+import "./events/eventListingCard";
