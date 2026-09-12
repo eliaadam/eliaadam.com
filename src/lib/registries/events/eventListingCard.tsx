@@ -7,6 +7,7 @@ import {
   registerPurchaseDisplay,
   type PurchaseDisplayProps,
 } from "../purchaseDisplayRegistry";
+import { ListingImageCarousel } from "../../../page/dashboard/Marketplace";
 
 /**
  * Real registration for General Events, replacing the earlier
@@ -26,6 +27,9 @@ function EventListingCardBody({ listing }: ListingCardBodyProps) {
 
   return (
     <div className="flex flex-col gap-1.5 rounded-md bg-gradient-to-br from-indigo-50 to-purple-50 p-3 dark:from-indigo-950/40 dark:to-purple-950/40">
+      {listing.images.length > 0 && (
+        <ListingImageCarousel fileIds={listing.images} />
+      )}
       <div className="flex items-center gap-1.5 text-xs font-medium text-indigo-700 dark:text-indigo-400">
         <Calendar size={13} />
         {startsAt ? new Date(startsAt).toLocaleString() : "Event"}

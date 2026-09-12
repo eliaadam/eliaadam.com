@@ -350,7 +350,15 @@ function ManagedListingCard({ listing }: { listing: Listing }) {
   );
 }
 
-function ListingImageCarousel({ fileIds }: { fileIds: string[] }) {
+/**
+ * Exported so registry-file card components (e.g.
+ * lib/registries/events/eventListingCard.tsx) can reuse this instead
+ * of duplicating the multi-image rotation and per-image failure
+ * tracking logic — a custom card body still needs to actually render
+ * `listing.images` itself, this component doesn't do that
+ * automatically just by a listing having images.
+ */
+export function ListingImageCarousel({ fileIds }: { fileIds: string[] }) {
   const [index, setIndex] = useState(0);
   const [failed, setFailed] = useState<Set<number>>(new Set());
 
