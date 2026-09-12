@@ -20,7 +20,6 @@ export function Header({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // In-page anchors for the marketing sections.
   const sectionLinks = [
     { label: "What we do", href: "#what-we-do" },
     { label: "What we provide", href: "#what-we-provide" },
@@ -29,62 +28,64 @@ export function Header({
   ];
 
   return (
-    <header
-      className={[
-        "sticky top-0 z-50 transition-colors duration-300",
-        scrolled
-          ? "bg-white/80 dark:bg-[#0D1117]/80 backdrop-blur-md border-b border-[#D0D7DE] dark:border-[#30363D]"
-          : "bg-transparent border-b border-transparent",
-      ].join(" ")}
-    >
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link
-          to="/"
-          className="font-[Space_Grotesk,sans-serif] text-lg font-medium tracking-tight text-[#1F2328] dark:text-[#E6EDF3]"
-        >
-          Maisha
-          <span className="font-normal text-[#59636E] dark:text-[#8B949E]">
-            Soft
+    <header className="sticky top-0 z-50 px-4 pt-4 sm:px-6">
+      <div
+        className={[
+          "mx-auto flex max-w-5xl items-center justify-between rounded-full px-4 py-2.5 transition-all duration-300 sm:px-5",
+          scrolled
+            ? "border border-[#D0D7DE] bg-white/90 shadow-[0_8px_24px_-16px_rgba(0,0,0,0.25)] backdrop-blur-md dark:border-[#30363D] dark:bg-[#0D1117]/90"
+            : "border border-transparent bg-white/60 backdrop-blur-sm dark:bg-[#0D1117]/60",
+        ].join(" ")}
+      >
+        <Link to="/" className="flex items-center gap-2">
+          <img
+            src="/images/mainlogo.png"
+            alt="MaishaSoft logo"
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded-md object-contain"
+          />
+          <span className="font-[Space_Grotesk,sans-serif] text-base font-medium tracking-tight text-[#1F2328] dark:text-[#E6EDF3]">
+            MaishaSoft
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-1 rounded-full bg-[#F6F8FA] p-1 dark:bg-[#161B22] md:flex">
           {sectionLinks.map((l) => (
             <a
               key={l.href}
               href={l.href}
-              className="text-sm text-[#59636E] transition-colors hover:text-[#1F2328] dark:text-[#8B949E] dark:hover:text-[#E6EDF3]"
+              className="rounded-full px-3.5 py-1.5 text-sm text-[#59636E] transition-colors hover:bg-white hover:text-[#1F2328] dark:text-[#8B949E] dark:hover:bg-[#0D1117] dark:hover:text-[#E6EDF3]"
             >
               {l.label}
             </a>
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={onToggleTheme}
             aria-label="Toggle dark mode"
-            className="grid h-8 w-8 place-items-center rounded-md border border-[#D0D7DE] text-[#59636E] transition-colors hover:border-[#1F2328] hover:text-[#1F2328] dark:border-[#30363D] dark:text-[#8B949E] dark:hover:border-[#E6EDF3] dark:hover:text-[#E6EDF3]"
+            className="grid h-8 w-8 place-items-center rounded-full text-[#59636E] transition-colors hover:bg-[#F6F8FA] hover:text-[#1F2328] dark:text-[#8B949E] dark:hover:bg-[#161B22] dark:hover:text-[#E6EDF3]"
           >
             {isDark ? <IconSun /> : <IconMoon />}
           </button>
 
-          {/* Auth links — desktop only, mirrored in the mobile menu below */}
           <NavLink
             to="/signin"
-            className="hidden text-sm text-[#59636E] transition-colors hover:text-[#1F2328] dark:text-[#8B949E] dark:hover:text-[#E6EDF3] sm:inline-block"
+            className="hidden rounded-full px-3.5 py-1.5 text-sm text-[#59636E] transition-colors hover:text-[#1F2328] dark:text-[#8B949E] dark:hover:text-[#E6EDF3] sm:inline-block"
           >
             Sign in
           </NavLink>
           <Link
             to="/signup"
-            className="hidden rounded-md bg-[#1F2328] px-3.5 py-1.5 text-sm text-white transition-colors hover:bg-black dark:bg-[#E6EDF3] dark:text-[#0D1117] dark:hover:bg-white sm:inline-block"
+            className="hidden rounded-full bg-[#1F2328] px-4 py-1.5 text-sm text-white transition-colors hover:bg-black dark:bg-[#E6EDF3] dark:text-[#0D1117] dark:hover:bg-white sm:inline-block"
           >
             Sign up
           </Link>
 
           <button
-            className="grid h-8 w-8 place-items-center rounded-md border border-[#D0D7DE] text-[#59636E] dark:border-[#30363D] dark:text-[#8B949E] md:hidden"
+            className="grid h-8 w-8 place-items-center rounded-full text-[#59636E] dark:text-[#8B949E] md:hidden"
             aria-label="Open menu"
             onClick={() => setMenuOpen((v) => !v)}
           >
@@ -107,7 +108,7 @@ export function Header({
       </div>
 
       {menuOpen && (
-        <div className="border-t border-[#D0D7DE] bg-white px-6 py-4 dark:border-[#30363D] dark:bg-[#0D1117] md:hidden">
+        <div className="mx-auto mt-2 max-w-5xl rounded-2xl border border-[#D0D7DE] bg-white px-5 py-4 shadow-[0_8px_24px_-16px_rgba(0,0,0,0.25)] dark:border-[#30363D] dark:bg-[#0D1117] md:hidden">
           <div className="flex flex-col gap-4">
             {sectionLinks.map((l) => (
               <a
@@ -130,7 +131,7 @@ export function Header({
               <Link
                 to="/signup"
                 onClick={() => setMenuOpen(false)}
-                className="rounded-md bg-[#1F2328] px-3.5 py-2 text-center text-sm text-white dark:bg-[#E6EDF3] dark:text-[#0D1117]"
+                className="rounded-full bg-[#1F2328] px-3.5 py-2 text-center text-sm text-white dark:bg-[#E6EDF3] dark:text-[#0D1117]"
               >
                 Sign up
               </Link>

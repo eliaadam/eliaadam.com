@@ -1,127 +1,127 @@
 // components/sections/Hero.tsx
-import { type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { type Accent, accentBorder, accentText } from "../../lib/design-tokens";
-import { IconDeliver, IconFind, IconTransact } from "./icons";
+import { accentBorder, accentText, type Accent } from "../../lib/design-tokens";
 
-function FlowDiagram() {
-  const nodes: {
-    key: Accent;
-    label: string;
-    icon: ReactNode;
-    cx: number;
-    cy: number;
-  }[] = [
-    { key: "find", label: "Find", icon: <IconFind />, cx: 60, cy: 40 },
-    {
-      key: "transact",
-      label: "Transact",
-      icon: <IconTransact />,
-      cx: 220,
-      cy: 130,
-    },
-    {
-      key: "deliver",
-      label: "Deliver",
-      icon: <IconDeliver />,
-      cx: 60,
-      cy: 220,
-    },
-  ];
+import { type ReactNode } from "react";
+import { IconFind, IconTransact, IconDeliver } from "./icons";
 
-  return (
-    <div className="relative mx-auto w-full max-w-sm md:mt-4">
-      <style>{`
-        @keyframes maisha-flow {
-          to { stroke-dashoffset: -200; }
-        }
-        .maisha-flow-path {
-          stroke-dasharray: 5 7;
-          animation: maisha-flow 6s linear infinite;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .maisha-flow-path { animation: none; }
-        }
-      `}</style>
-      <svg viewBox="0 0 280 260" className="h-auto w-full">
-        <path
-          d="M60 40 C 160 40, 160 130, 220 130 C 160 130, 160 220, 60 220"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          className="maisha-flow-path text-[#D0D7DE] dark:text-[#30363D]"
-        />
-        {nodes.map((n) => (
-          <g key={n.key}>
-            <circle
-              cx={n.cx}
-              cy={n.cy}
-              r="30"
-              className={`fill-white dark:fill-[#0D1117] ${accentBorder[n.key]}`}
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-          </g>
-        ))}
-      </svg>
-
-      <div className="pointer-events-none absolute inset-0">
-        {nodes.map((n) => (
-          <div
-            key={n.key}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
-            style={{
-              left: `${(n.cx / 280) * 100}%`,
-              top: `${(n.cy / 260) * 100}%`,
-            }}
-          >
-            <span className={accentText[n.key]}>{n.icon}</span>
-            <span className="text-xs text-[#59636E] dark:text-[#8B949E]">
-              {n.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+const flow: { key: Accent; label: string; icon: ReactNode }[] = [
+  { key: "find", label: "Find", icon: <IconFind /> },
+  { key: "transact", label: "Transact", icon: <IconTransact /> },
+  { key: "deliver", label: "Deliver", icon: <IconDeliver /> },
+];
 
 export function Hero() {
   return (
     <section id="top" className="relative overflow-hidden">
-      <div className="mx-auto grid max-w-6xl gap-12 px-6 pb-20 pt-16 md:grid-cols-[1.1fr_0.9fr] md:pb-28 md:pt-24">
-        <div>
-          <h1 className="font-[Space_Grotesk,sans-serif] text-[2.6rem] font-medium leading-[1.08] tracking-tight text-[#1F2328] dark:text-[#E6EDF3] sm:text-6xl">
-            Find what you need.
-            <br />
-            Transact with confidence.
-            <br />
-            Get it where it&apos;s going.
-          </h1>
+      {/* Watermark: the logo, large and faint, anchored top-right */}
+      <img
+        src="/images/mainlogo.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-24 -top-24 h-[420px] w-[420px] opacity-[0.05] dark:opacity-[0.08] sm:h-[520px] sm:w-[520px]"
+      />
 
-          <p className="mt-6 max-w-md text-[15px] leading-relaxed text-[#59636E] dark:text-[#8B949E]">
-            MaishaSoft builds the software, platforms, and partnerships that
-            connect people and businesses — from discovery, through a secure
-            transaction, to delivery.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <a
-              href="#what-we-provide"
-              className="rounded-md bg-[#1F2328] px-4 py-2 text-sm text-white transition-colors hover:bg-black dark:bg-[#E6EDF3] dark:text-[#0D1117] dark:hover:bg-white"
-            >
-              Explore our products
-            </a>
-            <Link
-              to="/signup"
-              className="rounded-md border border-[#D0D7DE] px-4 py-2 text-sm text-[#1F2328] transition-colors hover:border-[#1F2328] dark:border-[#30363D] dark:text-[#E6EDF3] dark:hover:border-[#E6EDF3]"
-            >
-              Create an account
-            </Link>
-          </div>
+      <div className="relative mx-auto max-w-4xl px-6 pb-20 pt-16 text-center sm:pb-28 sm:pt-24">
+        {/* Badge */}
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#D0D7DE] bg-white/70 px-3.5 py-1.5 text-xs text-[#59636E] backdrop-blur-sm dark:border-[#30363D] dark:bg-[#0D1117]/70 dark:text-[#8B949E]">
+          <img
+            src="/images/mainlogo.png"
+            alt=""
+            aria-hidden="true"
+            className="h-4 w-4 rounded-sm object-contain"
+          />
+          One connected ecosystem
         </div>
 
-        <FlowDiagram />
+        <h1 className="mx-auto mt-6 max-w-2xl font-[Space_Grotesk,sans-serif] text-4xl font-medium leading-[1.1] tracking-tight text-[#1F2328] dark:text-[#E6EDF3] sm:text-6xl">
+          Software that connects discovery, transactions, and delivery.
+        </h1>
+
+        <p className="mx-auto mt-5 max-w-lg text-[15px] leading-relaxed text-[#59636E] dark:text-[#8B949E]">
+          MaishaSoft builds the platforms and partnerships that take people and
+          businesses from finding what they need to getting it delivered —
+          securely, end to end.
+        </p>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            to="/signup"
+            className="rounded-full bg-[#1F2328] px-5 py-2.5 text-sm text-white transition-colors hover:bg-black dark:bg-[#E6EDF3] dark:text-[#0D1117] dark:hover:bg-white"
+          >
+            Create an account
+          </Link>
+          <a
+            href="#what-we-provide"
+            className="rounded-full border border-[#D0D7DE] px-5 py-2.5 text-sm text-[#1F2328] transition-colors hover:border-[#1F2328] dark:border-[#30363D] dark:text-[#E6EDF3] dark:hover:border-[#E6EDF3]"
+          >
+            Explore our products
+          </a>
+        </div>
+
+        {/* Find → Transact → Deliver, as a horizontal tag row instead of a circuit diagram */}
+        <div className="mx-auto mt-14 flex max-w-md items-center justify-center gap-2 sm:gap-3">
+          {flow.map((step, i) => (
+            <div key={step.key} className="flex items-center gap-2 sm:gap-3">
+              <div
+                className={[
+                  "flex items-center gap-2 rounded-full border bg-white px-3.5 py-2 dark:bg-[#0D1117] sm:px-4",
+                  accentBorder[step.key],
+                ].join(" ")}
+              >
+                <span className={accentText[step.key]}>{step.icon}</span>
+                <span className="text-sm font-medium text-[#1F2328] dark:text-[#E6EDF3]">
+                  {step.label}
+                </span>
+              </div>
+              {i < flow.length - 1 && (
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  className="shrink-0 text-[#D0D7DE] dark:text-[#30363D]"
+                >
+                  <path
+                    d="M5 12h14M13 6l6 6-6 6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Stat strip — a different way of reinforcing scale/trust than the old diagram */}
+        <dl className="mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-4 border-t border-[#D0D7DE] pt-8 dark:border-[#30363D]">
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-[#8B949E]">
+              Products
+            </dt>
+            <dd className="mt-1 font-[Space_Grotesk,sans-serif] text-2xl font-medium text-[#1F2328] dark:text-[#E6EDF3] sm:text-3xl">
+              SaaS
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-[#8B949E]">
+              Focus
+            </dt>
+            <dd className="mt-1 font-[Space_Grotesk,sans-serif] text-2xl font-medium text-[#1F2328] dark:text-[#E6EDF3] sm:text-3xl">
+              Secure
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-[#8B949E]">
+              Reach
+            </dt>
+            <dd className="mt-1 font-[Space_Grotesk,sans-serif] text-2xl font-medium text-[#1F2328] dark:text-[#E6EDF3] sm:text-3xl">
+              End to end
+            </dd>
+          </div>
+        </dl>
       </div>
     </section>
   );
