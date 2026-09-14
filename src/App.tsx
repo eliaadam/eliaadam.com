@@ -43,7 +43,6 @@ import { MyPurchases } from "./page/dashboard/MyPurchases";
 import { queryClient } from "./lib/query/Queryclient";
 import HomePage from "./page/HomePage";
 import { Payment } from "./page/payment/Payment";
-import { PaymentIntentDetail } from "./page/payment/PaymentIntentDetail";
 import { PaymentWalletDetail } from "./page/payment/PaymentWalletDetail";
 import { Events } from "./page/dashboard/Events";
 
@@ -65,6 +64,18 @@ import { Events } from "./page/dashboard/Events";
  * unchanged — `ContainerProvider` also calls `useAuth()` internally,
  * so it still needs `AuthProvider` as an ancestor regardless of where
  * the Router sits relative to it.
+ *
+ * FIX (payment consolidation): `PaymentIntentDetail` and its own
+ * `payment/:intentId` route are GONE — that view is now rendered
+ * inline by `Payment.tsx`'s own History tab
+ * (`?tab=history&intent=<id>`), not a separate routed page. A
+ * `payment/payouts/:payoutId` route was never added here either,
+ * despite the old Payment page linking to it — confirmed genuinely
+ * orphaned, not just unlisted; the new Payouts tab fixes this by
+ * construction, since selecting a payout there sets a query param
+ * instead of navigating anywhere. `payment/wallets/:walletId` is
+ * UNCHANGED — wallet balance/participants/transfer/cashout stay their
+ * own page, not folded into the tabs.
  */
 function App() {
   return (
@@ -131,19 +142,21 @@ function App() {
                     element={<FormResponses />}
                   />
                   {/* Static "communication" route, same priority
-                      reasoning as "form" above — takes precedence over
-                      the dynamic :capabilityRoute catch-all regardless
-                      of declaration order. Matches the manifest's own
-                      navigation().route exactly. */}
+                      reasoning as "form" above. */}
                   <Route path="communication" element={<Communication />} />
                   <Route
                     path="communication/:conversationId"
                     element={<Communication />}
                   />
                   {/* Static "payment" route, same priority reasoning
-                      as "form"/"communication" above. Matches the
-                      manifest's own navigation().route exactly. */}
+                      as "form"/"communication" above. Now the single,
+                      tabbed consolidation — see this file's own note
+                      above on what moved inline. */}
                   <Route path="payment" element={<Payment />} />
+                  <Route
+                    path="payment/wallets/:walletId"
+                    element={<PaymentWalletDetail />}
+                  />
                   {/* Static "inventory" route, same priority reasoning
                       as "payment"/"form"/"communication" above.
                       Matches InventoryCapability's own
@@ -161,14 +174,6 @@ function App() {
                   />
                   <Route path="marketplace" element={<Marketplace />} />
                   <Route path="my-purchases" element={<MyPurchases />} />
-                  <Route
-                    path="payment/wallets/:walletId"
-                    element={<PaymentWalletDetail />}
-                  />
-                  <Route
-                    path="payment/:intentId"
-                    element={<PaymentIntentDetail />}
-                  />
                   <Route path="admin/hub" element={<AdminHub />} />
                   <Route path="admin/actors" element={<Actors />} />
                   <Route
