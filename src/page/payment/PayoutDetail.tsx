@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -31,6 +32,11 @@ const LEG_STATUS_STYLES: Record<PayoutLegStatus, string> = {
   failed: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
 };
 
+// Same cadence/give-up point as PaymentIntentDetail's own identical
+// fix — see that file's own comment for the full reasoning.
+const RECONCILE_INTERVAL_MS = 4000;
+const RECONCILE_MAX_ATTEMPTS = 30;
+
 function destinationSummary(destination: {
   bank?: { code: string; number: string };
   mobile_money?: { country: string; network: string; msisdn: string };
@@ -57,16 +63,24 @@ function destinationSummary(destination: {
 export function PayoutDetail() {
   const { payoutId } = useParams<{ payoutId: string }>();
   const queryClient = useQueryClient();
+  const [autoReconcileGaveUp, setAutoReconcileGaveUp] = useState(false);
+  const reconcileAttempts = useRef(0);
 
   const { data: payout, isLoading } = useQuery({
     queryKey: ["payment", "payout", payoutId],
+    // FIX: this used to also carry `refetchInterval`, re-running THIS
+    // SAME plain read every 4s while "processing"/"partially_succeeded"
+    // — a passive re-fetch of whatever the database already says,
+    // which a leg stuck at a gateway never changes on its own. Only a
+    // manual "Check status now" click (calling reconcilePayout(), the
+    // ACTIVE "ask the gateway" call) ever moved a leg forward.
+    // Replaced by the reconcile-driven effect below, keyed off the
+    // SAME `hasProcessingLeg` condition the manual button already
+    // uses — not the looser parent-status check the old
+    // refetchInterval used, which would have polled even when there
+    // was no actual in-flight leg left to reconcile.
     queryFn: () => sdk.payment.getPayout(payoutId!),
     enabled: Boolean(payoutId),
-    refetchInterval: (query) =>
-      query.state.data?.status === "processing" ||
-      query.state.data?.status === "partially_succeeded"
-        ? 4000
-        : false,
   });
 
   const invalidate = () =>
@@ -84,6 +98,41 @@ export function PayoutDetail() {
     onSuccess: invalidate,
   });
 
+  const hasProcessingLeg = Boolean(
+    payout?.legs.some((l) => l.status === "processing"),
+  );
+
+  useEffect(() => {
+    reconcileAttempts.current = 0;
+    setAutoReconcileGaveUp(false);
+  }, [payoutId, hasProcessingLeg]);
+
+  useEffect(() => {
+    if (!payoutId || !hasProcessingLeg) return;
+    if (reconcileAttempts.current >= RECONCILE_MAX_ATTEMPTS) return;
+
+    const timer = setInterval(() => {
+      reconcileAttempts.current += 1;
+      sdk.payment
+        .reconcilePayout(payoutId)
+        .then(invalidate)
+        .catch(() => {
+          // A transient error on one poll shouldn't kill the loop —
+          // the next tick tries again; the attempt counter still
+          // advances either way, so a genuinely broken connection
+          // eventually gives up too.
+        })
+        .finally(() => {
+          if (reconcileAttempts.current >= RECONCILE_MAX_ATTEMPTS) {
+            setAutoReconcileGaveUp(true);
+          }
+        });
+    }, RECONCILE_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payoutId, hasProcessingLeg]);
+
   if (isLoading || !payout) {
     return (
       <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
@@ -95,7 +144,6 @@ export function PayoutDetail() {
     .reduce((sum, l) => sum + l.amount, 0);
   const hasShortfall =
     succeededAmount < payout.amount && payout.status !== "succeeded";
-  const hasProcessingLeg = payout.legs.some((l) => l.status === "processing");
 
   return (
     <div className="max-w-xl">
@@ -139,6 +187,14 @@ export function PayoutDetail() {
           </dd>
         </div>
       </dl>
+
+      {hasProcessingLeg && (
+        <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-500">
+          {autoReconcileGaveUp
+            ? "Still processing — check again if you know the transfer went through."
+            : "Waiting on a gateway to confirm — this checks automatically."}
+        </p>
+      )}
 
       <div className="mt-6 flex flex-wrap gap-2">
         {hasShortfall && (
