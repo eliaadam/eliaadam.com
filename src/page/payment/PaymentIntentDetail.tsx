@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -11,6 +11,16 @@ import { sdk } from "../../lib/sdk";
 function formatAmount(minor: number, currency: string): string {
   return `${(minor / 100).toFixed(2)} ${currency}`;
 }
+
+// Auto-reconcile cadence + give-up point. 4s to match the interval
+// this file already used for its own (previously ineffective)
+// refetchInterval. Gives up after 2 minutes of real attempts — a
+// USSD/PIN prompt that hasn't resolved by then almost certainly needs
+// the buyer to actually act on their phone, not more polling; "Check
+// status now" stays available as a manual fallback forever after
+// that, it just stops firing automatically.
+const RECONCILE_INTERVAL_MS = 4000;
+const RECONCILE_MAX_ATTEMPTS = 30;
 
 /**
  * `nextAction` lives in local state, not in the fetched `intent` —
@@ -27,13 +37,22 @@ export function PaymentIntentDetail() {
   const [refundReason, setRefundReason] = useState("");
   const [showRefund, setShowRefund] = useState(false);
   const [nextAction, setNextAction] = useState<NextAction | null>(null);
+  const [autoReconcileGaveUp, setAutoReconcileGaveUp] = useState(false);
+  const reconcileAttempts = useRef(0);
 
   const { data: intent, isLoading } = useQuery({
     queryKey: ["payment", "intent", intentId],
+    // FIX: this used to also carry `refetchInterval` re-running THIS
+    // SAME plain read every 4s while "processing" — a passive
+    // re-fetch of whatever the database already says, which never
+    // changes on its own since the webhook path doesn't work in this
+    // deployment (confirmed separately). Nothing here ever moved the
+    // status forward automatically; only a manual "Check status now"
+    // click (which calls reconcileIntent(), the ACTIVE "ask Selcom"
+    // call) ever did. Replaced by the reconcile-driven effect below,
+    // which is the thing that actually needs to run on an interval.
     queryFn: () => sdk.payment.getIntent(intentId!),
     enabled: Boolean(intentId),
-    refetchInterval: (query) =>
-      query.state.data?.status === "processing" ? 4000 : false,
   });
 
   const invalidate = () =>
@@ -53,6 +72,45 @@ export function PaymentIntentDetail() {
     mutationFn: () => sdk.payment.reconcileIntent(intentId!),
     onSuccess: invalidate,
   });
+
+  // Auto-reconcile — actually asks Selcom (via reconcileIntent(), not
+  // a passive re-read) every RECONCILE_INTERVAL_MS while the intent
+  // is "processing", so the buyer's own payment resolves in front of
+  // them without needing to click anything. Resets its own attempt
+  // counter and give-up state whenever the intent id or its status
+  // changes (e.g. navigating between two different intents, or a
+  // status genuinely moving out of "processing").
+  useEffect(() => {
+    reconcileAttempts.current = 0;
+    setAutoReconcileGaveUp(false);
+  }, [intentId, intent?.status]);
+
+  useEffect(() => {
+    if (!intentId || intent?.status !== "processing") return;
+    if (reconcileAttempts.current >= RECONCILE_MAX_ATTEMPTS) return;
+
+    const timer = setInterval(() => {
+      reconcileAttempts.current += 1;
+      sdk.payment
+        .reconcileIntent(intentId)
+        .then(invalidate)
+        .catch(() => {
+          // A transient network/API error on ONE poll shouldn't kill
+          // the whole loop — just let the next tick try again. The
+          // attempt counter still advances either way, so a
+          // genuinely broken connection still eventually gives up
+          // rather than polling forever.
+        })
+        .finally(() => {
+          if (reconcileAttempts.current >= RECONCILE_MAX_ATTEMPTS) {
+            setAutoReconcileGaveUp(true);
+          }
+        });
+    }, RECONCILE_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intentId, intent?.status]);
 
   if (isLoading || !intent) {
     return (
@@ -116,14 +174,21 @@ export function PaymentIntentDetail() {
         )}
 
         {intent.status === "processing" && (
-          <button
-            type="button"
-            onClick={() => reconcileMutation.mutate()}
-            disabled={reconcileMutation.isPending}
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium dark:border-neutral-700"
-          >
-            {reconcileMutation.isPending ? "Checking…" : "Check status now"}
-          </button>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-neutral-500 dark:text-neutral-500">
+              {autoReconcileGaveUp
+                ? "Still processing — check again if you know the payment went through."
+                : "Waiting for the payment to complete — this checks automatically."}
+            </p>
+            <button
+              type="button"
+              onClick={() => reconcileMutation.mutate()}
+              disabled={reconcileMutation.isPending}
+              className="self-start rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium dark:border-neutral-700"
+            >
+              {reconcileMutation.isPending ? "Checking…" : "Check status now"}
+            </button>
+          </div>
         )}
 
         {intent.status === "succeeded" && (
