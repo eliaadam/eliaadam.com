@@ -83,7 +83,6 @@ export function PaymentGatewayDocs() {
 {
   "amount": 500000,
   "currency": "TZS",
-  "gateway": "selcom",
   "description": "Order #4821",
   "buyer_name": "Asha Mwangi",
   "buyer_email": "asha@example.com",
@@ -126,7 +125,6 @@ X-Gateway-Signature: <hex HMAC-SHA256>
   "status": "succeeded",
   "amount": 500000,
   "currency": "TZS",
-  "gateway": "selcom",
   "gateway_reference": "SEL-9284712",
   "failure_reason": null,
   "metadata": {}
@@ -186,8 +184,6 @@ POST ${baseUrl}/payment-intents/{id}/reconcile/  # force a fresh check`}</CodeBl
         <CodeBlock>{`Base URL:      ${baseUrl}/
 Authentication: HTTP Basic — username = public key, password = secret key
 Amounts:        Always integers, minor units
-Gateways:       selcom, flutterwave
-
 POST   /payment-intents/                    Create + start collection
 GET    /payment-intents/{id}/               Check last-known status
 POST   /payment-intents/{id}/reconcile/     Force a fresh status check`}</CodeBlock>
