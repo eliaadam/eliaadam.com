@@ -98,6 +98,30 @@ export function Callout({
   );
 }
 
+export function StepList({
+  steps,
+}: {
+  steps: { title: string; description: string }[];
+}) {
+  return (
+    <ol className="mt-3 flex flex-col gap-3">
+      {steps.map((step, i) => (
+        <li key={i} className="flex gap-3">
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-neutral-900 text-xs font-medium text-white dark:bg-white dark:text-black">
+            {i + 1}
+          </span>
+          <div>
+            <p className="text-sm font-medium">{step.title}</p>
+            <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
+              {step.description}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export function DocPageTitle({
   title,
   description,

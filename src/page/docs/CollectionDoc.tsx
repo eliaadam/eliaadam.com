@@ -1,15 +1,12 @@
 import {
-  DocPageTitle,
   DocSection,
   CodeBlock,
   Callout,
-} from "../../components/payment-gateway/DocsPrimitives";
+  DocPageTitle,
+} from "../../components/docs/DocsPrimitives";
 
 export function CollectionDoc() {
-  const baseUrl =
-    typeof window !== "undefined"
-      ? `https://sysc.sonicpesa.com/api/gateway/v1`
-      : "https://sysc.sonicpesa.com/api/gateway/v1";
+  const baseUrl = "https://sysc.sonicpesa.com/api/gateway/v1";
 
   return (
     <>

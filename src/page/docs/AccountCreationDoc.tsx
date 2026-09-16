@@ -1,16 +1,11 @@
 import {
-  DocPageTitle,
   DocSection,
-  CodeBlock,
+  StepList,
   Callout,
-} from "../../components/payment-gateway/DocsPrimitives";
+  DocPageTitle,
+} from "../../components/docs/DocsPrimitives";
 
 export function AccountCreationDoc() {
-  const baseUrl =
-    typeof window !== "undefined"
-      ? "https://sysc.sonicpesa.com"
-      : "https://sysc.sonicpesa.com";
-
   return (
     <>
       <DocPageTitle
@@ -18,52 +13,42 @@ export function AccountCreationDoc() {
         description="Everything below this page assumes you already have a platform account. Start here if you don't."
       />
 
-      <DocSection title="Register">
-        <p>
-          One call creates your account and logs you in — no separate
-          verification step required before you can start working.
-        </p>
-        <CodeBlock>{`POST ${baseUrl}/api/identity/auth/register
-
-{
-  "email": "you@example.com",
-  "password": "a-strong-password",
-  "display_name": "Your Name"
-}`}</CodeBlock>
-        <CodeBlock>{`201 Created
-{
-  "actor": {
-    "id": "b6a1...",
-    "display_name": "Your Name",
-    "status": "active"
-  },
-  "access_token": "..."
-}`}</CodeBlock>
-        <Callout>
-          <strong>
-            This <code>access_token</code> is for the internal platform
-            dashboard API
-          </strong>{" "}
-          (creating containers, managing wallets, requesting API credentials,
-          and so on) — a Bearer token, used as{" "}
-          <code>Authorization: Bearer &lt;access_token&gt;</code>. It is a
-          completely different mechanism from the public/secret key pair you'll
-          obtain in section 3, which authenticates your own server's calls to
-          the external collection API. Don't confuse the two — nothing below
-          this page ever asks for this Bearer token again; everything from
-          section 3 onward uses the key pair instead.
-        </Callout>
+      <DocSection title="Sign up">
+        <StepList
+          steps={[
+            {
+              title: "Go to the sign-up page",
+              description:
+                "Open the platform's sign-up page and choose to create a new account.",
+            },
+            {
+              title: "Enter your details",
+              description:
+                "Your email address, a password, and your name (or your business's name).",
+            },
+            {
+              title: "Submit",
+              description:
+                "Your account is created and you're signed in immediately — no separate email verification step required before you can start working.",
+            },
+          ]}
+        />
       </DocSection>
 
       <DocSection title="Log in later">
-        <p>Returning to an existing account:</p>
-        <CodeBlock>{`POST ${baseUrl}/api/identity/auth/login
-
-{
-  "email": "you@example.com",
-  "password": "a-strong-password"
-}`}</CodeBlock>
+        <p>
+          Once you have an account, return to the sign-in page any time with the
+          same email and password.
+        </p>
       </DocSection>
+
+      <Callout>
+        Everything from here on happens inside the dashboard, using the account
+        you just created — sections 2, 3, and 7 are all things you do by
+        clicking through the dashboard's own UI, not API calls. Sections 4
+        through 6 are for whoever on your team is actually integrating your
+        server against the collection API.
+      </Callout>
     </>
   );
 }
