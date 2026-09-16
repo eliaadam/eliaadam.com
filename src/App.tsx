@@ -45,6 +45,7 @@ import HomePage from "./page/HomePage";
 import { Payment } from "./page/payment/Payment";
 import { PaymentWalletDetail } from "./page/payment/PaymentWalletDetail";
 import { Events } from "./page/dashboard/Events";
+import { PaymentGatewayDocs } from "./components/payment-gateway/PaymentGatewayDocs";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -62,6 +63,7 @@ function App() {
             <ContainerProvider>
               <Routes>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/docs" element={<PaymentGatewayDocs />} />
                 <Route path="/signin" element={<Signin />} />
                 <Route path="/signup" element={<Signup />} />
                 {/* Genuinely public — no auth, outside ProtectedRoute
