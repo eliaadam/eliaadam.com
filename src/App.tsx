@@ -52,30 +52,6 @@ import { Events } from "./page/dashboard/Events";
  * is composing them into routes. `Home` and `CapabilityPlaceholder`
  * used to be defined inline here; both are now `page/Home.tsx` and
  * `page/dashboard/CapabilityPlaceholder.tsx`.
- *
- * FIX: `<ContainerProvider>` and `<BrowserRouter>` were previously
- * nested the other way around (ContainerProvider outside the
- * Router) — `ContainerProvider`'s own `switchContainer()` needs
- * `useNavigate()` to redirect away from a capability-specific page
- * when the user switches containers (see ContainerContext.tsx's own
- * fix notes), and that hook throws immediately if called outside a
- * Router. Swapped so `<BrowserRouter>` is the direct parent of
- * `<ContainerProvider>` instead. `<AuthProvider>` stays OUTSIDE both,
- * unchanged — `ContainerProvider` also calls `useAuth()` internally,
- * so it still needs `AuthProvider` as an ancestor regardless of where
- * the Router sits relative to it.
- *
- * FIX (payment consolidation): `PaymentIntentDetail` and its own
- * `payment/:intentId` route are GONE — that view is now rendered
- * inline by `Payment.tsx`'s own History tab
- * (`?tab=history&intent=<id>`), not a separate routed page. A
- * `payment/payouts/:payoutId` route was never added here either,
- * despite the old Payment page linking to it — confirmed genuinely
- * orphaned, not just unlisted; the new Payouts tab fixes this by
- * construction, since selecting a payout there sets a query param
- * instead of navigating anywhere. `payment/wallets/:walletId` is
- * UNCHANGED — wallet balance/participants/transfer/cashout stay their
- * own page, not folded into the tabs.
  */
 function App() {
   return (
