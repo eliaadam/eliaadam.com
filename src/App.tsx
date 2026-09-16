@@ -34,7 +34,7 @@ import { FormFill } from "./page/dashboard/FormFill";
 import { Communication } from "./page/dashboard/Communication";
 
 import { Inventory } from "./page/dashboard/Inventory";
-
+import { PaymentGateway } from "./page/dashboard/PaymentGateway";
 import { Subscription } from "./page/dashboard/Subscription";
 import { MySubscriptions } from "./page/dashboard/MySubscriptions";
 import { Marketplace } from "./page/dashboard/Marketplace";
@@ -133,6 +133,7 @@ function App() {
                     path="payment/wallets/:walletId"
                     element={<PaymentWalletDetail />}
                   />
+                  <Route path="payment-gateway" element={<PaymentGateway />} />
                   {/* Static "inventory" route, same priority reasoning
                       as "payment"/"form"/"communication" above.
                       Matches InventoryCapability's own
