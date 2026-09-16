@@ -1,6 +1,6 @@
 import "./App.css";
 import "./lib/registries/registrations";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./components/context/Authcontext";
 import { ContainerProvider } from "./components/context/ContainerContext";
@@ -45,7 +45,15 @@ import HomePage from "./page/HomePage";
 import { Payment } from "./page/payment/Payment";
 import { PaymentWalletDetail } from "./page/payment/PaymentWalletDetail";
 import { Events } from "./page/dashboard/Events";
-import { PaymentGatewayDocs } from "./components/payment-gateway/PaymentGatewayDocs";
+
+import { AccountCreationDoc } from "./page/docs/AccountCreationDoc";
+import { AuthenticationDoc } from "./page/docs/AuthenticationDoc";
+import { CollectionDoc } from "./page/docs/CollectionDoc";
+import { ContainerInstantiationDoc } from "./page/docs/ContainerInstantiationDoc";
+import { CredentialsDoc } from "./page/docs/CredentialsDoc";
+import { DocsLayout } from "./page/docs/DocsLayout";
+import { IdempotencyDoc } from "./page/docs/IdempotencyDoc";
+import { PayoutsDoc } from "./page/docs/PayoutsDoc";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -63,7 +71,28 @@ function App() {
             <ContainerProvider>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/docs" element={<PaymentGatewayDocs />} />
+                <Route path="/docs" element={<DocsLayout />}>
+                  <Route
+                    index
+                    element={<Navigate to="account-creation" replace />}
+                  />
+                  <Route
+                    path="account-creation"
+                    element={<AccountCreationDoc />}
+                  />
+                  <Route
+                    path="container-instantiation"
+                    element={<ContainerInstantiationDoc />}
+                  />
+                  <Route path="credentials" element={<CredentialsDoc />} />
+                  <Route
+                    path="authentication"
+                    element={<AuthenticationDoc />}
+                  />
+                  <Route path="collection" element={<CollectionDoc />} />
+                  <Route path="idempotency" element={<IdempotencyDoc />} />
+                  <Route path="payouts" element={<PayoutsDoc />} />
+                </Route>
                 <Route path="/signin" element={<Signin />} />
                 <Route path="/signup" element={<Signup />} />
                 {/* Genuinely public — no auth, outside ProtectedRoute
