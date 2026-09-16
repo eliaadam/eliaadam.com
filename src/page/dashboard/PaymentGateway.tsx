@@ -3,16 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { Copy, Eye, EyeOff } from "lucide-react";
 import { sdk } from "../../lib/sdk";
-
-import { useContainer } from "../../components/context/ContainerContext";
 import type {
-  NewApiCredential,
-  RequestApiKeyResult,
   ApiCredential,
-  NewWebhookEndpoint,
-  WebhookEndpoint,
   ApiKeyRequest,
+  CollectedIntent,
+  NewApiCredential,
+  NewWebhookEndpoint,
+  RequestApiKeyResult,
+  WebhookEndpoint,
 } from "../../lib/sdk/domains/paymentGateway";
+import { useContainer } from "../../components/context/ContainerContext";
+import { PaymentGatewayDocs } from "../../components/payment-gateway/PaymentGatewayDocs";
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
@@ -20,13 +21,21 @@ const inputClass =
 const primaryButtonClass =
   "rounded-md bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black";
 
-type TabId = "credentials" | "webhooks" | "my-requests" | "approvals";
+type TabId =
+  | "credentials"
+  | "webhooks"
+  | "transactions"
+  | "my-requests"
+  | "approvals"
+  | "docs";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "credentials", label: "Credentials" },
   { id: "webhooks", label: "Webhooks" },
+  { id: "transactions", label: "Transactions" },
   { id: "my-requests", label: "My Requests" },
   { id: "approvals", label: "Approvals" },
+  { id: "docs", label: "Docs" },
 ];
 
 /**
@@ -76,8 +85,10 @@ export function PaymentGateway() {
       <div className="mt-4">
         {activeTab === "credentials" && <CredentialsTab />}
         {activeTab === "webhooks" && <WebhooksTab />}
+        {activeTab === "transactions" && <TransactionsTab />}
         {activeTab === "my-requests" && <MyRequestsTab />}
         {activeTab === "approvals" && <ApprovalsTab />}
+        {activeTab === "docs" && <PaymentGatewayDocs />}
       </div>
     </div>
   );
@@ -546,6 +557,115 @@ function WebhooksTab() {
         </form>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Transactions
+// ---------------------------------------------------------------------------
+
+const TRANSACTION_STATUS_STYLES: Record<CollectedIntent["status"], string> = {
+  pending:
+    "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+  processing:
+    "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+  succeeded: "bg-black text-white dark:bg-white dark:text-black",
+  failed: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+  refunded:
+    "border border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400",
+};
+
+function formatAmount(minor: number, currency: string): string {
+  return `${(minor / 100).toFixed(2)} ${currency}`;
+}
+
+/**
+ * Every payment any of this container's own API credentials have
+ * collected — the "did my integration actually work" view. Enriched
+ * server-side with real amount/description/status from the
+ * underlying PaymentIntent, not just the bare tracking record — see
+ * CollectionApplicationService.list_for_container()'s own docstring.
+ */
+function TransactionsTab() {
+  const { currentContainerId } = useContainer();
+
+  const { data: transactions, isLoading } = useQuery({
+    queryKey: ["payment-gateway", "collected-intents", currentContainerId],
+    queryFn: () => sdk.paymentGateway.listCollectedIntents(currentContainerId!),
+    enabled: Boolean(currentContainerId),
+    // Auto-refresh while anything's still processing, same reasoning
+    // as the internal payment-intent status panel's own polling —
+    // a collection made through an external integration should
+    // resolve in front of whoever's watching this dashboard without
+    // needing a manual refresh.
+    refetchInterval: (query) =>
+      query.state.data?.some((t) => t.status === "processing") ? 5000 : false,
+  });
+
+  if (!currentContainerId) {
+    return (
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        Select a container first.
+      </p>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-2">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-16 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-900"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (!transactions || transactions.length === 0) {
+    return (
+      <p className="py-6 text-center text-sm text-neutral-500 dark:text-neutral-500">
+        No transactions yet — collections made through your API credentials will
+        show up here.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+      {transactions.map((t) => (
+        <li key={t.id} className="flex flex-col gap-1 px-4 py-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">
+                {t.description || "Untitled payment"}
+              </p>
+              <p className="truncate text-xs text-neutral-500 dark:text-neutral-500">
+                {formatAmount(t.amount, t.currency)} · {t.gateway}
+                {t.created_at &&
+                  ` · ${new Date(t.created_at).toLocaleString()}`}
+              </p>
+            </div>
+            <span
+              className={`flex-none rounded-full px-2.5 py-1 text-xs font-medium ${TRANSACTION_STATUS_STYLES[t.status]}`}
+            >
+              {t.status}
+            </span>
+          </div>
+          {t.gateway_reference && (
+            <p className="font-mono text-xs text-neutral-500 dark:text-neutral-500">
+              {t.gateway_reference}
+            </p>
+          )}
+          {t.failure_reason && (
+            <p className="text-xs text-red-600 dark:text-red-400">
+              {t.failure_reason}
+            </p>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 

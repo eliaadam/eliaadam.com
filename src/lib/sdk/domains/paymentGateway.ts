@@ -71,6 +71,23 @@ export interface IssuancePolicy {
   required_subscription_plan_id: string | null;
 }
 
+/** One row on the transactions dashboard — a real payment this
+ * container's own credentials collected, enriched with its actual
+ * amount/currency/description from the underlying PaymentIntent, not
+ * just the bare tracking record. */
+export interface CollectedIntent {
+  id: string;
+  payment_intent_id: string;
+  status: "pending" | "processing" | "succeeded" | "failed" | "refunded";
+  amount: number;
+  currency: string;
+  gateway: string;
+  description: string | null;
+  gateway_reference: string | null;
+  failure_reason: string | null;
+  created_at: string | null;
+}
+
 /**
  * Either outcome of requestApiKey() — issued immediately, or
  * submitted for approval. Callers should branch on `type`, mirroring
@@ -135,6 +152,17 @@ function disableWebhookEndpoint(endpointId: string): Promise<WebhookEndpoint> {
   return api.post<WebhookEndpoint>(
     `/api/payment-gateway/webhook-endpoints/${endpointId}/disable/`,
   );
+}
+
+async function listCollectedIntents(
+  containerId: string,
+  limit = 50,
+  offset = 0,
+): Promise<CollectedIntent[]> {
+  const result = await api.get<{ results: CollectedIntent[] }>(
+    `/api/payment-gateway/containers/${containerId}/collected-intents/?limit=${limit}&offset=${offset}`,
+  );
+  return result.results;
 }
 
 function enableWebhookEndpoint(endpointId: string): Promise<WebhookEndpoint> {
@@ -222,6 +250,7 @@ export const paymentGateway = {
   registerWebhookEndpoint,
   disableWebhookEndpoint,
   enableWebhookEndpoint,
+  listCollectedIntents,
   requestApiKey,
   listApiKeyRequests,
   approveApiKeyRequest,
