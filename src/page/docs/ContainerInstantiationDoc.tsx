@@ -3,7 +3,7 @@ import {
   StepList,
   Callout,
   DocPageTitle,
-} from "../../components/docs/DocsPrimitives";
+} from "../../components/payment-gateway/DocsPrimitives";
 
 export function ContainerInstantiationDoc() {
   return (

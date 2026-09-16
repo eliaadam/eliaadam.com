@@ -3,7 +3,7 @@ import {
   CodeBlock,
   Callout,
   DocPageTitle,
-} from "../../components/docs/DocsPrimitives";
+} from "../../components/payment-gateway/DocsPrimitives";
 
 export function CollectionDoc() {
   const baseUrl = "https://sysc.sonicpesa.com/api/gateway/v1";

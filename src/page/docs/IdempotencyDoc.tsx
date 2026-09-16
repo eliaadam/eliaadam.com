@@ -1,6 +1,10 @@
-import { DocPageTitle, DocSection, CodeBlock, Callout } from "../../components/payment-gateway/DocsPrimitives";
+import {
+  DocPageTitle,
+  DocSection,
+  CodeBlock,
+  Callout,
+} from "../../components/payment-gateway/DocsPrimitives";
 
- 
 export function IdempotencyDoc() {
   return (
     <>

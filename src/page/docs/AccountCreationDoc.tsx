@@ -1,9 +1,9 @@
 import {
+  DocPageTitle,
   DocSection,
   StepList,
   Callout,
-  DocPageTitle,
-} from "../../components/docs/DocsPrimitives";
+} from "../../components/payment-gateway/DocsPrimitives";
 
 export function AccountCreationDoc() {
   return (
