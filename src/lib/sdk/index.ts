@@ -12,6 +12,7 @@ import { surfacing } from "./domains/surfacing";
 import { avatars } from "./domains/avatars";
 import { inventory } from "./domains/inventory";
 import { events } from "./domains/events";
+import { paymentGateway } from "./domains/paymentGateway";
 
 /**
  * Single entry point for every domain's API client.
@@ -38,6 +39,7 @@ export const sdk = {
   avatars,
   inventory,
   events,
+  paymentGateway
 };
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";
