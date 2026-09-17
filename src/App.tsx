@@ -37,7 +37,7 @@ import { Inventory } from "./page/dashboard/Inventory";
 import { PaymentGateway } from "./page/dashboard/PaymentGateway";
 import { Subscription } from "./page/dashboard/Subscription";
 import { MySubscriptions } from "./page/dashboard/MySubscriptions";
-import { Marketplace } from "./page/dashboard/Marketplace";
+ 
 import { MyPurchases } from "./page/dashboard/MyPurchases";
 
 import { queryClient } from "./lib/query/Queryclient";
@@ -54,6 +54,7 @@ import { CredentialsDoc } from "./page/docs/CredentialsDoc";
 import { DocsLayout } from "./page/docs/DocsLayout";
 import { IdempotencyDoc } from "./page/docs/IdempotencyDoc";
 import { PayoutsDoc } from "./page/docs/PayoutsDoc";
+import { Marketplace } from "./page/dashboard/Marketplace";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
