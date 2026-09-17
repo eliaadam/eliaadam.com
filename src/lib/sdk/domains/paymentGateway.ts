@@ -98,10 +98,10 @@ export interface CollectedIntent {
 export type RequestApiKeyResult =
   | ({ type: "credential" } & NewApiCredential)
   | {
-    type: "instantiation_request";
-    request_id: string;
-    status: ApiKeyRequestStatus;
-  };
+      type: "instantiation_request";
+      request_id: string;
+      status: ApiKeyRequestStatus;
+    };
 
 export interface RequestApiKeyInput {
   wallet_id: string;
@@ -114,6 +114,61 @@ export interface SetIssuancePolicyInput {
   requires_approval?: boolean;
   required_form_id?: string;
   required_subscription_plan_id?: string;
+}
+
+export interface GatewayRoutingPolicy {
+  id: string;
+  method_type: string | null;
+  currency: string | null;
+  gateway: string;
+}
+
+export interface SetGatewayRoutingPolicyInput {
+  method_type?: string;
+  currency?: string;
+  gateway: "selcom" | "flutterwave";
+}
+
+export interface PayoutFeePolicy {
+  id: string;
+  destination_type: string | null;
+  currency: string | null;
+  flat_fee: number;
+  percentage_bps: number;
+}
+
+export interface SetPayoutFeePolicyInput {
+  destination_type?: string;
+  currency?: string;
+  flat_fee?: number;
+  percentage_bps?: number;
+}
+
+export interface DirectPaymentRequest {
+  id: string;
+  payment_intent_id: string;
+  amount: number;
+  currency: string;
+  purpose: "purchase" | "subscription";
+  status: "pending" | "processing" | "succeeded" | "failed";
+  completed: boolean;
+  result: Record<string, unknown> | null;
+}
+
+export interface RequestDirectPurchaseInput {
+  gateway?: string;
+  method_type?: "mobile_money" | "card";
+  buyer_name?: string;
+  buyer_email?: string;
+  buyer_phone?: string;
+}
+
+export interface RequestDirectSubscriptionInput {
+  gateway?: string;
+  method_type?: "mobile_money" | "card";
+  buyer_name?: string;
+  buyer_email?: string;
+  buyer_phone?: string;
 }
 
 async function listCredentials(containerId: string): Promise<ApiCredential[]> {
@@ -243,6 +298,77 @@ function setIssuancePolicy(
   );
 }
 
+// --- Gateway routing policy (platform admin) --------------------------
+
+async function listGatewayRoutingPolicies(): Promise<GatewayRoutingPolicy[]> {
+  const result = await api.get<{ results: GatewayRoutingPolicy[] }>(
+    "/api/payment-gateway/gateway-routing-policies/",
+  );
+  return result.results;
+}
+
+function setGatewayRoutingPolicy(
+  input: SetGatewayRoutingPolicyInput,
+): Promise<GatewayRoutingPolicy> {
+  return api.post<GatewayRoutingPolicy>(
+    "/api/payment-gateway/gateway-routing-policies/",
+    input,
+  );
+}
+
+// --- Payout fee policy (platform admin) ---------------------------------
+
+async function listPayoutFeePolicies(): Promise<PayoutFeePolicy[]> {
+  const result = await api.get<{ results: PayoutFeePolicy[] }>(
+    "/api/payment-gateway/payout-fee-policies/",
+  );
+  return result.results;
+}
+
+function setPayoutFeePolicy(
+  input: SetPayoutFeePolicyInput,
+): Promise<PayoutFeePolicy> {
+  return api.post<PayoutFeePolicy>(
+    "/api/payment-gateway/payout-fee-policies/",
+    input,
+  );
+}
+
+// --- Direct-pay purchases/subscriptions ---------------------------------
+
+function requestDirectPurchase(
+  listingId: string,
+  input: RequestDirectPurchaseInput = {},
+): Promise<DirectPaymentRequest> {
+  return api.post<DirectPaymentRequest>(
+    `/api/payment-gateway/listings/${listingId}/direct-pay/`,
+    input,
+  );
+}
+
+function requestDirectSubscription(
+  planId: string,
+  input: RequestDirectSubscriptionInput = {},
+): Promise<DirectPaymentRequest> {
+  return api.post<DirectPaymentRequest>(
+    `/api/payment-gateway/plans/${planId}/direct-pay/`,
+    input,
+  );
+}
+
+function getDirectPaymentRequest(id: string): Promise<DirectPaymentRequest> {
+  return api.get<DirectPaymentRequest>(
+    `/api/payment-gateway/direct-payment-requests/${id}/`,
+  );
+}
+
+async function listMyDirectPaymentRequests(): Promise<DirectPaymentRequest[]> {
+  const result = await api.get<{ results: DirectPaymentRequest[] }>(
+    "/api/payment-gateway/my-direct-payment-requests/",
+  );
+  return result.results;
+}
+
 export const paymentGateway = {
   listCredentials,
   revokeCredential,
@@ -258,4 +384,12 @@ export const paymentGateway = {
   listMyApiKeyRequests,
   getIssuancePolicy,
   setIssuancePolicy,
+  listGatewayRoutingPolicies,
+  setGatewayRoutingPolicy,
+  listPayoutFeePolicies,
+  setPayoutFeePolicy,
+  requestDirectPurchase,
+  requestDirectSubscription,
+  getDirectPaymentRequest,
+  listMyDirectPaymentRequests,
 };
