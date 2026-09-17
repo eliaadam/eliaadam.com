@@ -1,0 +1,203 @@
+/*
+ * Sonic Pesa UI
+ * Design System — Application Styles
+ */
+
+@import "tailwindcss";
+
+@import "./tokens.css";
+@import "./theme.css";
+
+/*
+ * ================================================================
+ * DARK MODE
+ * ================================================================
+ *
+ * Tailwind's dark: utilities respond to the .dark class.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * ================================================================
+ * BASE
+ * ================================================================
+ */
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    background: var(--background);
+    color: var(--foreground);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+}
+
+/*
+ * ================================================================
+ * ACCESSIBILITY
+ * ================================================================
+ */
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/*
+ * ================================================================
+ * RESPONSIVE PAGE CONTAINER
+ * ================================================================
+ */
+
+@layer components {
+  .ds-container {
+    width: 100%;
+    max-width: var(--container-content);
+    margin-inline: auto;
+    padding-inline: var(--page-padding-mobile);
+  }
+
+  @media (min-width: 640px) {
+    .ds-container {
+      padding-inline: var(--page-padding-tablet);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ds-container {
+      padding-inline: var(--page-padding-desktop);
+    }
+  }
+}
+
+/*
+ * ================================================================
+ * RESPONSIVE CONTENT
+ * ================================================================
+ */
+
+@layer components {
+  .ds-content {
+    width: 100%;
+    max-width: var(--container-content);
+    margin-inline: auto;
+  }
+}
+
+/*
+ * ================================================================
+ * BRAND GRADIENT UTILITIES
+ * ================================================================
+ */
+
+@layer utilities {
+  .ds-brand-gradient {
+    background-image: var(--brand-gradient);
+  }
+
+  .ds-brand-gradient-blue-teal {
+    background-image: var(--brand-gradient-blue-teal);
+  }
+
+  .ds-brand-gradient-teal-green {
+    background-image: var(--brand-gradient-teal-green);
+  }
+}
+
+/* Thin, minimal scrollbar matching the grayscale design system — applies globally */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(212 212 212) transparent; /* neutral-300 */
+}
+
+*::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(212 212 212); /* neutral-300 */
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(163 163 163); /* neutral-400 */
+}
+
+.dark * {
+  scrollbar-color: rgb(64 64 64) transparent; /* neutral-700 */
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background-color: rgb(64 64 64); /* neutral-700 */
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(115 115 115); /* neutral-500 */
+}
+
+/* Add alongside your existing scroll-thin rules */
+.scroll-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
