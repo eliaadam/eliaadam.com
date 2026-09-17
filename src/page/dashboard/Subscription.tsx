@@ -9,6 +9,7 @@ import {
 import { useAuth } from "../../components/context/Authcontext";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageSubscriptionPlans } from "../../lib/hooks/useCanManageSubscriptionPlans";
+import { DirectPayFlow } from "../../components/payment-gateway/DirectPayFlow";
 
 const inputClass =
   "rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
@@ -224,6 +225,7 @@ function SubscribeForm({
 }) {
   const queryClient = useQueryClient();
   const [walletId, setWalletId] = useState("");
+  const [payMode, setPayMode] = useState<"wallet" | "direct">("wallet");
 
   const { data: wallets } = useQuery({
     queryKey: ["payment", "wallets", containerId],
@@ -242,8 +244,57 @@ function SubscribeForm({
     },
   });
 
+  if (payMode === "direct") {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => setPayMode("wallet")}
+            className="flex-1 rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-600 transition-colors dark:border-neutral-700 dark:text-neutral-400"
+          >
+            Wallet
+          </button>
+          <button
+            type="button"
+            onClick={() => setPayMode("direct")}
+            className="flex-1 rounded-md border border-black bg-black px-2 py-1 text-xs font-medium text-white transition-colors dark:border-white dark:bg-white dark:text-black"
+          >
+            Pay direct
+          </button>
+        </div>
+        <DirectPayFlow
+          onSubmit={(buyerPhone) =>
+            sdk.paymentGateway.requestDirectSubscription(plan.id, {
+              method_type: "mobile_money",
+              buyer_phone: buyerPhone,
+            })
+          }
+          successLabel="Subscribed. You'll be billed on the plan's own schedule."
+          invalidateKeys={[["subscription"]]}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2">
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={() => setPayMode("wallet")}
+          className="flex-1 rounded-md border border-black bg-black px-2 py-1 text-xs font-medium text-white transition-colors dark:border-white dark:bg-white dark:text-black"
+        >
+          Wallet
+        </button>
+        <button
+          type="button"
+          onClick={() => setPayMode("direct")}
+          className="flex-1 rounded-md border border-neutral-300 px-2 py-1 text-xs font-medium text-neutral-600 transition-colors dark:border-neutral-700 dark:text-neutral-400"
+        >
+          Pay direct
+        </button>
+      </div>
       <select
         className={`${inputClass} w-full`}
         value={walletId}
