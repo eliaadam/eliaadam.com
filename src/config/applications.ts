@@ -4,7 +4,7 @@ import type { ApplicationDefinition } from '../platform/application/types';
 export const APPLICATIONS: readonly ApplicationDefinition[] = [
     {
         code: 'main',
-        hostname: 'sonicpesa.com',
+        hostname: 'ui.sonicpesa.com',
         name: 'SonicPesa',
         description: 'SonicPesa main application',
         enabled: true,
