@@ -336,7 +336,7 @@ function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
 
         <div className="mt-auto">
           <Button className="w-full" asChild>
-            <a href="https://ui.sonicpesa.com/signup">
+            <a href="/signup">
               Start Integration
               <ArrowRight />
             </a>
@@ -425,7 +425,7 @@ export default function Home(): React.ReactElement {
 
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <Button size="lg" asChild>
-                  <a href="/register">
+                  <a href="/signup">
                     Start Integration
                     <ArrowRight />
                   </a>
