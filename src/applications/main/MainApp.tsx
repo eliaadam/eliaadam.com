@@ -57,7 +57,9 @@ import { Marketplace } from "../../page/dashboard/Marketplace";
 import { PaymentReporting } from "../../page/dashboard/PaymentReporting";
 import { PaymentReportingWalletDetail } from "../../page/dashboard/PaymentReportingWalletDetail";
 import { SubscribeToPlan } from "../../page/dashboard/SubscribeToPlan";
- 
+import { PaymentGatewayApprovals } from "../../page/dashboard/admin/PaymentGatewayApprovals";
+import { PaymentGatewaySettings } from "../../page/dashboard/admin/PaymentGatewaySettings";
+
 /**
  * Pure router + provider wiring. Every actual page/component lives in
  * its own file under `page/` or `components/` — this file's only job
@@ -120,7 +122,10 @@ function MainApp() {
                     path="containers/:containerId/join-requests"
                     element={<JoinRequests />}
                   />
-                  <Route path="subscribe/plan/:planId" element={<SubscribeToPlan />} />
+                  <Route
+                    path="subscribe/plan/:planId"
+                    element={<SubscribeToPlan />}
+                  />
                   <Route
                     path="containers/:containerId/settings"
                     element={<ContainerSettings />}
@@ -209,6 +214,14 @@ function MainApp() {
                     element={<LicenseContainer />}
                   />
                   <Route path="admin/provisioning" element={<Provisioning />} />
+                  <Route
+                    path="admin/payment-gateway-approvals"
+                    element={<PaymentGatewayApprovals />}
+                  />
+                  <Route
+                    path="admin/payment-gateway-settings"
+                    element={<PaymentGatewaySettings />}
+                  />
                   <Route
                     path=":capabilityRoute"
                     element={<CapabilityPlaceholder />}
