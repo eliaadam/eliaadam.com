@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  ChevronDown,
   Sparkles,
 } from "lucide-react";
 
@@ -82,6 +83,41 @@ function useCapabilityNav() {
   });
 }
 
+/* -------------------------------------------------------------------------- */
+/* Static application navigation                                              */
+/* -------------------------------------------------------------------------- */
+
+function StaticNav({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <nav className="flex flex-col gap-1">
+      {staticNavItems.map(({ to, label, icon: Icon, end }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            [
+              "flex items-center gap-3 rounded-lg px-3 py-2.5",
+              "text-sm font-medium transition-colors",
+              isActive
+                ? "bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400"
+                : "text-muted-foreground hover:bg-background hover:text-foreground",
+            ].join(" ")
+          }
+        >
+          <Icon size={16} strokeWidth={1.8} />
+          <span>{label}</span>
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Capability navigation                                                      */
+/* -------------------------------------------------------------------------- */
+
 function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
   const { data: capabilityNav } = useCapabilityNav();
 
@@ -94,9 +130,10 @@ function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
     .sort((a, b) => (a.navigation?.order ?? 0) - (b.navigation?.order ?? 0));
 
   return (
-    <div className="mt-6">
+    <div>
       <div className="mb-2 flex items-center gap-2 px-3">
         <Sparkles size={13} className="text-brand-green-500" />
+
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Capabilities
         </span>
@@ -113,37 +150,153 @@ function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function UserFooter({ onSignOut }: { onSignOut: () => void }) {
-  const { user } = useAuth();
+/* -------------------------------------------------------------------------- */
+/* Profile / application menu                                                 */
+/* -------------------------------------------------------------------------- */
+
+function ProfileMenu() {
+  const { user, signOut } = useAuth();
+
+  const [open, setOpen] = useState(false);
+
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * Close when clicking outside the menu.
+   */
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [open]);
+
+  /*
+   * Close with Escape.
+   */
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   return (
-    <div className="border-t border-border pt-4">
-      <div className="flex items-center gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-gradient text-sm font-semibold text-white">
+    <div ref={menuRef} className="relative">
+      {/* Profile trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label="Open account menu"
+        aria-expanded={open}
+        className={[
+          "flex h-9 items-center gap-2 rounded-lg",
+          "border border-border bg-surface px-2",
+          "text-sm font-medium text-foreground",
+          "transition-colors",
+          "hover:border-brand-blue-500/40",
+          "focus:outline-none focus:ring-4 focus:ring-brand-blue-500/10",
+        ].join(" ")}
+      >
+        <span className="grid size-7 place-items-center rounded-md bg-brand-gradient text-xs font-semibold text-white">
           {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-        </div>
+        </span>
 
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">
-            {user?.name}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {user?.email}
-          </p>
-        </div>
+        <ChevronDown
+          size={14}
+          className={[
+            "hidden transition-transform sm:block",
+            open ? "rotate-180" : "",
+          ].join(" ")}
+        />
+      </button>
 
-        <button
-          type="button"
-          onClick={onSignOut}
-          aria-label="Sign out"
-          className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+      {/* Context menu */}
+      {open && (
+        <div
+          className={[
+            "absolute right-0 top-12 z-50",
+            "w-[280px] max-w-[calc(100vw-2rem)]",
+            "overflow-hidden rounded-2xl",
+            "border border-border bg-surface",
+            "shadow-xl shadow-black/10",
+            "dark:shadow-black/30",
+          ].join(" ")}
         >
-          <LogOut size={15} />
-        </button>
-      </div>
+          {/* Account identity */}
+          <div className="border-b border-border p-4">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-gradient text-sm font-semibold text-white">
+                {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+              </div>
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {user?.name}
+                </p>
+
+                <p className="truncate text-xs text-muted-foreground">
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Application navigation */}
+          <div className="p-2">
+            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Navigation
+            </p>
+
+            <StaticNav onNavigate={() => setOpen(false)} />
+          </div>
+
+          {/* Sign out */}
+          <div className="border-t border-border p-2">
+            <button
+              type="button"
+              onClick={signOut}
+              className={[
+                "flex w-full items-center gap-3 rounded-lg",
+                "px-3 py-2.5 text-sm font-medium",
+                "text-muted-foreground",
+                "transition-colors",
+                "hover:bg-error/5 hover:text-error",
+              ].join(" ")}
+            >
+              <LogOut size={16} />
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Capability drawer                                                          */
+/* -------------------------------------------------------------------------- */
 
 function CapabilityDrawer({
   open,
@@ -152,14 +305,13 @@ function CapabilityDrawer({
   open: boolean;
   onClose: () => void;
 }) {
-  const { signOut } = useAuth();
-
   return (
     <>
       {/* Mobile backdrop */}
       <div
         className={[
-          "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 md:hidden",
+          "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden",
+          "transition-opacity duration-300",
           open
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0",
@@ -172,31 +324,32 @@ function CapabilityDrawer({
       <aside
         className={[
           "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col",
-          "border-r border-border bg-surface shadow-xl",
+          "border-r border-border bg-surface",
+          "shadow-xl md:static md:z-auto md:shadow-none",
           "transition-transform duration-300 ease-out",
-          "md:static md:z-auto md:translate-x-0 md:shadow-none",
           open ? "translate-x-0" : "-translate-x-full",
+          "md:translate-x-0",
         ].join(" ")}
       >
+        {/* Drawer header */}
         <div className="flex h-16 items-center justify-between border-b border-border px-5">
-          <div className="flex items-center gap-2.5">
-            <img
-              src="/images/mainlogo.png"
-              alt="Sonic Pesa"
-              className="h-8 w-auto object-contain"
-            />
-          </div>
+          <img
+            src="/images/mainlogo.png"
+            alt="Sonic Pesa"
+            className="h-8 w-auto object-contain"
+          />
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close navigation"
+            aria-label="Close capabilities"
             className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background hover:text-foreground md:hidden"
           >
             <X size={18} />
           </button>
         </div>
 
+        {/* Drawer content */}
         <div className="flex-1 overflow-y-auto px-4 py-5">
           <div className="mb-5">
             <ContainerSwitcher />
@@ -204,14 +357,14 @@ function CapabilityDrawer({
 
           <CapabilityNav onNavigate={onClose} />
         </div>
-
-        <div className="px-4 pb-5">
-          <UserFooter onSignOut={signOut} />
-        </div>
       </aside>
     </>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Dashboard layout                                                           */
+/* -------------------------------------------------------------------------- */
 
 export function DashboardLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -219,12 +372,10 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
       <div className="flex min-h-screen">
-        {/* Desktop capability drawer */}
-        <div className="hidden md:flex md:w-[280px] md:flex-none">
-          <CapabilityDrawer open={true} onClose={() => undefined} />
-        </div>
+        {/* ------------------------------------------------------------------ */}
+        {/* Capability drawer                                                  */}
+        {/* ------------------------------------------------------------------ */}
 
-        {/* Mobile capability drawer */}
         <div className="md:hidden">
           <CapabilityDrawer
             open={drawerOpen}
@@ -232,66 +383,54 @@ export function DashboardLayout() {
           />
         </div>
 
+        <div className="hidden md:flex md:w-[280px] md:flex-none">
+          <CapabilityDrawer open onClose={() => undefined} />
+        </div>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Main application                                                   */}
+        {/* ------------------------------------------------------------------ */}
+
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Top bar */}
           <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
-              {/* Mobile menu */}
+              {/* Mobile capability menu */}
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
                 aria-label="Open capabilities"
-                className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-surface text-muted-foreground transition-colors hover:text-foreground md:hidden"
+                className={[
+                  "grid size-9 shrink-0 place-items-center",
+                  "rounded-lg border border-border bg-surface",
+                  "text-muted-foreground",
+                  "transition-colors",
+                  "hover:text-foreground md:hidden",
+                ].join(" ")}
               >
                 <Menu size={18} />
               </button>
 
-              {/* Mobile logo */}
-              <img
-                src="/images/mainlogo.png"
-                alt="Sonic Pesa"
-                className="h-7 w-auto object-contain md:hidden"
-              />
-
-              {/* Desktop navigation */}
-              <nav className="hidden min-w-0 flex-1 items-center gap-1 md:flex">
-                {staticNavItems.map(({ to, label, icon: Icon, end }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={end}
-                    className={({ isActive }) =>
-                      [
-                        "inline-flex items-center gap-2 rounded-lg px-3 py-2",
-                        "text-sm font-medium whitespace-nowrap transition-colors",
-                        isActive
-                          ? "bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400"
-                          : "text-muted-foreground hover:bg-surface hover:text-foreground",
-                      ].join(" ")
-                    }
-                  >
-                    <Icon size={15} strokeWidth={1.8} />
-                    {label}
-                  </NavLink>
-                ))}
-              </nav>
-
-              {/* Mobile title */}
-              <div className="min-w-0 flex-1 md:hidden">
-                <p className="truncate text-sm font-semibold text-foreground">
-                  Dashboard
-                </p>
+              {/* Brand */}
+              <div className="flex min-w-0 flex-1 items-center">
+                <img
+                  src="/images/mainlogo.png"
+                  alt="Sonic Pesa"
+                  className="h-7 w-auto object-contain md:h-8"
+                />
               </div>
 
-              {/* Theme */}
-              <ThemeToggle />
+              {/* Desktop spacing / utility area */}
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
 
-              {/* Mobile user action */}
-              <MobileUserMenu />
+                {/* Profile menu exists on ALL screen sizes */}
+                <ProfileMenu />
+              </div>
             </div>
           </header>
 
-          {/* Page content */}
+          {/* Content */}
           <main className="flex-1">
             <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
               <Outlet />
@@ -299,45 +438,6 @@ export function DashboardLayout() {
           </main>
         </div>
       </div>
-    </div>
-  );
-}
-
-function MobileUserMenu() {
-  const { user, signOut } = useAuth();
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative md:hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-label="Open account menu"
-        aria-expanded={open}
-        className="grid size-9 place-items-center rounded-lg border border-border bg-surface text-sm font-semibold text-foreground transition-colors hover:border-brand-blue-500/40"
-      >
-        {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-11 w-64 rounded-xl border border-border bg-surface p-2 shadow-lg">
-          <div className="border-b border-border px-3 py-2.5">
-            <p className="truncate text-sm font-medium">{user?.name}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {user?.email}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={signOut}
-            className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-          >
-            <LogOut size={15} />
-            Sign out
-          </button>
-        </div>
-      )}
     </div>
   );
 }
