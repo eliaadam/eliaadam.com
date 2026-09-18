@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -9,7 +10,11 @@ import {
   Star,
   ShoppingBag,
   LogOut,
+  Menu,
+  X,
+  Sparkles,
 } from "lucide-react";
+
 import { useAuth } from "../context/Authcontext";
 import { useContainer } from "../context/ContainerContext";
 import { ThemeToggle } from "../context/ThemeContext";
@@ -18,47 +23,42 @@ import { CapabilityNavLink } from "./CapabilityNavLink";
 import { sdk } from "../../lib/sdk";
 
 const staticNavItems = [
-  // "Containers" (Discover + My Containers tabs) is now the index
-  // route — replaces the old Registry-asset "Recent" feed (dropped)
-  // and the standalone "Join" page (folded into the Discover tab).
-  { to: "/dashboard", label: "Containers", icon: Folders, end: true },
-  { to: "/dashboard/profile", label: "Profile", icon: User, end: false },
-  // Ungated on purpose — instantiating a template and
-  // creating/redeeming invitations are both open to any authenticated
-  // actor on the backend (see each page's own docstring for exactly
-  // why), so they're not hidden behind usePermission the way
-  // admin-only pages are.
-  { to: "/dashboard/templates", label: "Templates", icon: Boxes, end: false },
+  {
+    to: "/dashboard",
+    label: "Containers",
+    icon: Folders,
+    end: true,
+  },
+  {
+    to: "/dashboard/profile",
+    label: "Profile",
+    icon: User,
+    end: false,
+  },
+  {
+    to: "/dashboard/templates",
+    label: "Templates",
+    icon: Boxes,
+    end: false,
+  },
   {
     to: "/dashboard/invitations",
     label: "Invitations",
     icon: Mail,
     end: false,
   },
-  // Also ungated — any authenticated actor can submit an
-  // instantiation request (that's what "requires approval" MEANS: no
-  // special permission to submit, only to decide), so checking on
-  // your own requests' status shouldn't need one either.
   {
     to: "/dashboard/my-instantiation-requests",
     label: "My requests",
     icon: ClipboardList,
     end: false,
   },
-  // Same reasoning — subscribing is open to any authenticated actor,
-  // no special permission required (see interface/views.py's own
-  // module docstring in capabilities.core.subscription), so checking
-  // your own subscriptions' status shouldn't need one either.
   {
     to: "/dashboard/my-subscriptions",
     label: "My subscriptions",
     icon: Star,
     end: false,
   },
-  // Same reasoning again — buying is open to any authenticated actor,
-  // no permission required (see capabilities.core.surfacing's own
-  // interface/views.py module docstring), so checking your own
-  // purchase history shouldn't need one either.
   {
     to: "/dashboard/my-purchases",
     label: "My purchases",
@@ -76,88 +76,268 @@ function useCapabilityNav() {
       sdk.capability.listManifests(currentContainerId ?? undefined),
     enabled: Boolean(currentContainerId),
     select: (manifests) =>
-      manifests.filter((m) => m.licensed && m.navigation !== null),
+      manifests.filter(
+        (manifest) => manifest.licensed && manifest.navigation !== null,
+      ),
   });
 }
 
-export function DashboardLayout() {
-  const { user, signOut } = useAuth();
+function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
   const { data: capabilityNav } = useCapabilityNav();
 
+  if (!capabilityNav || capabilityNav.length === 0) {
+    return null;
+  }
+
+  const sorted = capabilityNav
+    .slice()
+    .sort((a, b) => (a.navigation?.order ?? 0) - (b.navigation?.order ?? 0));
+
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 md:grid-cols-[16rem_1fr]">
-      <aside className="flex flex-col justify-between border-b border-neutral-200 p-6 dark:border-neutral-800 md:border-b-0 md:border-r">
-        <div>
-          <div className="mb-6 flex items-center justify-between">
-            <span className="text-sm font-semibold tracking-tight">Sysc</span>
-            <ThemeToggle />
+    <div className="mt-6">
+      <div className="mb-2 flex items-center gap-2 px-3">
+        <Sparkles size={13} className="text-brand-green-500" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Capabilities
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        {sorted.map((manifest) => (
+          <div key={manifest.feature_code} onClick={onNavigate}>
+            <CapabilityNavLink manifest={manifest} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UserFooter({ onSignOut }: { onSignOut: () => void }) {
+  const { user } = useAuth();
+
+  return (
+    <div className="border-t border-border pt-4">
+      <div className="flex items-center gap-3">
+        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-gradient text-sm font-semibold text-white">
+          {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">
+            {user?.name}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {user?.email}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onSignOut}
+          aria-label="Sign out"
+          className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+        >
+          <LogOut size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CapabilityDrawer({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { signOut } = useAuth();
+
+  return (
+    <>
+      {/* Mobile backdrop */}
+      <div
+        className={[
+          "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 md:hidden",
+          open
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0",
+        ].join(" ")}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Drawer */}
+      <aside
+        className={[
+          "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col",
+          "border-r border-border bg-surface shadow-xl",
+          "transition-transform duration-300 ease-out",
+          "md:static md:z-auto md:translate-x-0 md:shadow-none",
+          open ? "translate-x-0" : "-translate-x-full",
+        ].join(" ")}
+      >
+        <div className="flex h-16 items-center justify-between border-b border-border px-5">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/images/mainlogo.png"
+              alt="Sonic Pesa"
+              className="h-8 w-auto object-contain"
+            />
           </div>
 
-          <div className="mb-6">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close navigation"
+            className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background hover:text-foreground md:hidden"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+          <div className="mb-5">
             <ContainerSwitcher />
           </div>
 
-          <nav className="flex flex-col gap-1">
-            {staticNavItems.map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  [
-                    "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-neutral-100 text-black dark:bg-neutral-900 dark:text-white"
-                      : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-100",
-                  ].join(" ")
-                }
-              >
-                <Icon size={16} />
-                {label}
-              </NavLink>
-            ))}
-
-            {capabilityNav && capabilityNav.length > 0 && (
-              <>
-                <div className="my-2 border-t border-neutral-200 dark:border-neutral-800" />
-                {capabilityNav
-                  .slice()
-                  .sort(
-                    (a, b) =>
-                      (a.navigation!.order ?? 0) - (b.navigation!.order ?? 0),
-                  )
-                  .map((manifest) => (
-                    <CapabilityNavLink
-                      key={manifest.feature_code}
-                      manifest={manifest}
-                    />
-                  ))}
-              </>
-            )}
-          </nav>
+          <CapabilityNav onNavigate={onClose} />
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-800">
-          <div className="min-w-0">
+        <div className="px-4 pb-5">
+          <UserFooter onSignOut={signOut} />
+        </div>
+      </aside>
+    </>
+  );
+}
+
+export function DashboardLayout() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground antialiased">
+      <div className="flex min-h-screen">
+        {/* Desktop capability drawer */}
+        <div className="hidden md:flex md:w-[280px] md:flex-none">
+          <CapabilityDrawer open={true} onClose={() => undefined} />
+        </div>
+
+        {/* Mobile capability drawer */}
+        <div className="md:hidden">
+          <CapabilityDrawer
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+          />
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Top bar */}
+          <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md">
+            <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+              {/* Mobile menu */}
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Open capabilities"
+                className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-surface text-muted-foreground transition-colors hover:text-foreground md:hidden"
+              >
+                <Menu size={18} />
+              </button>
+
+              {/* Mobile logo */}
+              <img
+                src="/images/mainlogo.png"
+                alt="Sonic Pesa"
+                className="h-7 w-auto object-contain md:hidden"
+              />
+
+              {/* Desktop navigation */}
+              <nav className="hidden min-w-0 flex-1 items-center gap-1 md:flex">
+                {staticNavItems.map(({ to, label, icon: Icon, end }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      [
+                        "inline-flex items-center gap-2 rounded-lg px-3 py-2",
+                        "text-sm font-medium whitespace-nowrap transition-colors",
+                        isActive
+                          ? "bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400"
+                          : "text-muted-foreground hover:bg-surface hover:text-foreground",
+                      ].join(" ")
+                    }
+                  >
+                    <Icon size={15} strokeWidth={1.8} />
+                    {label}
+                  </NavLink>
+                ))}
+              </nav>
+
+              {/* Mobile title */}
+              <div className="min-w-0 flex-1 md:hidden">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  Dashboard
+                </p>
+              </div>
+
+              {/* Theme */}
+              <ThemeToggle />
+
+              {/* Mobile user action */}
+              <MobileUserMenu />
+            </div>
+          </header>
+
+          {/* Page content */}
+          <main className="flex-1">
+            <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+              <Outlet />
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileUserMenu() {
+  const { user, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative md:hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label="Open account menu"
+        aria-expanded={open}
+        className="grid size-9 place-items-center rounded-lg border border-border bg-surface text-sm font-semibold text-foreground transition-colors hover:border-brand-blue-500/40"
+      >
+        {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-11 w-64 rounded-xl border border-border bg-surface p-2 shadow-lg">
+          <div className="border-b border-border px-3 py-2.5">
             <p className="truncate text-sm font-medium">{user?.name}</p>
-            <p className="truncate text-xs text-neutral-500 dark:text-neutral-500">
+            <p className="truncate text-xs text-muted-foreground">
               {user?.email}
             </p>
           </div>
+
           <button
             type="button"
             onClick={signOut}
-            aria-label="Sign out"
-            className="inline-flex h-8 w-8 flex-none items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
+            className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
           >
             <LogOut size={15} />
+            Sign out
           </button>
         </div>
-      </aside>
-
-      <main className="p-6 md:p-10">
-        <Outlet />
-      </main>
+      )}
     </div>
   );
 }
