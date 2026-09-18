@@ -203,7 +203,7 @@ function TemplateCard({
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
               Requires approval before it's actually created.{" "}
               <Link
-                to={`my-instantiation-requests`}
+                to={`/dashboard/templates/${template.code}/requests`}
                 className="underline hover:text-black dark:hover:text-white"
               >
                 View requests
