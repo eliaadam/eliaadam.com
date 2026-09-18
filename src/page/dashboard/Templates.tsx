@@ -219,7 +219,7 @@ function TemplateCard({
                   Requires an active subscription
                   {requiredPlan && ` to "${requiredPlan.name}"`}.{" "}
                   <Link
-                    to="/dashboard/subscription"
+                    to={`/dashboard/subscribe/plan/${template.required_subscription_plan_id}`}
                     className="underline hover:text-black dark:hover:text-white"
                   >
                     Subscribe
