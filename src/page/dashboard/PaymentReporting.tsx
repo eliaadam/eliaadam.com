@@ -236,13 +236,13 @@ function WalletsTab() {
         </div>
       )}
 
-      {data && data.data.length === 0 && (
+      {(!data?.data || data.data.length === 0) && !isLoading && (
         <p className="text-sm text-neutral-500 dark:text-neutral-500">
           No wallets match these filters.
         </p>
       )}
 
-      {data && data.data.length > 0 && (
+      {data?.data && data.data.length > 0 && (
         <>
           <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
             {data.data.map((wallet) => (
@@ -355,13 +355,13 @@ function TransactionsTab() {
         </div>
       )}
 
-      {data && data.data.length === 0 && (
+      {(!data?.data || data.data.length === 0) && !isLoading && (
         <p className="text-sm text-neutral-500 dark:text-neutral-500">
           No transactions match these filters.
         </p>
       )}
 
-      {data && data.data.length > 0 && (
+      {data?.data && data.data.length > 0 && (
         <>
           <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
             {data.data.map((txn) => (
@@ -397,9 +397,9 @@ function TransactionRow({ transaction }: { transaction: TransactionReport }) {
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
         {transaction.description}
       </p>
-      {transaction.entries.length > 0 && (
+      {(transaction.entries ?? []).length > 0 && (
         <ul className="mt-1 flex flex-col gap-0.5">
-          {transaction.entries.map((entry) => (
+          {(transaction.entries ?? []).map((entry) => (
             <li
               key={entry.id}
               className="flex justify-between font-mono text-xs text-neutral-500 dark:text-neutral-500"

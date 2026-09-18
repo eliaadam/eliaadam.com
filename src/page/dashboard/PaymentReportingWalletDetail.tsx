@@ -99,13 +99,13 @@ export function PaymentReportingWalletDetail() {
             Transaction history
           </h2>
 
-          {data.transactions.length === 0 ? (
+          {(data.transactions ?? []).length === 0 ? (
             <p className="mt-3 text-sm text-neutral-500 dark:text-neutral-500">
               No transactions touch this wallet yet.
             </p>
           ) : (
             <ul className="mt-3 flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-              {data.transactions.map((txn) => (
+              {(data.transactions ?? []).map((txn) => (
                 <WalletTransactionRow
                   key={txn.id}
                   transaction={txn}
@@ -127,7 +127,9 @@ function WalletTransactionRow({
   transaction: TransactionReport;
   walletId: string;
 }) {
-  const ownEntry = transaction.entries.find((e) => e.account_id === walletId);
+  const ownEntry = (transaction.entries ?? []).find(
+    (e) => e.account_id === walletId,
+  );
 
   return (
     <li className="flex items-center justify-between gap-3 px-4 py-3">
