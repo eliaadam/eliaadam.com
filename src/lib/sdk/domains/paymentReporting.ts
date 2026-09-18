@@ -86,8 +86,8 @@ function buildQuery(
 
 function listWallets(
   params: ListWalletsParams = {},
-): Promise<{ data: WalletReport[]; total: number }> {
-  return api.get<{ data: WalletReport[]; total: number }>(
+): Promise<{ results: WalletReport[]; total: number }> {
+  return api.get<{ results: WalletReport[]; total: number }>(
     `/api/payment/reporting/wallets/${buildQuery(params)}`,
   );
 }
@@ -104,8 +104,8 @@ function getWalletDetail(
 
 function listTransactions(
   params: ListTransactionsParams = {},
-): Promise<{ data: TransactionReport[]; total: number }> {
-  return api.get<{ data: TransactionReport[]; total: number }>(
+): Promise<{ results: TransactionReport[]; total: number }> {
+  return api.get<{ results: TransactionReport[]; total: number }>(
     `/api/payment/reporting/transactions/${buildQuery(params)}`,
   );
 }

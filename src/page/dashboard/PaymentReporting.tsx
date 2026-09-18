@@ -236,16 +236,16 @@ function WalletsTab() {
         </div>
       )}
 
-      {(!data?.data || data.data.length === 0) && !isLoading && (
+      {(!data?.results || data.results.length === 0) && !isLoading && (
         <p className="text-sm text-neutral-500 dark:text-neutral-500">
           No wallets match these filters.
         </p>
       )}
 
-      {data?.data && data.data.length > 0 && (
+      {data?.results && data.results.length > 0 && (
         <>
           <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-            {data.data.map((wallet) => (
+            {data.results.map((wallet) => (
               <WalletRow key={wallet.id} wallet={wallet} />
             ))}
           </ul>
@@ -355,16 +355,16 @@ function TransactionsTab() {
         </div>
       )}
 
-      {(!data?.data || data.data.length === 0) && !isLoading && (
+      {(!data?.results || data.results.length === 0) && !isLoading && (
         <p className="text-sm text-neutral-500 dark:text-neutral-500">
           No transactions match these filters.
         </p>
       )}
 
-      {data?.data && data.data.length > 0 && (
+      {data?.results && data.results.length > 0 && (
         <>
           <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-            {data.data.map((txn) => (
+            {data.results.map((txn) => (
               <TransactionRow key={txn.id} transaction={txn} />
             ))}
           </ul>
