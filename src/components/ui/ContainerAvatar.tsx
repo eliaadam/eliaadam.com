@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { sdk } from "../../lib/sdk";
-import { Avatar } from "./Avatar";
+import { Avatar } from "../Avatar";
 
 interface ContainerAvatarProps {
   containerId: string;

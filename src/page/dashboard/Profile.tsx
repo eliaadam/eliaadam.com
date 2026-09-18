@@ -4,7 +4,7 @@ import { Camera, X } from "lucide-react";
 import { sdk } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
 import { useAuth } from "../../components/context/Authcontext";
-import { Avatar } from "../../components/ui/Avatar";
+import { Avatar } from "../../components/Avatar";
 
 const inputClass =
   "rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
