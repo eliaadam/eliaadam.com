@@ -54,6 +54,8 @@ import { DocsLayout } from "../../page/docs/DocsLayout";
 import { IdempotencyDoc } from "../../page/docs/IdempotencyDoc";
 import { PayoutsDoc } from "../../page/docs/PayoutsDoc";
 import { Marketplace } from "../../page/dashboard/Marketplace";
+import { PaymentReporting } from "../../page/dashboard/PaymentReporting";
+import { PaymentReportingWalletDetail } from "../../page/dashboard/PaymentReportingWalletDetail";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -125,6 +127,14 @@ function MainApp() {
                   <Route
                     path="templates/:templateCode/requests"
                     element={<InstantiationRequests />}
+                  />
+                  <Route
+                    path="payment-reporting"
+                    element={<PaymentReporting />}
+                  />
+                  <Route
+                    path="payment-reporting/wallets/:walletId"
+                    element={<PaymentReportingWalletDetail />}
                   />
                   <Route path="invitations" element={<Invitations />} />
                   <Route

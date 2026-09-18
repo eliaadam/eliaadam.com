@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { KeyRound, Folders, UserCog } from "lucide-react";
+import { KeyRound, Folders, UserCog, BarChart3 } from "lucide-react";
 
 /**
  * The landing page `core.admin`'s `navigation()` points at. Closes a
@@ -39,6 +39,12 @@ const ADMIN_SECTIONS = [
     label: "License a container",
     icon: KeyRound,
     description: "Grant or revoke a capability on any container.",
+  },
+  {
+    to: "/dashboard/payment-reporting",
+    label: "Payment reporting",
+    icon: BarChart3,
+    description: "Every wallet and transaction, across every container.",
   },
 ];
 

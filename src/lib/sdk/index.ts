@@ -13,6 +13,7 @@ import { avatars } from "./domains/avatars";
 import { inventory } from "./domains/inventory";
 import { events } from "./domains/events";
 import { paymentGateway } from "./domains/paymentGateway";
+import { paymentReporting } from "./domains/paymentReporting";
 
 /**
  * Single entry point for every domain's API client.
@@ -39,7 +40,8 @@ export const sdk = {
   avatars,
   inventory,
   events,
-  paymentGateway
+  paymentGateway,
+  paymentReporting
 };
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";
@@ -111,6 +113,12 @@ export type {
   CreateIntentInput,
   CreateTransferInput,
 } from "./domains/payment";
+export type {
+  WalletReport,
+  TransactionReport,
+  LedgerEntryReport,
+  PlatformPaymentSummary,
+} from "./domains/paymentReporting";
 export type {
   BillingInterval,
   PlanStatus,
