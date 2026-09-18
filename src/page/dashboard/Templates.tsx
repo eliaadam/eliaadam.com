@@ -202,12 +202,12 @@ function TemplateCard({
           {template.requires_approval && (
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
               Requires approval before it's actually created.{" "}
-              {/* <Link
-                to={`/dashboard/templates/${template.code}/requests`}
+              <Link
+                to={`dashboard/my-instantiation-requests`}
                 className="underline hover:text-black dark:hover:text-white"
               >
                 View requests
-              </Link> */}
+              </Link>
             </p>
           )}
           {template.required_subscription_plan_id && (
