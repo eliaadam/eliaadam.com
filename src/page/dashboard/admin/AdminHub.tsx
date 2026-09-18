@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
-import { KeyRound, Folders, UserCog, BarChart3 } from "lucide-react";
+import {
+  KeyRound,
+  Folders,
+  UserCog,
+  BarChart3,
+  CheckSquare,
+  Settings,
+} from "lucide-react";
 
 /**
  * The landing page `core.admin`'s `navigation()` points at. Closes a
@@ -45,6 +52,18 @@ const ADMIN_SECTIONS = [
     label: "Payment reporting",
     icon: BarChart3,
     description: "Every wallet and transaction, across every container.",
+  },
+  {
+    to: "/dashboard/admin/payment-gateway-approvals",
+    label: "Payment gateway approvals",
+    icon: CheckSquare,
+    description: "Pending API key requests awaiting approval.",
+  },
+  {
+    to: "/dashboard/admin/payment-gateway-settings",
+    label: "Payment gateway settings",
+    icon: Settings,
+    description: "Platform-wide gateway routing and payout fee rules.",
   },
 ];
 

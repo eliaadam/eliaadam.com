@@ -5,26 +5,6 @@ import { sdk, type InstantiationRequest } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
 import { useCanApproveRootInstantiation } from "../../lib/hooks/useCanApproveRootInstantiation";
 
-/**
- * One request, with approve/reject + an optional reason. Shared by
- * the per-template review page (`InstantiationRequests.tsx`) and the
- * admin's aggregate "Requests" tab in Provisioning — the only real
- * difference between those two contexts is whether the template code
- * needs to be shown (the per-template page already says which
- * template in its own header; the aggregate view spans every
- * template, so each row needs to say which one).
- *
- * FIX: approve/reject used to be shown as always-enabled to every
- * viewer, even ones with no way to actually use them — a real 403
- * only explained itself AFTER a click. For ROOT-level requests, that's
- * now a genuine pre-check (`useCanApproveRootInstantiation` — a real
- * permission code, checked the same way the backend's own Gate would)
- * — the button is honestly disabled, with the reason stated up front,
- * before anyone clicks. Sub-container approval can't get the same
- * treatment today: it's a direct owner check that bypasses Authority's
- * Gate by design, so there's no permission code to pre-check — those
- * buttons stay enabled with a plain note instead of a fake check.
- */
 export function InstantiationRequestRow({
   request,
   onApprove,
