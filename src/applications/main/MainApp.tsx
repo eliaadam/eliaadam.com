@@ -56,7 +56,8 @@ import { PayoutsDoc } from "../../page/docs/PayoutsDoc";
 import { Marketplace } from "../../page/dashboard/Marketplace";
 import { PaymentReporting } from "../../page/dashboard/PaymentReporting";
 import { PaymentReportingWalletDetail } from "../../page/dashboard/PaymentReportingWalletDetail";
-
+import { SubscribeToPlan } from "../../page/dashboard/SubscribeToPlan";
+ 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
  * its own file under `page/` or `components/` — this file's only job
@@ -119,6 +120,7 @@ function MainApp() {
                     path="containers/:containerId/join-requests"
                     element={<JoinRequests />}
                   />
+                  <Route path="subscribe/plan/:planId" element={<SubscribeToPlan />} />
                   <Route
                     path="containers/:containerId/settings"
                     element={<ContainerSettings />}

@@ -213,7 +213,8 @@ function PlanCard({
     </div>
   );
 }
-function SubscribeForm({
+
+export function SubscribeForm({
   plan,
   containerId,
   onDone,
