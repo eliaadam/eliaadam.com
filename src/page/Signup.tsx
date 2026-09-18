@@ -53,7 +53,7 @@ function AuthHeader({
     <header className="relative z-20 flex items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
       <Link to="/" className="flex items-center gap-2.5">
         <img
-          src="/images/mainlog.png"
+          src="/images/mainlogo.png"
           alt="Sonic Pesa"
           className="h-9 w-auto object-contain"
         />
