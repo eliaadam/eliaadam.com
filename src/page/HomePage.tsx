@@ -336,7 +336,7 @@ function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
 
         <div className="mt-auto">
           <Button className="w-full" asChild>
-            <a href="#get-started">
+            <a href="https://ui.sonicpesa.com/signup">
               Start Integration
               <ArrowRight />
             </a>
