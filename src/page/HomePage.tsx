@@ -1,42 +1,47 @@
+// src/pages/home.tsx
+
 import React, { useEffect, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  BarChart3,
+  Braces,
+  Check,
+  ChevronRight,
+  Code2,
+  Layers3,
+  Menu,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  X,
+  Zap,
+} from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@radix-ui/react-accordion";
+import { Separator } from "@radix-ui/react-dropdown-menu";
+import { Button } from "../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { cn } from "../design-system/lib/utils";
+import { Badge } from "../components/ui/badge";
 
-// ---------------------------------------------------------------------------
-// Shared design tokens (kept as constants so every color pull is intentional)
-// ---------------------------------------------------------------------------
-const INK = "#0A0D10"; // page background — cool near-black
-const SURFACE = "#10151A"; // raised panels
-const SURFACE_2 = "#161C22"; // cards
-const LINE = "#1F262C"; // hairline borders
-const TEXT = "#E7ECEF"; // primary text
-const TEXT_DIM = "#7C8790"; // secondary text
-const SIGNAL_GREEN = "#2FD68C"; // "online / settled" status only
-const SIGNAL_BLUE = "#4C8DFF"; // "data / in-flight" status only
+type Node = {
+  id: number;
+  x: number;
+  y: number;
+  status?: "green" | "blue";
+};
 
-function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReduced(mq.matches);
-    mq.addEventListener("change", onChange);
-
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  return reduced;
-}
-
-// ---------------------------------------------------------------------------
-// Signature element: the settlement grid — a node network standing in for
-// "the payment grid" itself. Static nodes are the merchant/bank endpoints;
-// traveling packets are transactions clearing across the network.
-// ---------------------------------------------------------------------------
-type Node = { id: number; x: number; y: number; status?: "green" | "blue" };
 type Edge = [number, number];
+
 type Packet = {
   edge: Edge;
   color: "green" | "blue";
@@ -87,170 +92,12 @@ const PACKETS: Packet[] = [
   { edge: [0, 6], color: "blue", dur: "3.9s", begin: "0.9s" },
 ];
 
-function edgeId(e: Edge): string {
-  return `edge-${e[0]}-${e[1]}`;
-}
-
-const SettlementGrid: React.FC = () => {
-  const reduced = useReducedMotion();
-  const nodeById = useMemo(() => {
-    const m = new Map<number, Node>();
-    NODES.forEach((n) => m.set(n.id, n));
-
-    return m;
-  }, []);
-
-  return (
-    <svg
-      viewBox="0 0 400 400"
-      className="h-full w-full"
-      role="img"
-      aria-label="Animated diagram of SonicPesa's distributed settlement network"
-    >
-      <defs>
-        <filter id="node-glow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="3.2" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* edges */}
-      {EDGES.map((e) => {
-        const a = nodeById.get(e[0])!;
-        const b = nodeById.get(e[1])!;
-
-        return (
-          <path
-            key={edgeId(e)}
-            id={edgeId(e)}
-            d={`M ${a.x} ${a.y} L ${b.x} ${b.y}`}
-            stroke={LINE}
-            strokeWidth={1}
-            fill="none"
-          />
-        );
-      })}
-
-      {/* packets traveling along edges */}
-      {PACKETS.map((p, i) => {
-        const color = p.color === "green" ? SIGNAL_GREEN : SIGNAL_BLUE;
-        const a = nodeById.get(p.edge[0])!;
-
-        if (reduced) {
-          return (
-            <circle
-              key={`pk-${i}`}
-              cx={a.x}
-              cy={a.y}
-              r={2.2}
-              fill={color}
-              opacity={0.85}
-            />
-          );
-        }
-
-        return (
-          <circle key={`pk-${i}`} r={2.2} fill={color} opacity={0.9}>
-            <animateMotion dur={p.dur} begin={p.begin} repeatCount="indefinite">
-              <mpath href={`#${edgeId(p.edge)}`} />
-            </animateMotion>
-          </circle>
-        );
-      })}
-
-      {/* nodes */}
-      {NODES.map((n) => {
-        const color =
-          n.status === "green"
-            ? SIGNAL_GREEN
-            : n.status === "blue"
-              ? SIGNAL_BLUE
-              : "#3A4550";
-        const r = n.status ? 4.4 : 3.2;
-
-        return (
-          <circle
-            key={n.id}
-            cx={n.x}
-            cy={n.y}
-            r={r}
-            fill={color}
-            filter={n.status ? "url(#node-glow)" : undefined}
-            className={
-              n.status && !reduced
-                ? "motion-safe:animate-[nodePulse_2.6s_ease-in-out_infinite]"
-                : ""
-            }
-          />
-        );
-      })}
-    </svg>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// Small inline icon set — kept as line-art glyphs, no external icon library
-// ---------------------------------------------------------------------------
-const iconProps = {
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.5,
-};
-
-const IconBolt = () => (
-  <svg {...iconProps}>
-    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" strokeLinejoin="round" />
-  </svg>
-);
-const IconShield = () => (
-  <svg {...iconProps}>
-    <path
-      d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z"
-      strokeLinejoin="round"
-    />
-    <path d="M9.5 12l1.8 1.8L14.8 10" />
-  </svg>
-);
-const IconBrackets = () => (
-  <svg {...iconProps}>
-    <path
-      d="M9 4 3 12l6 8M15 4l6 8-6 8"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-const IconBars = () => (
-  <svg {...iconProps}>
-    <path d="M4 20V10M11 20V4M18 20v-7" strokeLinecap="round" />
-  </svg>
-);
-const IconWave = () => (
-  <svg {...iconProps}>
-    <rect x="7" y="3" width="10" height="18" rx="2" />
-    <path d="M4 12c1-2 2-2 3 0s2 2 3 0M15 12c1-2 2-2 3 0s2 2 3 0" />
-  </svg>
-);
-const IconLayers = () => (
-  <svg {...iconProps}>
-    <path d="M12 3 3 8l9 5 9-5-9-5Z" strokeLinejoin="round" />
-    <path d="M3 13l9 5 9-5M3 18l9 5 9-5" />
-  </svg>
-);
-
-// ---------------------------------------------------------------------------
-// Content
-// ---------------------------------------------------------------------------
 const NAV_LINKS = [
-  { label: "Get Started", href: "/home" },
-  { label: "Infrastructure", href: "https://sonicpesa.com/#infrastructure" },
-  { label: "Developers", href: "https://sonicpesa.com/#developers" },
-  { label: "Network", href: "https://sonicpesa.com/#network" },
-  { label: "Security", href: "https://sonicpesa.com/#security" },
+  { label: "Get Started", href: "#get-started" },
+  { label: "Infrastructure", href: "#infrastructure" },
+  { label: "Developers", href: "#developers" },
+  { label: "Network", href: "#network" },
+  { label: "Security", href: "#security" },
 ];
 
 const STATS = [
@@ -260,559 +107,862 @@ const STATS = [
   { value: "180ms", label: "Latency Log" },
 ];
 
-const FEATURES: { icon: React.FC; title: string; body: string }[] = [
+const FEATURES = [
   {
-    icon: IconBolt,
+    icon: Zap,
     title: "Instant Liquidation",
     body: "Withdraw funds to Tanzanian mobile wallets in seconds. No holding periods, no delays.",
+    tone: "green",
   },
   {
-    icon: IconShield,
+    icon: ShieldCheck,
     title: "E2E Encryption",
-    body: "Bank-grade SHA-256 encryption. Protected by dual-layer firewall protocols and 2FA.",
+    body: "Bank-grade encryption with layered security controls and two-factor authentication.",
+    tone: "blue",
   },
   {
-    icon: IconBrackets,
+    icon: Braces,
     title: "Micro-Service API",
-    body: "A developer-first architecture. Clean JSON responses and autonomic webhook retry logic.",
+    body: "A developer-first architecture with clean JSON responses and resilient webhook handling.",
+    tone: "green",
   },
   {
-    icon: IconBars,
+    icon: BarChart3,
     title: "Deep Analytics",
-    body: "High-precision telemetry for every transaction. Understand your revenue growth in real-time.",
+    body: "High-precision transaction telemetry to understand revenue and payment activity in real time.",
+    tone: "blue",
   },
   {
-    icon: IconWave,
-    title: "Native Push USSD",
-    body: "Seamless checkout experiences for M-Pesa, Tigo Pesa, Halopesa & Airtel Money.",
+    icon: Smartphone,
+    title: "Native Mobile Money",
+    body: "Seamless checkout experiences across Tanzania's major mobile-money networks.",
+    tone: "green",
   },
   {
-    icon: IconLayers,
+    icon: Layers3,
     title: "Scalable Logic",
-    body: "Engineered to handle high-concurrency event streams without performance degradation.",
+    body: "Engineered for high-concurrency payment events without compromising application performance.",
+    tone: "blue",
   },
 ];
 
-const FOOTER_COLUMNS: {
-  heading: string;
-  links: { label: string; href: string }[];
-}[] = [
-  {
-    heading: "System Architecture",
-    links: [
-      { label: "Technical Registry", href: "https://sonicpesa.com/docs" },
-      { label: "Security Tokens", href: "https://sonicpesa.com/api" },
-      { label: "Control Panel", href: "https://sonicpesa.com/dashboard" },
-    ],
-  },
-  {
-    heading: "Operation Policies",
-    links: [
-      { label: "System Terms", href: "https://sonicpesa.com/terms" },
-      { label: "Privacy Vault", href: "https://sonicpesa.com/privacy" },
-      { label: "Corporate Bio", href: "https://sonicpesa.com/about" },
-    ],
-  },
-];
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-export default function Home(): React.ReactElement {
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const update = () => setReduced(media.matches);
+
+    update();
+    media.addEventListener("change", update);
+
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return reduced;
+}
+
+function Logo() {
   return (
-    <div
-      className="min-h-screen w-full antialiased"
-      style={{
-        background: INK,
-        color: TEXT,
-        fontFamily: "Inter, system-ui, sans-serif",
-      }}
+    <a
+      href="#"
+      className="group inline-flex items-center gap-2.5"
+      aria-label="SonicPesa home"
     >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-        .font-display { font-family: 'Space Grotesk', system-ui, sans-serif; }
-        .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-        @keyframes nodePulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.45; }
-        }
-        @keyframes caretBlink {
-          0%, 45% { opacity: 1; }
-          50%, 100% { opacity: 0; }
-        }
-        .caret { animation: caretBlink 1.1s steps(1) infinite; }
-        @media (prefers-reduced-motion: reduce) {
-          .caret { animation: none; opacity: 1; }
-        }
-      `}</style>
+      <span className="relative flex size-8 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-white shadow-sm">
+        <Zap className="size-4 fill-current" strokeWidth={2.5} />
+      </span>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Nav                                                                 */}
-      {/* ------------------------------------------------------------------ */}
-      <header
-        className="sticky top-0 z-50 border-b backdrop-blur"
-        style={{ borderColor: LINE, background: "rgba(10,13,16,0.75)" }}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a
-            href="#"
-            className="font-display flex items-center gap-2 text-[15px] font-semibold tracking-tight"
-          >
-            <span
-              className="flex h-6 w-6 items-center justify-center rounded-[6px] border font-mono text-[11px]"
-              style={{ borderColor: LINE, color: SIGNAL_BLUE }}
+      <span className="font-display text-base font-semibold tracking-tight text-foreground">
+        SonicPesa
+      </span>
+    </a>
+  );
+}
+
+function SettlementGrid() {
+  const reduced = useReducedMotion();
+
+  const nodeById = useMemo(() => {
+    const map = new Map<number, Node>();
+
+    NODES.forEach((node) => {
+      map.set(node.id, node);
+    });
+
+    return map;
+  }, []);
+
+  return (
+    <svg
+      viewBox="0 0 400 400"
+      className="size-full"
+      role="img"
+      aria-label="SonicPesa distributed payment network"
+    >
+      <defs>
+        <filter
+          id="sonic-node-glow"
+          x="-60%"
+          y="-60%"
+          width="220%"
+          height="220%"
+        >
+          <feGaussianBlur stdDeviation="3.2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {EDGES.map(([from, to]) => {
+        const a = nodeById.get(from)!;
+        const b = nodeById.get(to)!;
+
+        return (
+          <path
+            key={`${from}-${to}`}
+            id={`sonic-edge-${from}-${to}`}
+            d={`M ${a.x} ${a.y} L ${b.x} ${b.y}`}
+            stroke="currentColor"
+            strokeOpacity="0.2"
+            strokeWidth="1"
+            fill="none"
+          />
+        );
+      })}
+
+      {PACKETS.map((packet, index) => {
+        const origin = nodeById.get(packet.edge[0])!;
+        const color =
+          packet.color === "green"
+            ? "var(--color-brand-green-500)"
+            : "var(--color-brand-blue-500)";
+
+        if (reduced) {
+          return (
+            <circle
+              key={`packet-${index}`}
+              cx={origin.x}
+              cy={origin.y}
+              r="2.2"
+              fill={color}
+              opacity="0.85"
+            />
+          );
+        }
+
+        return (
+          <circle key={`packet-${index}`} r="2.2" fill={color} opacity="0.9">
+            <animateMotion
+              dur={packet.dur}
+              begin={packet.begin}
+              repeatCount="indefinite"
             >
-              S
-            </span>
-            SonicPesa
-          </a>
-          <nav className="hidden items-center gap-8 md:flex">
-            {NAV_LINKS.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                className="rounded-sm font-mono text-[11px] tracking-[0.14em] uppercase transition-colors hover:text-white focus-visible:ring-1 focus-visible:outline-none"
-                style={{ color: TEXT_DIM }}
-              >
-                {l.label}
-              </a>
-            ))}
-          </nav>
-          <a
-            href="/home"
-            className="rounded-md border px-4 py-2 font-mono text-[11px] tracking-[0.12em] uppercase transition-colors hover:border-[color:var(--acc)] focus-visible:ring-1 focus-visible:outline-none"
-            style={{ borderColor: LINE, color: TEXT }}
+              <mpath href={`#sonic-edge-${packet.edge[0]}-${packet.edge[1]}`} />
+            </animateMotion>
+          </circle>
+        );
+      })}
+
+      {NODES.map((node) => {
+        const fill =
+          node.status === "green"
+            ? "var(--color-brand-green-500)"
+            : node.status === "blue"
+              ? "var(--color-brand-blue-500)"
+              : "currentColor";
+
+        return (
+          <circle
+            key={node.id}
+            cx={node.x}
+            cy={node.y}
+            r={node.status ? 4.4 : 3.2}
+            fill={fill}
+            opacity={node.status ? 1 : 0.3}
+            filter={node.status ? "url(#sonic-node-glow)" : undefined}
+            className={
+              node.status && !reduced
+                ? "motion-safe:animate-[sonic-node-pulse_2.6s_ease-in-out_infinite]"
+                : undefined
+            }
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] md:hidden">
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div className="absolute inset-y-0 right-0 flex w-[min(88vw,360px)] flex-col border-l border-border bg-surface p-6 shadow-xl">
+        <div className="flex items-center justify-between">
+          <Logo />
+
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Close navigation"
+            onClick={onClose}
           >
-            Get Started
-          </a>
+            <X />
+          </Button>
+        </div>
+
+        <nav className="mt-10 flex flex-col gap-2">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              onClick={onClose}
+              className="rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="mt-auto">
+          <Button className="w-full" asChild>
+            <a href="#get-started">
+              Start Integration
+              <ArrowRight />
+            </a>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Home(): React.ReactElement {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      {/* Navigation */}
+      <header className="sticky top-0 z-50 border-b border-border/80 bg-background/85 backdrop-blur-xl">
+        <div className="ds-container">
+          <div className="flex h-16 items-center justify-between">
+            <Logo />
+
+            <nav className="hidden items-center gap-7 md:flex">
+              {NAV_LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+
+            <div className="hidden md:block">
+              <Button size="sm" asChild>
+                <a href="#get-started">
+                  Get Started
+                  <ArrowRight />
+                </a>
+              </Button>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label="Open navigation"
+              onClick={() => setMobileNavOpen(true)}
+            >
+              <Menu />
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Hero                                                                */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 py-20 md:grid-cols-2 md:py-28">
-          <div>
-            <div
-              className="mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono text-[10px] tracking-[0.14em] uppercase"
-              style={{ borderColor: LINE, color: TEXT_DIM }}
-            >
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ background: SIGNAL_GREEN }}
-              />
-              ISO-27001 Protocol Standards Certified
-            </div>
+      <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
-            <h1 className="font-display text-[2.6rem] leading-[1.05] font-semibold tracking-tight md:text-[3.4rem]">
-              The High-Speed
-              <br />
-              <span style={{ color: SIGNAL_BLUE }}>Payment</span> Grid
-            </h1>
+      {/* Hero */}
+      <section id="get-started" className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_35%,rgba(0,87,184,0.14),transparent_30%),radial-gradient(circle_at_85%_65%,rgba(46,174,104,0.1),transparent_28%)]" />
 
-            <p
-              className="mt-6 max-w-md text-[15px] leading-relaxed"
-              style={{ color: TEXT_DIM }}
-            >
-              System ya kisasa ya malipo kwa wafanyabiashara Afrika. Deploy in
-              minutes, scale to millions. Makato madogo sana kwa kila muamala.
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <a
-                href="https://sonicpesa.com/register"
-                className="rounded-md px-5 py-3 font-mono text-[12px] tracking-[0.1em] uppercase transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:outline-none"
-                style={{ background: TEXT, color: INK }}
+        <div className="ds-container relative">
+          <div className="grid items-center gap-14 py-20 md:grid-cols-2 md:py-28 lg:gap-20 lg:py-32">
+            <div>
+              <Badge
+                variant="outline"
+                className="border-brand-green-500/30 bg-brand-green-500/5 text-brand-green-600 dark:text-brand-green-400"
               >
-                Start Integration
-              </a>
-              <a
-                href="https://sonicpesa.com/docs"
-                className="font-mono text-[12px] tracking-[0.1em] uppercase underline decoration-dotted underline-offset-4"
-                style={{ color: TEXT_DIM }}
-              >
-                Documentation
-              </a>
-            </div>
-          </div>
+                <span className="mr-1.5 size-1.5 rounded-full bg-brand-green-500" />
+                Payment infrastructure for Africa
+              </Badge>
 
-          <div className="relative mx-auto aspect-square w-full max-w-[420px]">
-            <div
-              className="absolute inset-0 rounded-2xl border"
-              style={{ borderColor: LINE, background: SURFACE }}
-            />
-            <div className="absolute inset-6">
-              <SettlementGrid />
+              <h1 className="font-display mt-6 max-w-2xl text-5xl font-semibold leading-[0.98] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
+                The high-speed{" "}
+                <span className="bg-brand-gradient bg-clip-text text-transparent">
+                  payment
+                </span>{" "}
+                grid.
+              </h1>
+
+              <p className="mt-7 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+                Mfumo wa kisasa wa malipo kwa wafanyabiashara Afrika. Unganisha
+                biashara yako, pokea malipo na panua huduma zako kwa miundombinu
+                iliyojengwa kwa kasi na kiwango.
+              </p>
+
+              <div className="mt-9 flex flex-wrap items-center gap-3">
+                <Button size="lg" asChild>
+                  <a href="/register">
+                    Start Integration
+                    <ArrowRight />
+                  </a>
+                </Button>
+
+                <Button variant="outline" size="lg" asChild>
+                  <a href="/docs">
+                    <Code2 />
+                    Documentation
+                  </a>
+                </Button>
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  <Check className="size-3.5 text-success" />
+                  Developer-first API
+                </span>
+
+                <span className="flex items-center gap-2">
+                  <Check className="size-3.5 text-success" />
+                  Mobile money ready
+                </span>
+
+                <span className="flex items-center gap-2">
+                  <Check className="size-3.5 text-success" />
+                  Built for scale
+                </span>
+              </div>
             </div>
-            <div
-              className="absolute right-4 bottom-4 left-4 flex items-center justify-between rounded-md border px-3 py-2 font-mono text-[10px]"
-              style={{
-                borderColor: LINE,
-                background: "rgba(16,21,26,0.8)",
-                color: TEXT_DIM,
-              }}
-            >
-              <span className="flex items-center gap-1.5">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: SIGNAL_GREEN }}
-                />
-                settled
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: SIGNAL_BLUE }}
-                />
-                in-flight
-              </span>
+
+            <div className="relative mx-auto w-full max-w-[520px]">
+              <div className="absolute -inset-10 rounded-full bg-brand-blue-500/10 blur-3xl" />
+
+              <Card className="relative overflow-hidden border-brand-blue-500/15 bg-surface/90 shadow-xl">
+                <CardContent className="p-0">
+                  <div className="aspect-square p-7 sm:p-10">
+                    <div className="relative flex size-full items-center justify-center rounded-2xl border border-border bg-background/60 text-foreground">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,87,184,0.09),transparent_55%)]" />
+
+                      <div className="relative size-full max-w-[420px]">
+                        <SettlementGrid />
+                      </div>
+
+                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-lg border border-border bg-surface/90 px-4 py-3 text-xs backdrop-blur">
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <span className="size-1.5 rounded-full bg-brand-green-500" />
+                          settled
+                        </span>
+
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <span className="size-1.5 rounded-full bg-brand-blue-500" />
+                          in-flight
+                        </span>
+
+                        <span className="font-mono text-[10px] text-foreground">
+                          LIVE
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
 
-        {/* Stats bar */}
-        <div className="border-y" style={{ borderColor: LINE }}>
-          <div
-            className="mx-auto grid max-w-6xl grid-cols-2 divide-x md:grid-cols-4"
-            style={{ borderColor: LINE }}
-          >
-            {STATS.map((s, i) => (
-              <div
-                key={s.label}
-                className={`px-6 py-6 ${i > 0 ? "border-l" : ""}`}
-                style={{ borderColor: LINE }}
-              >
+        {/* Stats */}
+        <div className="border-y border-border">
+          <div className="ds-container">
+            <div className="grid grid-cols-2 md:grid-cols-4">
+              {STATS.map((stat, index) => (
                 <div
-                  className="font-mono text-2xl font-medium"
-                  style={{ color: TEXT }}
+                  key={stat.label}
+                  className={cn(
+                    "px-4 py-6 sm:px-6",
+                    index > 0 && "border-l border-border",
+                  )}
                 >
-                  {s.value}
+                  <div className="font-mono text-xl font-medium tracking-tight sm:text-2xl">
+                    {stat.value}
+                  </div>
+
+                  <div className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    {stat.label}
+                  </div>
                 </div>
-                <div
-                  className="mt-1 font-mono text-[11px] tracking-[0.1em] uppercase"
-                  style={{ color: TEXT_DIM }}
-                >
-                  {s.label}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Core Infrastructure                                                 */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="mx-auto max-w-6xl px-6 py-24" id="infrastructure">
-        <div className="mb-14 max-w-xl">
-          <span
-            className="font-mono text-[11px] tracking-[0.14em] uppercase"
-            style={{ color: SIGNAL_GREEN }}
-          >
-            Autonomous Systems
-          </span>
-          <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-            Core Infrastructure
-          </h2>
-        </div>
+      {/* Infrastructure */}
+      <section id="infrastructure" className="py-24 lg:py-32">
+        <div className="ds-container">
+          <div className="mb-12 max-w-2xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-green-600 dark:text-brand-green-400">
+              Autonomous Systems
+            </div>
 
-        <div
-          className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border sm:grid-cols-2 lg:grid-cols-3"
-          style={{ borderColor: LINE, background: LINE }}
-        >
-          {FEATURES.map((f, i) => {
-            const Icon = f.icon;
-            const accent = i % 2 === 0 ? SIGNAL_GREEN : SIGNAL_BLUE;
-
-            return (
-              <div
-                key={f.title}
-                className="group p-7 transition-colors"
-                style={{ background: SURFACE_2 }}
-              >
-                <div
-                  className="mb-5 flex h-10 w-10 items-center justify-center rounded-lg border transition-colors"
-                  style={{
-                    borderColor: LINE,
-                    color: TEXT_DIM,
-                  }}
-                >
-                  <span
-                    className="h-5 w-5 transition-colors group-hover:[color:var(--a)]"
-                    style={{
-                      ["--a" as string]: accent,
-                      color: "inherit",
-                    }}
-                  >
-                    <Icon />
-                  </span>
-                </div>
-                <h3 className="font-display text-[15px] font-semibold">
-                  {f.title}
-                </h3>
-                <p
-                  className="mt-2 text-[13.5px] leading-relaxed"
-                  style={{ color: TEXT_DIM }}
-                >
-                  {f.body}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Built for Engineers                                                 */}
-      {/* ------------------------------------------------------------------ */}
-      <section
-        className="border-y"
-        style={{ borderColor: LINE }}
-        id="developers"
-      >
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-14 px-6 py-24 md:grid-cols-2">
-          <div>
-            <span
-              className="font-mono text-[11px] tracking-[0.14em] uppercase"
-              style={{ color: SIGNAL_BLUE }}
-            >
-              Sonic-Shell v1.0.4
-            </span>
-            <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-              Built for
-              <br />
-              Engineers
+            <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+              Core infrastructure
             </h2>
-            <p
-              className="mt-5 max-w-md text-[15px] leading-relaxed"
-              style={{ color: TEXT_DIM }}
-            >
-              SonicPesa isn&rsquo;t just a gateway; it&rsquo;s a complete
-              toolkit for building the future of Tanzanian Fintech.
-            </p>
 
-            <div className="mt-8 grid grid-cols-2 gap-4">
-              <div
-                className="rounded-lg border p-4"
-                style={{ borderColor: LINE }}
-              >
-                <div
-                  className="font-mono text-[12px] font-medium"
-                  style={{ color: TEXT }}
-                >
-                  SDK Autonomy
-                </div>
-                <div className="mt-1 text-[12.5px]" style={{ color: TEXT_DIM }}>
-                  Pre-built modules for PHP, Go, and React.
-                </div>
-              </div>
-              <div
-                className="rounded-lg border p-4"
-                style={{ borderColor: LINE }}
-              >
-                <div
-                  className="font-mono text-[12px] font-medium"
-                  style={{ color: TEXT }}
-                >
-                  Secure Vault
-                </div>
-                <div className="mt-1 text-[12.5px]" style={{ color: TEXT_DIM }}>
-                  Encrypted API key management systems.
-                </div>
-              </div>
-            </div>
+            <p className="mt-5 text-base leading-7 text-muted-foreground">
+              Everything needed to accept, process, monitor and settle digital
+              payments from one infrastructure layer.
+            </p>
           </div>
 
-          <div>
-            <div
-              className="overflow-hidden rounded-xl border"
-              style={{ borderColor: LINE, background: "#0D1114" }}
-            >
-              <div
-                className="flex items-center justify-between border-b px-4 py-2.5"
-                style={{ borderColor: LINE }}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ background: "#3A4550" }}
-                  />
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ background: "#3A4550" }}
-                  />
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ background: "#3A4550" }}
-                  />
-                </div>
-                <span
-                  className="font-mono text-[10.5px]"
-                  style={{ color: TEXT_DIM }}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((feature) => {
+              const Icon = feature.icon;
+
+              return (
+                <Card
+                  key={feature.title}
+                  className="group transition-all duration-normal hover:-translate-y-0.5 hover:shadow-lg"
                 >
+                  <CardHeader>
+                    <div
+                      className={cn(
+                        "flex size-11 items-center justify-center rounded-xl border",
+                        feature.tone === "green"
+                          ? "border-brand-green-500/20 bg-brand-green-500/10 text-brand-green-600 dark:text-brand-green-400"
+                          : "border-brand-blue-500/20 bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400",
+                      )}
+                    >
+                      <Icon className="size-5" />
+                    </div>
+
+                    <CardTitle className="mt-5 text-base">
+                      {feature.title}
+                    </CardTitle>
+                  </CardHeader>
+
+                  <CardContent>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {feature.body}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Developer section */}
+      <section
+        id="developers"
+        className="border-y border-border bg-muted/30 py-24 lg:py-32"
+      >
+        <div className="ds-container">
+          <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
+            <div>
+              <Badge variant="secondary">
+                <Sparkles />
+                Sonic-Shell
+              </Badge>
+
+              <h2 className="font-display mt-5 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+                Built for engineers.
+              </h2>
+
+              <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
+                SonicPesa is more than a payment gateway. It provides the
+                building blocks required to integrate payments into modern
+                digital products.
+              </p>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                <Card>
+                  <CardContent className="p-5">
+                    <Code2 className="size-5 text-brand-blue-500" />
+
+                    <h3 className="mt-4 text-sm font-semibold">SDK Autonomy</h3>
+
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      Pre-built modules for common application stacks and
+                      payment workflows.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-5">
+                    <ShieldCheck className="size-5 text-brand-green-500" />
+
+                    <h3 className="mt-4 text-sm font-semibold">Secure Vault</h3>
+
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      Structured API credentials and security controls for
+                      production integrations.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <Card className="overflow-hidden bg-[#0B1014] text-slate-100">
+              <div className="flex h-11 items-center border-b border-white/10 px-4">
+                <div className="flex gap-1.5">
+                  <span className="size-2.5 rounded-full bg-white/20" />
+                  <span className="size-2.5 rounded-full bg-white/20" />
+                  <span className="size-2.5 rounded-full bg-white/20" />
+                </div>
+
+                <span className="mx-auto font-mono text-[10px] text-slate-500">
                   sonic-shell — zsh
                 </span>
-                <span />
+
+                <span className="w-8" />
               </div>
-              <pre
-                className="overflow-x-auto px-5 py-6 font-mono text-[12.5px] leading-relaxed"
-                style={{ color: TEXT }}
-              >
-                {`$ curl -X POST https://api.sonicpesa.com/v1/pay
-  -H "X-API-KEY: live_vault_99..."
-  -d {
-    "phone": "255788123456",
-    "amount": 150000,
-    "currency": "TZS"
-  }
-`}
-                <span className="caret" style={{ color: SIGNAL_BLUE }}>
-                  _
-                </span>
+
+              <pre className="overflow-x-auto p-6 font-mono text-xs leading-7 sm:text-sm">
+                <code>
+                  <span className="text-slate-500">$</span>{" "}
+                  <span className="text-slate-200">
+                    curl -X POST https://api.sonicpesa.com/v1/pay
+                  </span>
+                  {"\n"}
+                  {"  "}
+                  <span className="text-slate-500">-H</span>{" "}
+                  <span className="text-slate-300">
+                    &quot;X-API-KEY: live_vault_99...&quot;
+                  </span>
+                  {"\n"}
+                  {"  "}
+                  <span className="text-slate-500">-d</span>{" "}
+                  <span className="text-slate-300">{"{"}</span>
+                  {"\n"}
+                  {"    "}
+                  <span className="text-brand-blue-400">&quot;phone&quot;</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-brand-green-400">
+                    &quot;255788123456&quot;
+                  </span>
+                  <span className="text-slate-500">,</span>
+                  {"\n"}
+                  {"    "}
+                  <span className="text-brand-blue-400">
+                    &quot;amount&quot;
+                  </span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-slate-200">150000</span>
+                  <span className="text-slate-500">,</span>
+                  {"\n"}
+                  {"    "}
+                  <span className="text-brand-blue-400">
+                    &quot;currency&quot;
+                  </span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-brand-green-400">&quot;TZS&quot;</span>
+                  {"\n"}
+                  {"  "}
+                  <span className="text-slate-300">{"}"}</span>
+                  {"\n\n"}
+                  <span className="text-brand-green-400">●</span>{" "}
+                  <span className="text-slate-500">
+                    Protocol status: nominal
+                  </span>
+                </code>
               </pre>
-              <div
-                className="flex items-center gap-2 border-t px-5 py-3 font-mono text-[11px]"
-                style={{ borderColor: LINE, color: TEXT_DIM }}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: SIGNAL_GREEN }}
-                />
-                Protocol status: nominal
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Network */}
+      <section id="network" className="py-24 lg:py-32">
+        <div className="ds-container">
+          <div className="grid items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-blue-600 dark:text-brand-blue-400">
+                Payment Network
               </div>
+
+              <h2 className="font-display mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                One connection.
+                <br />
+                Multiple payment rails.
+              </h2>
+
+              <p className="mt-5 text-base leading-7 text-muted-foreground">
+                Connect your application once and build payment experiences
+                around a consistent infrastructure layer.
+              </p>
+
+              <Button className="mt-8" variant="outline" asChild>
+                <a href="/docs">
+                  Explore the network
+                  <ChevronRight />
+                </a>
+              </Button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                "M-Pesa",
+                "Tigo Pesa",
+                "Airtel Money",
+                "Halopesa",
+                "Bank Payments",
+                "Developer API",
+              ].map((network) => (
+                <Card key={network}>
+                  <CardContent className="flex items-center gap-3 p-5">
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-muted">
+                      <Check className="size-4 text-success" />
+                    </span>
+
+                    <span className="text-sm font-medium">{network}</span>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* CTA                                                                  */}
-      {/* ------------------------------------------------------------------ */}
+      {/* Security */}
       <section
-        className="relative overflow-hidden px-6 py-28 text-center"
         id="security"
+        className="relative overflow-hidden border-y border-border py-24 lg:py-32"
       >
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(${LINE} 1px, transparent 1px)`,
-            backgroundSize: "22px 22px",
-            maskImage:
-              "radial-gradient(ellipse at center, black 30%, transparent 75%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-xl">
-          <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
-            Ready to
-            <br />
-            <span style={{ color: SIGNAL_GREEN }}>Evolve?</span>
-          </h2>
-          <p
-            className="mt-5 text-[15px] leading-relaxed"
-            style={{ color: TEXT_DIM }}
-          >
-            Jiunge na mfumo wa malipo wenye kasi zaidi. SonicPesa is powering
-            the future.
-          </p>
-          <a
-            href="https://sonicpesa.com/register"
-            className="mt-8 inline-block rounded-md px-6 py-3 font-mono text-[12px] tracking-[0.1em] uppercase transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:outline-none"
-            style={{ background: TEXT, color: INK }}
-          >
-            Initialize Merchant ID
-          </a>
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(46,174,104,0.08),transparent_42%)]" />
+
+        <div className="ds-container relative">
+          <div className="mx-auto max-w-3xl text-center">
+            <Badge variant="outline">
+              <ShieldCheck />
+              Security-first infrastructure
+            </Badge>
+
+            <h2 className="font-display mt-6 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+              Designed to protect every transaction.
+            </h2>
+
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
+              Security controls are integrated throughout the payment lifecycle,
+              from credentials and APIs to transaction processing and
+              settlement.
+            </p>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Badge variant="success">Encrypted</Badge>
+              <Badge variant="info">Monitored</Badge>
+              <Badge variant="secondary">Auditable</Badge>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Footer                                                              */}
-      {/* ------------------------------------------------------------------ */}
-      <footer className="border-t" style={{ borderColor: LINE }}>
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 py-16 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <div className="font-display flex items-center gap-2 text-[15px] font-semibold">
-              <span
-                className="flex h-6 w-6 items-center justify-center rounded-[6px] border font-mono text-[11px]"
-                style={{
-                  borderColor: LINE,
-                  color: SIGNAL_BLUE,
-                }}
-              >
-                S
-              </span>
-              SonicPesa
-            </div>
-            <p
-              className="mt-4 max-w-sm text-[13px] leading-relaxed"
-              style={{ color: TEXT_DIM }}
-            >
-              Engineered for performance. Optimized for commerce. Sustained by
-              high-level encryption protocols.
-            </p>
-          </div>
+      {/* CTA */}
+      <section className="relative overflow-hidden py-28">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,87,184,0.12),transparent_45%)]" />
 
-          {FOOTER_COLUMNS.map((col) => (
-            <div key={col.heading}>
-              <div
-                className="font-mono text-[10.5px] tracking-[0.12em] uppercase"
-                style={{ color: TEXT_DIM }}
-              >
-                {col.heading}
+        <div className="ds-container relative">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
+              Ready to{" "}
+              <span className="bg-brand-gradient bg-clip-text text-transparent">
+                evolve
+              </span>
+              ?
+            </h2>
+
+            <p className="mt-5 text-base leading-7 text-muted-foreground">
+              Jiunge na mfumo wa malipo wenye kasi na miundombinu iliyojengwa
+              kwa biashara zinazotaka kukua.
+            </p>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Button size="lg" asChild>
+                <a href="/register">
+                  Initialize Merchant ID
+                  <ArrowRight />
+                </a>
+              </Button>
+
+              <Button variant="outline" size="lg" asChild>
+                <a href="/docs">Read the documentation</a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="border-t border-border py-20 lg:py-24">
+        <div className="ds-container">
+          <div className="grid gap-12 lg:grid-cols-[0.7fr_1.3fr]">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Frequently Asked
               </div>
-              <ul className="mt-4 space-y-2.5">
-                {col.links.map((l) => (
-                  <li key={l.label}>
-                    <a
-                      href={l.href}
-                      className="text-[13px] transition-colors hover:text-white"
-                      style={{ color: TEXT }}
-                    >
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
+
+              <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight">
+                Common questions
+              </h2>
+            </div>
+
+            <Accordion type="single" collapsible>
+              <AccordionItem value="item-1">
+                <AccordionTrigger>What is SonicPesa?</AccordionTrigger>
+                <AccordionContent>
+                  SonicPesa is a payment infrastructure platform designed to
+                  help businesses integrate digital payments into their products
+                  and services.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-2">
+                <AccordionTrigger>
+                  Who can integrate SonicPesa?
+                </AccordionTrigger>
+                <AccordionContent>
+                  Businesses and developers can use the platform to build
+                  payment flows into websites, applications and other digital
+                  products.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-3">
+                <AccordionTrigger>
+                  Does SonicPesa support mobile money?
+                </AccordionTrigger>
+                <AccordionContent>
+                  The homepage presents support for major Tanzanian mobile money
+                  payment networks through the SonicPesa infrastructure.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-4">
+                <AccordionTrigger>
+                  Where can developers find the API documentation?
+                </AccordionTrigger>
+                <AccordionContent>
+                  Developer documentation can be accessed through the
+                  Documentation entry in the navigation and calls to action.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border">
+        <div className="ds-container">
+          <div className="grid gap-12 py-14 md:grid-cols-4">
+            <div className="md:col-span-2">
+              <Logo />
+
+              <p className="mt-5 max-w-sm text-sm leading-6 text-muted-foreground">
+                Engineered for payment performance. Built for modern African
+                commerce.
+              </p>
+
+              <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="size-1.5 rounded-full bg-success" />
+                Systems operational
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.12em]">
+                Platform
+              </h3>
+
+              <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+                <li>
+                  <a className="hover:text-foreground" href="#infrastructure">
+                    Infrastructure
+                  </a>
+                </li>
+                <li>
+                  <a className="hover:text-foreground" href="#developers">
+                    Developers
+                  </a>
+                </li>
+                <li>
+                  <a className="hover:text-foreground" href="#network">
+                    Network
+                  </a>
+                </li>
+                <li>
+                  <a className="hover:text-foreground" href="#security">
+                    Security
+                  </a>
+                </li>
               </ul>
             </div>
-          ))}
 
-          <div>
-            <div
-              className="font-mono text-[10.5px] tracking-[0.12em] uppercase"
-              style={{ color: TEXT_DIM }}
-            >
-              Dispatch Log
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-[0.12em]">
+                Resources
+              </h3>
+
+              <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+                <li>
+                  <a className="hover:text-foreground" href="/docs">
+                    Documentation
+                  </a>
+                </li>
+                <li>
+                  <a className="hover:text-foreground" href="/dashboard">
+                    Control Panel
+                  </a>
+                </li>
+                <li>
+                  <a className="hover:text-foreground" href="/terms">
+                    Terms
+                  </a>
+                </li>
+                <li>
+                  <a className="hover:text-foreground" href="/privacy">
+                    Privacy
+                  </a>
+                </li>
+              </ul>
             </div>
-            <ul
-              className="mt-4 space-y-2.5 text-[13px]"
-              style={{ color: TEXT }}
-            >
-              <li>WhatsApp: +255 627 360 144</li>
-              <li>Terminal: support@sonicpesa.com</li>
-              <li
-                className="flex items-center gap-1.5"
-                style={{ color: TEXT_DIM }}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: SIGNAL_GREEN }}
-                />
-                Sub-Nodes Online
-              </li>
-            </ul>
+          </div>
+
+          <Separator />
+
+          <div className="flex flex-col gap-3 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <span>© 2026 SonicPesa Infrastructure.</span>
+
+            <span className="font-mono">
+              DISTRIBUTED_FINANCIAL_OPERATING_SYSTEM
+            </span>
           </div>
         </div>
-
-        <div
-          className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 border-t px-6 py-6 font-mono text-[10.5px] md:flex-row"
-          style={{ borderColor: LINE, color: TEXT_DIM }}
-        >
-          <span>
-            &copy; 2026 SonicPesa Infrastructure. SECURED_CREDENTIALS_V_2.0.8
-          </span>
-          <span>Distributed Financial Operating System</span>
-        </div>
       </footer>
-    </div>
+    </main>
   );
 }
