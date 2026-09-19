@@ -1,4 +1,4 @@
-// src/context/NavDisplayContext.tsx
+// NavDisplayContext.tsx — cycle order added
 import {
   createContext,
   useContext,
@@ -11,9 +11,18 @@ export type NavDisplayMode = "icons" | "icons-label" | "label";
 
 const STORAGE_KEY = "sonicpesa.nav-display-mode";
 
+// Fixed cycle order the single toggle button steps through.
+const CYCLE: NavDisplayMode[] = ["icons", "icons-label", "label"];
+
+export function nextNavDisplayMode(mode: NavDisplayMode): NavDisplayMode {
+  const index = CYCLE.indexOf(mode);
+  return CYCLE[(index + 1) % CYCLE.length];
+}
+
 type NavDisplayContextValue = {
   mode: NavDisplayMode;
   setMode: (mode: NavDisplayMode) => void;
+  cycle: () => void;
 };
 
 const NavDisplayContext = createContext<NavDisplayContextValue | null>(null);
@@ -37,8 +46,10 @@ export function NavDisplayProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, mode);
   }, [mode]);
 
+  const cycle = () => setMode((current) => nextNavDisplayMode(current));
+
   return (
-    <NavDisplayContext.Provider value={{ mode, setMode }}>
+    <NavDisplayContext.Provider value={{ mode, setMode, cycle }}>
       {children}
     </NavDisplayContext.Provider>
   );

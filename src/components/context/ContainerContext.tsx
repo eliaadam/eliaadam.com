@@ -1,134 +1,124 @@
+// ContainerContext.tsx
 import {
   createContext,
   useContext,
-  useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { sdk, type Container } from "../../lib/sdk";
-import { useAuth } from "./Authcontext";
+import { useQuery } from "@tanstack/react-query";
 
-interface ContainerContextValue {
+import { useAuth } from "./Authcontext";
+import { sdk, type Container } from "../../lib/sdk";
+
+const STORAGE_KEY = "sonicpesa.current-container-id";
+
+type ContainerContextValue = {
+  containers: Container[];
   currentContainerId: string | null;
   currentContainer: Container | null;
-  containers: Container[];
+  switchContainer: (id: string) => void;
   isLoading: boolean;
-  switchContainer: (containerId: string) => void;
-  refresh: () => void;
-}
+};
 
-const STORAGE_KEY = "maicore.container.current";
 const ContainerContext = createContext<ContainerContextValue | null>(null);
 
-// Where a container switch lands the user — deliberately a
-// container-agnostic route, not wherever they happened to be. Staying
-// on e.g. /dashboard/payment across a switch is exactly the bug this
-// fixes: the new container might not even have that capability
-// licensed, and even when it does, that page's own React Query keys
-// catching up (or not) shouldn't be what determines what the user
-// sees immediately after switching.
-const SAFE_LANDING_ROUTE = "/dashboard";
-
-function loadStoredContainerId(): string | null {
-  return localStorage.getItem(STORAGE_KEY);
+function readStoredContainerId(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(STORAGE_KEY);
 }
 
-function persistContainerId(containerId: string): void {
-  localStorage.setItem(STORAGE_KEY, containerId);
+/**
+ * Container has no "list containers for the current actor" endpoint —
+ * only listActorMemberships(actorId), which returns Membership[]
+ * (container_id, role, status — no container name/slug/etc). So this
+ * resolves the actor's active memberships first, then fetches each
+ * container's full record. If this becomes a hot path with many
+ * memberships, ask the backend for a batch-get-by-ids endpoint rather
+ * than growing this Promise.all further.
+ */
+async function fetchActorContainers(actorId: string): Promise<Container[]> {
+  const memberships = await sdk.container.listActorMemberships(actorId);
+  const active = memberships.filter((m) => m.status === "active");
+
+  const containers = await Promise.all(
+    active.map((m) => sdk.container.getContainer(m.container_id)),
+  );
+
+  return containers;
 }
 
 export function ContainerProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [containers, setContainers] = useState<Container[]>([]);
+  const { user } = useAuth();
+
+  // NOTE: assumes `user.id` is the actor id — that's the one field this
+  // file needs from Authcontext that ProfileMenu doesn't already prove
+  // exists (it only reads user.name / user.email). Point this at the
+  // right field if the auth user shape differs.
+  const actorId = user?.id ?? null;
+
+  const { data: containers = [], isLoading } = useQuery({
+    queryKey: ["containers", actorId],
+    queryFn: () => fetchActorContainers(actorId as string),
+    enabled: Boolean(actorId),
+  });
+
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(
-    null,
+    readStoredContainerId,
   );
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshToken, setRefreshToken] = useState(0);
 
-  useEffect(() => {
-    if (!user) {
-      setContainers([]);
-      setCurrentContainerId(null);
-      setIsLoading(false);
-      return;
-    }
+  // Derived, not effect-driven: if the stored id doesn't match anything
+  // we actually belong to (revoked access, stale localStorage, nothing
+  // picked yet), fall back to the first container once the list is in.
+  const effectiveContainerId =
+    !isLoading && !containers.some((c) => c.id === currentContainerId)
+      ? (containers[0]?.id ?? null)
+      : currentContainerId;
 
-    let cancelled = false;
-    setIsLoading(true);
+  const currentContainer = useMemo(
+    () => containers.find((c) => c.id === effectiveContainerId) ?? null,
+    [containers, effectiveContainerId],
+  );
 
-    sdk.container
-      .listActorMemberships(user.id)
-      .then(async (memberships) => {
-        const active = memberships.filter((m) => m.status === "active");
-        const resolved = await Promise.all(
-          active.map((m) => sdk.container.getContainer(m.container_id)),
-        );
-        if (cancelled) return;
+  function switchContainer(id: string) {
+    if (id === effectiveContainerId) return;
 
-        setContainers(resolved);
+    setCurrentContainerId(id);
+    window.localStorage.setItem(STORAGE_KEY, id);
 
-        const stored = loadStoredContainerId();
-        const storedStillValid = resolved.some((c) => c.id === stored);
-        const next = storedStillValid ? stored : (resolved[0]?.id ?? null);
+    // Land somewhere guaranteed valid in the new container's context,
+    // rather than leaving the actor on a route/resource scoped to the
+    // previous container.
+    navigate("/dashboard");
+  }
 
-        // Deliberately NOT navigating here — this branch runs on
-        // initial load (and on refresh()), not on a user-initiated
-        // switch. Redirecting here would yank a freshly-logged-in
-        // user away from wherever they landed (a deep link, a
-        // bookmark) the moment their container resolves. Only
-        // switchContainer() below — the one function actually wired
-        // to the switcher UI — should ever navigate.
-        setCurrentContainerId(next);
-        if (next) persistContainerId(next);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, refreshToken]);
-
-  const switchContainer = (containerId: string) => {
-    setCurrentContainerId(containerId);
-    persistContainerId(containerId);
-    // FIX: this function used to only update state — nothing told
-    // React Router the context changed, so whatever page the user was
-    // on (e.g. /dashboard/payment) just stayed mounted, showing
-    // either stale data or a broken view if the new container doesn't
-    // even have that capability licensed. Every capability-specific
-    // page gets unmounted by this navigation; if the user goes back
-    // to it, it mounts fresh against the new currentContainerId.
-    navigate(SAFE_LANDING_ROUTE);
+  const value: ContainerContextValue = {
+    containers,
+    currentContainerId: effectiveContainerId,
+    currentContainer,
+    switchContainer,
+    isLoading,
   };
 
-  const currentContainer =
-    containers.find((c) => c.id === currentContainerId) ?? null;
-
   return (
-    <ContainerContext.Provider
-      value={{
-        currentContainerId,
-        currentContainer,
-        containers,
-        isLoading,
-        switchContainer,
-        refresh: () => setRefreshToken((n) => n + 1),
-      }}
-    >
+    <ContainerContext.Provider value={value}>
       {children}
     </ContainerContext.Provider>
   );
 }
 
-export function useContainer(): ContainerContextValue {
-  const context = useContext(ContainerContext);
-  if (!context) {
-    throw new Error("useContainer must be used within ContainerProvider");
+// This hook must remain colocated for the current public API. The context
+// module also exports the provider, so exclude this non-component export from
+// the fast-refresh rule until hooks are split into a separate module.
+// eslint-disable-next-line react-refresh/only-export-components
+export function useContainer() {
+  const ctx = useContext(ContainerContext);
+
+  if (!ctx) {
+    throw new Error("useContainer must be used within a ContainerProvider");
   }
-  return context;
+
+  return ctx;
 }

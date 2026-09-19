@@ -64,12 +64,22 @@ const staticNavItems = [
   },
 ];
 
-// Aside width per display mode — the whole point of the toggle is that
-// the rail visibly grows/shrinks, GitHub-collapsed-sidebar style.
 const ASIDE_WIDTH: Record<NavDisplayMode, string> = {
   icons: "72px",
   "icons-label": "280px",
   label: "220px",
+};
+
+const NAV_DISPLAY_ICON: Record<NavDisplayMode, LucideIcon> = {
+  icons: LayoutGrid,
+  "icons-label": Rows3,
+  label: AlignLeft,
+};
+
+const NAV_DISPLAY_LABEL: Record<NavDisplayMode, string> = {
+  icons: "Icons only — click for icons & labels",
+  "icons-label": "Icons & labels — click for labels only",
+  label: "Labels only — click for icons only",
 };
 
 function useCapabilityNav() {
@@ -88,54 +98,23 @@ function useCapabilityNav() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Nav display toggle (icons / icons+labels / labels)                        */
+/* Nav display toggle — one button, shows current mode, click cycles         */
 /* -------------------------------------------------------------------------- */
 
-const NAV_DISPLAY_OPTIONS: {
-  mode: NavDisplayMode;
-  label: string;
-  icon: LucideIcon;
-}[] = [
-  { mode: "icons", label: "Icons only", icon: LayoutGrid },
-  { mode: "icons-label", label: "Icons & labels", icon: Rows3 },
-  { mode: "label", label: "Labels only", icon: AlignLeft },
-];
-
 function NavDisplayToggle() {
-  const { mode, setMode } = useNavDisplay();
-  const showLabel = mode !== "icons";
+  const { mode, cycle } = useNavDisplay();
+  const Icon = NAV_DISPLAY_ICON[mode];
 
   return (
-    <div
-      className={[
-        "hidden items-center gap-1 rounded-lg bg-muted p-1 md:flex",
-        showLabel ? "" : "flex-col",
-      ].join(" ")}
+    <button
+      type="button"
+      onClick={cycle}
+      title={NAV_DISPLAY_LABEL[mode]}
+      aria-label={NAV_DISPLAY_LABEL[mode]}
+      className="hidden size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex"
     >
-      {NAV_DISPLAY_OPTIONS.map((option) => {
-        const Icon = option.icon;
-        const active = option.mode === mode;
-
-        return (
-          <button
-            key={option.mode}
-            type="button"
-            onClick={() => setMode(option.mode)}
-            title={option.label}
-            aria-label={option.label}
-            aria-pressed={active}
-            className={[
-              "flex flex-1 items-center justify-center rounded-md py-1.5 transition-colors",
-              active
-                ? "bg-surface text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            ].join(" ")}
-          >
-            <Icon size={14} strokeWidth={1.8} />
-          </button>
-        );
-      })}
-    </div>
+      <Icon size={16} strokeWidth={1.8} />
+    </button>
   );
 }
 
@@ -257,7 +236,6 @@ function ProfileMenu() {
 
       {open && (
         <div className="absolute right-0 top-12 z-50 w-[280px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl bg-surface shadow-xl shadow-black/10 dark:shadow-black/30">
-          {/* Account identity */}
           <div className="bg-muted/40 p-4">
             <div className="flex items-center gap-3">
               <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-gradient text-sm font-semibold text-white">
@@ -275,7 +253,6 @@ function ProfileMenu() {
             </div>
           </div>
 
-          {/* Static application navigation */}
           <div className="p-2">
             <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Navigation
@@ -304,7 +281,6 @@ function ProfileMenu() {
             </nav>
           </div>
 
-          {/* Sign out */}
           <div className="p-2">
             <button
               type="button"
@@ -322,7 +298,7 @@ function ProfileMenu() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Capability drawer / aside — width now reacts to nav display mode          */
+/* Capability drawer / aside — capability nav only; toggle lives in header   */
 /* -------------------------------------------------------------------------- */
 
 function CapabilityDrawer({
@@ -352,39 +328,25 @@ function CapabilityDrawer({
       <aside
         style={{ width: open ? width : undefined }}
         className={[
-          "fixed inset-y-0 left-0 z-50 flex flex-col",
+          "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col",
           "bg-background shadow-xl md:static md:z-auto md:shadow-none",
           "transition-[width,transform] duration-300 ease-out",
-          open ? "translate-x-0 w-[280px]" : "-translate-x-full w-[280px]",
+          open ? "translate-x-0" : "-translate-x-full",
           "md:translate-x-0",
         ].join(" ")}
       >
-        <div className="flex h-16 shrink-0 items-center justify-between px-5">
-          <img
-            src="/images/mainlogo.png"
-            alt="Sonic Pesa"
-            className="h-8 w-auto object-contain"
-          />
-
+        <div className="flex h-16 shrink-0 items-center px-4 md:hidden">
           <button
             type="button"
             onClick={onClose}
             aria-label="Close navigation"
-            className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+            className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X size={18} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-5">
-          <div className="mb-5">
-            <ContainerSwitcher />
-          </div>
-
-          <div className="mb-4">
-            <NavDisplayToggle />
-          </div>
-
           <CapabilityNav onNavigate={onClose} />
         </div>
       </aside>
@@ -418,8 +380,9 @@ function DashboardLayoutContent() {
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
+          {/* Top app bar — logo + container switcher live here, always */}
           <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md">
-            <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 items-center gap-2 px-4 sm:px-6 lg:px-8">
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
@@ -429,18 +392,18 @@ function DashboardLayoutContent() {
                 <Menu size={18} />
               </button>
 
-              {/* Brand — mobile only; desktop aside already carries the logo */}
-              <div className="flex min-w-0 flex-1 items-center md:hidden">
-                <img
-                  src="/images/mainlogo.png"
-                  alt="Sonic Pesa"
-                  className="h-7 w-auto object-contain"
-                />
-              </div>
+              <img
+                src="/images/mainlogo.png"
+                alt="Sonic Pesa"
+                className="h-7 w-auto shrink-0 object-contain md:h-8"
+              />
 
-              <div className="hidden flex-1 md:block" />
+              <ContainerSwitcher />
 
-              <div className="flex items-center gap-2">
+              <div className="flex-1" />
+
+              <div className="flex items-center gap-1">
+                <NavDisplayToggle />
                 <ThemeToggle />
                 <ProfileMenu />
               </div>
