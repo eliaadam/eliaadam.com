@@ -7,7 +7,7 @@ export function Logo() {
     >
       <span className="relative flex size-8 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-white shadow-sm">
         <img
-          src="/images/mainlog.png"
+          src="/images/mainlogo.png"
           alt="Illustration of money transferring between two people"
           className="size-full max-w-[380px] object-contain"
           loading="eager"
