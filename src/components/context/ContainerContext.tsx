@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "./Authcontext";
 import { sdk, type Container } from "../../lib/sdk";
-
+ 
 const STORAGE_KEY = "sonicpesa.current-container-id";
 
 type ContainerContextValue = {
@@ -19,6 +19,7 @@ type ContainerContextValue = {
   currentContainerId: string | null;
   currentContainer: Container | null;
   switchContainer: (id: string) => void;
+  refresh: () => void;
   isLoading: boolean;
 };
 
@@ -59,7 +60,11 @@ export function ContainerProvider({ children }: { children: ReactNode }) {
   // right field if the auth user shape differs.
   const actorId = user?.id ?? null;
 
-  const { data: containers = [], isLoading } = useQuery({
+  const {
+    data: containers = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["containers", actorId],
     queryFn: () => fetchActorContainers(actorId as string),
     enabled: Boolean(actorId),
@@ -94,11 +99,21 @@ export function ContainerProvider({ children }: { children: ReactNode }) {
     navigate("/dashboard");
   }
 
+  // Callers (Containers.tsx after creating one, Invitations.tsx and
+  // Join.tsx after redeeming/joining) need to re-pull the membership
+  // list rather than wait for React Query's own stale-time. Exposed as
+  // a plain no-arg function rather than the raw refetch() result, since
+  // nothing downstream consumes the returned QueryObserverResult.
+  function refresh() {
+    void refetch();
+  }
+
   const value: ContainerContextValue = {
     containers,
     currentContainerId: effectiveContainerId,
     currentContainer,
     switchContainer,
+    refresh,
     isLoading,
   };
 
@@ -109,10 +124,6 @@ export function ContainerProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// This hook must remain colocated for the current public API. The context
-// module also exports the provider, so exclude this non-component export from
-// the fast-refresh rule until hooks are split into a separate module.
-// eslint-disable-next-line react-refresh/only-export-components
 export function useContainer() {
   const ctx = useContext(ContainerContext);
 
