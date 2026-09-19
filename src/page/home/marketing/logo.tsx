@@ -5,7 +5,7 @@ export function Logo() {
       className="group inline-flex items-center gap-2.5"
       aria-label="SonicPesa home"
     >
-      <span className="relative flex size-8 items-center justify-center overflow-hidden rounded-lg bg-brand-gradient text-white shadow-sm">
+      <span className="relative flex size-8 items-center justify-center overflow-hidden rounded-lg bg:white shadow-sm">
         <img
           src="/images/mainlogo.png"
           alt="Illustration of money transferring between two people"

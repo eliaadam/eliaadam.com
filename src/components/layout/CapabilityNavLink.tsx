@@ -2,20 +2,6 @@ import { NavLink } from "react-router-dom";
 import { usePermission } from "../../lib/hooks/usePermission";
 import type { CapabilityManifest } from "../../lib/sdk";
 
-/**
- * One capability's nav entry, gated on its `required_permission`.
- *
- * Pulled into its own component (rather than a permission check inside
- * a `.map()` in DashboardLayout) specifically so `usePermission`'s hook
- * call has a stable, one-per-component-instance call site — a variable
- * number of capabilities is fine across separate component instances,
- * it would NOT be fine to call a variable number of hooks inside one
- * component's own render (Rules of Hooks).
- *
- * Renders nothing while the check is pending, same "don't flash a
- * flicker of a control the person can't use" instinct as
- * `ProtectedRoute` waiting out `isLoading` before deciding.
- */
 export function CapabilityNavLink({
   manifest,
 }: {
