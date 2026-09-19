@@ -95,9 +95,12 @@ export { FormValidationError } from "./domains/form";
 export type {
   ConversationType,
   ParticipantRole,
+  ConversationStatus,
+  ParticipantStatus,
   Conversation,
   Participant,
   Message as CommunicationMessage,
+  Reaction as CommunicationReaction,
 } from "./domains/communication";
 export type {
   WalletOwnerType,
