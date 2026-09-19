@@ -40,7 +40,7 @@ import { MySubscriptions } from "../../page/dashboard/MySubscriptions";
 import { MyPurchases } from "../../page/dashboard/MyPurchases";
 
 import { queryClient } from "../../lib/query/Queryclient";
-import HomePage from "../../page/HomePage";
+import HomePage from "../../page/home/HomePage";
 import { Payment } from "../../page/payment/Payment";
 import { PaymentWalletDetail } from "../../page/payment/PaymentWalletDetail";
 import { Events } from "../../page/dashboard/Events";
