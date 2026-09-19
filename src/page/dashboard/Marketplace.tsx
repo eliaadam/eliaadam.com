@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Plus,
-  Archive,
-  ShoppingBag,
-  CheckCircle2,
   AlertTriangle,
+  Archive,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Plus,
+  Search,
+  ShoppingBag,
 } from "lucide-react";
 import {
   sdk,
@@ -21,11 +22,33 @@ import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageMarketplaceListings } from "../../lib/hooks/useCanManageMarketplaceListings";
 import { DirectPayFlow } from "../../components/payment-gateway/DirectPayFlow";
 
-const inputClass =
-  "rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
+import { cn } from "../../design-system/lib/utils";
+import { Button } from "../../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Separator } from "../../components/ui/separator";
+import { Badge } from "../../components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 
-const primaryButtonClass =
-  "rounded-md bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black";
+const segmentedButtonClass =
+  "rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors";
+
+const activeSegmentClass = "border-primary bg-primary text-primary-foreground";
+
+const inactiveSegmentClass =
+  "bg-surface text-muted-foreground hover:bg-muted hover:text-foreground";
 
 function formatPrice(price: number, currency: string) {
   return `${currency} ${(price / 100).toFixed(2)}`;
@@ -34,6 +57,7 @@ function formatPrice(price: number, currency: string) {
 export function Marketplace() {
   const { currentContainerId } = useContainer();
   const { data: canManage } = useCanManageMarketplaceListings();
+
   const [activeTab, setActiveTab] = useState<"manage" | "browse">("browse");
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState("");
@@ -86,35 +110,32 @@ export function Marketplace() {
     enabled: Boolean(currentContainerId),
   });
 
-  // Automatically folds the current container's own storefront in
-  // alongside the global browse — the only thing a storefront query
-  // ever adds beyond what's already in the global results is its own
-  // "container_only" listings (everything else overlaps), so merging
-  // and de-duping by id gives one seamless list with no manual
-  // switching. The storefront endpoint has no category param of its
-  // own, so the category filter is applied client-side to the merged
-  // set instead, keeping both sources consistent.
   const activeResults = useMemo(() => {
     if (!browseResults && !containerStorefrontResults) return undefined;
+
     const seen = new Set<string>();
     const merged: Listing[] = [];
+
     for (const listing of browseResults ?? []) {
       if (!seen.has(listing.id)) {
         seen.add(listing.id);
         merged.push(listing);
       }
     }
+
     for (const listing of containerStorefrontResults ?? []) {
       if (!seen.has(listing.id)) {
         seen.add(listing.id);
         merged.push(listing);
       }
     }
+
     if (!selectedCategory) return merged;
+
     return merged.filter(
-      (l) =>
-        l.source_capability === selectedCategory.source_capability &&
-        l.source_type === selectedCategory.source_type,
+      (listing) =>
+        listing.source_capability === selectedCategory.source_capability &&
+        listing.source_type === selectedCategory.source_type,
     );
   }, [browseResults, containerStorefrontResults, selectedCategory]);
 
@@ -122,185 +143,325 @@ export function Marketplace() {
     browseLoading ||
     (Boolean(currentContainerId) && containerStorefrontLoading);
 
-  const showManageTab = canManage && currentContainerId;
+  const showManageTab = Boolean(canManage && currentContainerId);
 
   return (
-    <div className="max-w-5xl">
-      <h1 className="text-xl font-semibold tracking-tight">Marketplace</h1>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Buy and sell anything a capability lets an actor own — templates,
-        access, anything with an id.
-      </p>
+    <div className="ds-content">
+      <div className="flex flex-col gap-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Marketplace
+            </h1>
 
-      {showManageTab && (
-        <div className="mt-6 flex gap-1 border-b border-neutral-200 dark:border-neutral-800">
-          <button
-            type="button"
-            onClick={() => setActiveTab("manage")}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "manage"
-                ? "border-black text-black dark:border-white dark:text-white"
-                : "border-transparent text-neutral-500 hover:text-black dark:hover:text-white"
-            }`}
-          >
-            Manage listings
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("browse")}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === "browse"
-                ? "border-black text-black dark:border-white dark:text-white"
-                : "border-transparent text-neutral-500 hover:text-black dark:hover:text-white"
-            }`}
-          >
-            Browse
-          </button>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Buy and sell anything a capability lets an actor own — templates,
+              access, anything with an id.
+            </p>
+          </div>
+
+          {showManageTab && (
+            <Button
+              type="button"
+              onClick={() => {
+                setActiveTab("manage");
+                setShowCreate(true);
+              }}
+            >
+              <Plus />
+              New listing
+            </Button>
+          )}
+        </header>
+
+        {showManageTab && (
+          <div className="border-b border-border">
+            <div className="flex gap-6">
+              <button
+                type="button"
+                onClick={() => setActiveTab("browse")}
+                className={cn(
+                  "relative pb-3 text-sm font-medium transition-colors",
+                  activeTab === "browse"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Browse
+                {activeTab === "browse" && (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("manage")}
+                className={cn(
+                  "relative pb-3 text-sm font-medium transition-colors",
+                  activeTab === "manage"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Manage listings
+                {activeTab === "manage" && (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showManageTab && activeTab === "manage" && (
+          <ManageListings
+            currentContainerId={currentContainerId!}
+            myListings={myListings}
+            draftListings={draftListings}
+            showCreate={showCreate}
+            onShowCreate={setShowCreate}
+          />
+        )}
+
+        {(!showManageTab || activeTab === "browse") && (
+          <BrowseMarketplace
+            search={search}
+            setSearch={setSearch}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            activeLoading={activeLoading}
+            activeResults={activeResults}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ManageListings({
+  currentContainerId,
+  myListings,
+  draftListings,
+  showCreate,
+  onShowCreate,
+}: {
+  currentContainerId: string;
+  myListings?: Listing[];
+  draftListings?: Listing[];
+  showCreate: boolean;
+  onShowCreate: (value: boolean) => void;
+}) {
+  return (
+    <section className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            Your listings
+          </h2>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage what this container makes available.
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          variant={showCreate ? "outline" : "primary"}
+          onClick={() => onShowCreate(!showCreate)}
+        >
+          <Plus />
+          {showCreate ? "Close" : "New listing"}
+        </Button>
+      </div>
+
+      {showCreate && (
+        <CreateListingForm
+          containerId={currentContainerId}
+          onDone={() => onShowCreate(false)}
+        />
+      )}
+
+      {(draftListings?.length ?? 0) > 0 && (
+        <div className="space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Drafts</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Not visible in the marketplace yet.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {draftListings!.map((listing) => (
+              <ManagedListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
         </div>
       )}
 
-      {showManageTab && activeTab === "manage" && (
-        <section className="mt-6">
-          <div className="flex items-start justify-between">
-            <h2 className="text-sm font-semibold tracking-tight">
-              This container's listings
-            </h2>
-            <button
-              type="button"
-              onClick={() => setShowCreate((v) => !v)}
-              className={`flex flex-none items-center gap-1.5 ${primaryButtonClass}`}
-            >
-              <Plus size={15} />
-              New listing
-            </button>
+      {(myListings?.length ?? 0) > 0 && (
+        <div className="space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Active</h3>
           </div>
 
-          {showCreate && (
-            <CreateListingForm
-              containerId={currentContainerId}
-              onDone={() => setShowCreate(false)}
-            />
-          )}
-
-          {(draftListings?.length ?? 0) > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-                Drafts — not visible in the marketplace yet
-              </p>
-              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {draftListings!.map((listing) => (
-                  <ManagedListingCard key={listing.id} listing={listing} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {(myListings?.length ?? 0) > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-                Active
-              </p>
-              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {myListings!.map((listing) => (
-                  <ManagedListingCard key={listing.id} listing={listing} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!draftListings?.length && !myListings?.length && !showCreate && (
-            <div className="mt-6 rounded-lg border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
-              <ShoppingBag
-                className="mx-auto text-neutral-400 dark:text-neutral-600"
-                size={22}
-              />
-              <p className="mt-3 text-sm font-medium">
-                No listings on this container yet
-              </p>
-            </div>
-          )}
-        </section>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {myListings!.map((listing) => (
+              <ManagedListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </div>
       )}
 
-      {(!showManageTab || activeTab === "browse") && (
-        <section className={showManageTab ? "mt-6" : "mt-8"}>
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold tracking-tight">Browse</h2>
-            <input
-              className={`${inputClass} max-w-xs`}
-              placeholder="Search listings…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+      {!draftListings?.length && !myListings?.length && !showCreate && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
+              <ShoppingBag size={22} />
+            </div>
 
-          {categories && categories.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <p className="mt-4 text-sm font-semibold text-foreground">
+              No listings yet
+            </p>
+
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Create your first marketplace listing for this container.
+            </p>
+
+            <Button className="mt-5" onClick={() => onShowCreate(true)}>
+              <Plus />
+              Create listing
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </section>
+  );
+}
+
+function BrowseMarketplace({
+  search,
+  setSearch,
+  categories,
+  selectedCategory,
+  setSelectedCategory,
+  activeLoading,
+  activeResults,
+}: {
+  search: string;
+  setSearch: (value: string) => void;
+  categories?: ListingCategory[];
+  selectedCategory: ListingCategory | null;
+  setSelectedCategory: (value: ListingCategory | null) => void;
+  activeLoading: boolean;
+  activeResults?: Listing[];
+}) {
+  return (
+    <section className="space-y-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            Browse marketplace
+          </h2>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Discover products, access, events, and other available resources.
+          </p>
+        </div>
+
+        <div className="relative w-full lg:max-w-sm">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search listings..."
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {categories && categories.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedCategory(null)}
+            className={cn(
+              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              selectedCategory === null
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground",
+            )}
+          >
+            All
+          </button>
+
+          {categories.map((category) => {
+            const isActive =
+              selectedCategory?.source_capability ===
+                category.source_capability &&
+              selectedCategory?.source_type === category.source_type;
+
+            return (
               <button
+                key={`${category.source_capability}:${category.source_type}`}
                 type="button"
-                onClick={() => setSelectedCategory(null)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  selectedCategory === null
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                }`}
+                onClick={() => setSelectedCategory(category)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground",
+                )}
               >
-                All
+                {category.source_type.replace(/_/g, " ")}
               </button>
-              {categories.map((cat) => {
-                const isActive =
-                  selectedCategory?.source_capability ===
-                    cat.source_capability &&
-                  selectedCategory?.source_type === cat.source_type;
-                return (
-                  <button
-                    key={`${cat.source_capability}:${cat.source_type}`}
-                    type="button"
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                      isActive
-                        ? "bg-black text-white dark:bg-white dark:text-black"
-                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800"
-                    }`}
-                  >
-                    {cat.source_type.replace(/_/g, " ")}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {activeLoading && (
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="h-56 animate-pulse rounded-lg bg-neutral-100 dark:bg-neutral-900"
-                />
-              ))}
-            </div>
-          )}
-
-          {activeResults && activeResults.length === 0 && (
-            <div className="mt-6 rounded-lg border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
-              <ShoppingBag
-                className="mx-auto text-neutral-400 dark:text-neutral-600"
-                size={22}
-              />
-              <p className="mt-3 text-sm font-medium">Nothing here yet</p>
-            </div>
-          )}
-
-          {activeResults && activeResults.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {activeResults.map((listing) => (
-                <BrowseListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          )}
-        </section>
+            );
+          })}
+        </div>
       )}
-    </div>
+
+      <Separator />
+
+      {activeLoading && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((item) => (
+            <div
+              key={item}
+              className="h-64 animate-pulse rounded-xl border border-border bg-muted"
+            />
+          ))}
+        </div>
+      )}
+
+      {!activeLoading && activeResults?.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
+              <ShoppingBag size={22} />
+            </div>
+
+            <p className="mt-4 text-sm font-semibold text-foreground">
+              Nothing here yet
+            </p>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Try another search or category.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!activeLoading && activeResults && activeResults.length > 0 && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {activeResults.map((listing) => (
+            <BrowseListingCard key={listing.id} listing={listing} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -314,119 +475,139 @@ function ManagedListingCard({ listing }: { listing: Listing }) {
     mutationFn: () => sdk.surfacing.publishListing(listing.id),
     onSuccess: invalidate,
   });
+
   const archiveMutation = useMutation({
     mutationFn: () => sdk.surfacing.archiveListing(listing.id),
     onSuccess: invalidate,
   });
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold">{listing.title}</p>
-        <button
-          type="button"
-          onClick={() => archiveMutation.mutate()}
-          disabled={archiveMutation.isPending}
-          aria-label="Archive listing"
-          className="text-neutral-400 transition-colors hover:text-red-600 disabled:opacity-60 dark:hover:text-red-400"
-        >
-          <Archive size={14} />
-        </button>
-      </div>
-      <p className="text-xs text-neutral-500 dark:text-neutral-500">
-        {formatPrice(listing.price, listing.currency)} ·{" "}
-        {listing.source_capability}/{listing.source_type}
-      </p>
-      {listing.status === "draft" && (
-        <button
-          type="button"
-          onClick={() => publishMutation.mutate()}
-          disabled={publishMutation.isPending}
-          className="self-start rounded-md bg-black px-2.5 py-1 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black"
-        >
-          {publishMutation.isPending ? "Publishing…" : "Publish"}
-        </button>
-      )}
-    </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="truncate text-sm">{listing.title}</CardTitle>
+
+            <CardDescription className="mt-1">
+              {listing.source_capability}/{listing.source_type}
+            </CardDescription>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={archiveMutation.isPending}
+            onClick={() => archiveMutation.mutate()}
+            aria-label="Archive listing"
+            className="shrink-0 text-muted-foreground hover:text-error"
+          >
+            <Archive size={15} />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <Badge variant={listing.status === "draft" ? "warning" : "success"}>
+            {listing.status}
+          </Badge>
+
+          <span className="text-sm font-semibold text-foreground">
+            {formatPrice(listing.price, listing.currency)}
+          </span>
+        </div>
+
+        {listing.status === "draft" && (
+          <Button
+            type="button"
+            size="sm"
+            disabled={publishMutation.isPending}
+            onClick={() => publishMutation.mutate()}
+          >
+            {publishMutation.isPending ? "Publishing..." : "Publish"}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-/**
- * Exported so registry-file card components (e.g.
- * lib/registries/events/eventListingCard.tsx) can reuse this instead
- * of duplicating the multi-image rotation and per-image failure
- * tracking logic — a custom card body still needs to actually render
- * `listing.images` itself, this component doesn't do that
- * automatically just by a listing having images.
- */
 export function ListingImageCarousel({ fileIds }: { fileIds: string[] }) {
   const [index, setIndex] = useState(0);
   const [failed, setFailed] = useState<Set<number>>(new Set());
 
-  // `listing.images` entries are Document file_ids (opaque references,
-  // set by listing_service.py's create() when seeding from a General
-  // Inventory item's branding assets), not direct URLs — resolved the
-  // same way Inventory's own branding tiles already do. Each image is
-  // tracked independently for failure, so one dead file_id just gets
-  // skipped in the rotation rather than breaking the whole carousel.
-  const validIndices = fileIds.map((_, i) => i).filter((i) => !failed.has(i));
+  const validIndices = fileIds
+    .map((_, itemIndex) => itemIndex)
+    .filter((itemIndex) => !failed.has(itemIndex));
 
   if (validIndices.length === 0) return null;
 
   const currentIndex = validIndices.includes(index) ? index : validIndices[0];
 
   const step = (direction: 1 | -1) => {
-    const pos = validIndices.indexOf(currentIndex);
-    const nextPos =
-      (pos + direction + validIndices.length) % validIndices.length;
-    setIndex(validIndices[nextPos]);
+    const position = validIndices.indexOf(currentIndex);
+    const nextPosition =
+      (position + direction + validIndices.length) % validIndices.length;
+
+    setIndex(validIndices[nextPosition]);
   };
 
   return (
-    <div className="group relative">
+    <div className="group relative overflow-hidden rounded-xl">
       <img
         src={`${API_BASE_URL}/api/document/files/${fileIds[currentIndex]}/raw/`}
         alt=""
-        onError={() => setFailed((prev) => new Set(prev).add(currentIndex))}
-        className="h-32 w-full rounded-md object-cover"
+        onError={() =>
+          setFailed((previous) => new Set(previous).add(currentIndex))
+        }
+        className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
       />
+
       {validIndices.length > 1 && (
         <>
-          <button
+          <Button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
+            variant="ghost"
+            size="icon"
+            onClick={(event) => {
+              event.stopPropagation();
               step(-1);
             }}
             aria-label="Previous image"
-            className="absolute left-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+            className="absolute left-2 top-1/2 size-8 -translate-y-1/2 rounded-full bg-black/50 text-white opacity-0 hover:bg-black/70 group-hover:opacity-100"
           >
-            <ChevronLeft size={14} />
-          </button>
-          <button
+            <ChevronLeft size={15} />
+          </Button>
+
+          <Button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
+            variant="ghost"
+            size="icon"
+            onClick={(event) => {
+              event.stopPropagation();
               step(1);
             }}
             aria-label="Next image"
-            className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100"
+            className="absolute right-2 top-1/2 size-8 -translate-y-1/2 rounded-full bg-black/50 text-white opacity-0 hover:bg-black/70 group-hover:opacity-100"
           >
-            <ChevronRight size={14} />
-          </button>
-          <div className="absolute bottom-1.5 left-1/2 flex -translate-x-1/2 gap-1">
-            {validIndices.map((i) => (
+            <ChevronRight size={15} />
+          </Button>
+
+          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
+            {validIndices.map((itemIndex) => (
               <button
-                key={i}
+                key={itemIndex}
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIndex(i);
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIndex(itemIndex);
                 }}
-                aria-label={`Go to image ${i + 1}`}
-                className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                  i === currentIndex ? "bg-white" : "bg-white/40"
-                }`}
+                aria-label={`Go to image ${itemIndex + 1}`}
+                className={cn(
+                  "size-1.5 rounded-full transition-colors",
+                  itemIndex === currentIndex ? "bg-white" : "bg-white/40",
+                )}
               />
             ))}
           </div>
@@ -438,59 +619,57 @@ export function ListingImageCarousel({ fileIds }: { fileIds: string[] }) {
 
 function DefaultListingCardBody({ listing }: { listing: Listing }) {
   return (
-    <>
+    <div className="space-y-3">
       {listing.images.length > 0 && (
         <ListingImageCarousel fileIds={listing.images} />
       )}
-      <p className="text-sm font-semibold">{listing.title}</p>
-      <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-        {listing.pricing_mode === "free"
-          ? "Free"
-          : listing.pricing_mode === "subscription"
-            ? `${formatPrice(listing.price, listing.currency)} · Subscription`
-            : formatPrice(listing.price, listing.currency)}
-      </p>
-      {listing.description && (
-        <p className="text-xs text-neutral-600 dark:text-neutral-400">
-          {listing.description}
+
+      <div>
+        <p className="text-sm font-semibold text-foreground">{listing.title}</p>
+
+        <p className="mt-1 text-sm font-medium text-foreground">
+          {listing.pricing_mode === "free"
+            ? "Free"
+            : listing.pricing_mode === "subscription"
+              ? `${formatPrice(listing.price, listing.currency)} · Subscription`
+              : formatPrice(listing.price, listing.currency)}
         </p>
-      )}
-    </>
+
+        {listing.description && (
+          <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
+            {listing.description}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 
 function BrowseListingCard({ listing }: { listing: Listing }) {
   const [showBuy, setShowBuy] = useState(false);
 
-  // Dispatch to a capability-registered card body if one exists (an
-  // Event, a Ticket, whatever needs to look genuinely different from
-  // a plain product) — falls back to the generic body otherwise. The
-  // Buy flow itself stays the same regardless; see
-  // listingCardRegistry.ts's own docstring on why that's deliberate.
   const CustomBody = getListingCardBody(listing.source_capability);
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      {CustomBody ? (
-        <CustomBody listing={listing} />
-      ) : (
-        <DefaultListingCardBody listing={listing} />
-      )}
-
-      <div className="mt-auto pt-2">
-        {showBuy ? (
-          <BuyForm listing={listing} onDone={() => setShowBuy(false)} />
+    <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md">
+      <CardContent className="flex flex-1 flex-col gap-4 p-4">
+        {CustomBody ? (
+          <CustomBody listing={listing} />
         ) : (
-          <button
-            type="button"
-            onClick={() => setShowBuy(true)}
-            className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 dark:bg-white dark:text-black"
-          >
-            Buy
-          </button>
+          <DefaultListingCardBody listing={listing} />
         )}
-      </div>
-    </div>
+
+        <div className="mt-auto pt-2">
+          {showBuy ? (
+            <BuyForm listing={listing} onDone={() => setShowBuy(false)} />
+          ) : (
+            <Button type="button" size="sm" onClick={() => setShowBuy(true)}>
+              {listing.pricing_mode === "free" ? "Get it free" : "Buy"}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -503,6 +682,7 @@ function BuyForm({
 }) {
   const queryClient = useQueryClient();
   const { currentContainerId } = useContainer();
+
   const [walletId, setWalletId] = useState("");
   const [payMode, setPayMode] = useState<"wallet" | "direct">("wallet");
 
@@ -528,8 +708,8 @@ function BuyForm({
   if (result) {
     if (result.status === "completed") {
       return (
-        <div className="flex items-start gap-1.5 text-xs text-black dark:text-white">
-          <CheckCircle2 size={14} className="mt-0.5 flex-none" />
+        <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/5 p-3 text-xs text-success">
+          <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
           <span>
             {listing.pricing_mode === "free"
               ? "It's yours. Check your account for access."
@@ -538,18 +718,20 @@ function BuyForm({
         </div>
       );
     }
+
     if (result.status === "subscribed") {
       return (
-        <div className="flex items-start gap-1.5 text-xs text-black dark:text-white">
-          <CheckCircle2 size={14} className="mt-0.5 flex-none" />
+        <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/5 p-3 text-xs text-success">
+          <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
           <span>Subscribed. You'll be billed on the plan's own schedule.</span>
         </div>
       );
     }
+
     if (result.status === "fulfillment_failed") {
       return (
-        <div className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
-          <AlertTriangle size={14} className="mt-0.5 flex-none" />
+        <div className="flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/5 p-3 text-xs text-warning-foreground">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
           <span>
             Payment succeeded, but something went wrong granting access. Contact
             the seller.
@@ -557,13 +739,14 @@ function BuyForm({
         </div>
       );
     }
+
     if (result.status === "subscription_failed") {
       return (
-        <div className="flex items-start gap-1.5 text-xs text-red-600 dark:text-red-400">
-          <AlertTriangle size={14} className="mt-0.5 flex-none" />
+        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/5 p-3 text-xs text-error">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
           <span>
-            Couldn't set up the subscription — check the wallet has enough
-            balance and try again.
+            Couldn't set up the subscription. Check the wallet balance and try
+            again.
           </span>
         </div>
       );
@@ -572,39 +755,40 @@ function BuyForm({
 
   if (!currentContainerId) {
     return (
-      <p className="text-xs text-neutral-500 dark:text-neutral-500">
+      <p className="text-xs leading-5 text-muted-foreground">
         Select a container first to choose a wallet to pay from.
       </p>
     );
   }
 
-  // Direct-pay has nothing to collect for a free listing — the
-  // toggle only makes sense when a real charge is actually involved.
   const canPayDirect = listing.pricing_mode !== "free";
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {canPayDirect && (
-        <div className="flex gap-1">
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
           <button
             type="button"
             onClick={() => setPayMode("wallet")}
-            className={`flex-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+            className={cn(
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
               payMode === "wallet"
-                ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
-            }`}
+                ? "bg-surface text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
           >
             Wallet
           </button>
+
           <button
             type="button"
             onClick={() => setPayMode("direct")}
-            className={`flex-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
+            className={cn(
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
               payMode === "direct"
-                ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
-            }`}
+                ? "bg-surface text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
           >
             Pay direct
           </button>
@@ -628,52 +812,54 @@ function BuyForm({
         />
       ) : (
         <>
-          <select
-            className={`${inputClass} w-full`}
-            value={walletId}
-            onChange={(e) => setWalletId(e.target.value)}
-          >
-            <option value="">
-              {listing.pricing_mode === "free"
-                ? "Account to use…"
-                : "Pay from…"}
-            </option>
-            {wallets?.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.label || w.owner_type} ({w.currency}{" "}
-                {(w.balance / 100).toFixed(2)})
-              </option>
-            ))}
-          </select>
+          <Select value={walletId} onValueChange={setWalletId}>
+            <SelectTrigger className="w-full">
+              <SelectValue
+                placeholder={
+                  listing.pricing_mode === "free"
+                    ? "Account to use..."
+                    : "Pay from..."
+                }
+              />
+            </SelectTrigger>
+
+            <SelectContent>
+              {wallets?.map((wallet) => (
+                <SelectItem key={wallet.id} value={wallet.id}>
+                  {wallet.label || wallet.owner_type} ({wallet.currency}{" "}
+                  {(wallet.balance / 100).toFixed(2)})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={() => mutation.mutate()}
               disabled={!walletId || mutation.isPending}
-              className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black"
             >
               {mutation.isPending
                 ? listing.pricing_mode === "subscription"
-                  ? "Subscribing…"
-                  : "Buying…"
+                  ? "Subscribing..."
+                  : "Buying..."
                 : listing.pricing_mode === "free"
                   ? "Get it free"
                   : listing.pricing_mode === "subscription"
                     ? "Subscribe"
                     : "Confirm"}
-            </button>
-            <button
-              type="button"
-              onClick={onDone}
-              className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
-            >
+            </Button>
+
+            <Button type="button" variant="ghost" size="sm" onClick={onDone}>
               Cancel
-            </button>
+            </Button>
           </div>
+
           {mutation.isError && (
-            <p className="text-xs text-red-600 dark:text-red-400">
-              Couldn't complete the purchase — check the wallet has enough
-              balance.
+            <p className="rounded-md border border-error/20 bg-error/5 px-3 py-2 text-xs text-error">
+              Couldn't complete the purchase. Check the wallet balance and try
+              again.
             </p>
           )}
         </>
@@ -700,7 +886,7 @@ const VISIBILITY_SCOPE_OPTIONS: {
   {
     value: "container_only",
     label: "This container only",
-    hint: "Never shows up in the global marketplace — only visible from this container's own listings.",
+    hint: "Only visible from this container's own listings.",
   },
 ];
 
@@ -713,20 +899,17 @@ function CreateListingForm({
 }) {
   const queryClient = useQueryClient();
 
-  // Source mode — seed from an existing General Inventory item or
-  // General Events event (snapshot at creation time, not a live
-  // reference — see the backend's own note on this), or reference
-  // something else manually (e.g. a Provisioning template, which has
-  // no catalog item behind it at all).
   const [sourceMode, setSourceMode] = useState<
     "inventory" | "events" | "manual"
   >("inventory");
+
   const [inventoryItemId, setInventoryItemId] = useState("");
   const [eventId, setEventId] = useState("");
 
   const [sourceCapability, setSourceCapability] = useState("");
   const [sourceType, setSourceType] = useState("");
   const [sourceId, setSourceId] = useState("");
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -736,6 +919,7 @@ function CreateListingForm({
   const [pricingMode, setPricingMode] = useState<
     "free" | "one_time" | "subscription"
   >("one_time");
+
   const [subscriptionPlanId, setSubscriptionPlanId] = useState("");
   const [visibilityScope, setVisibilityScope] =
     useState<VisibilityScope>("system");
@@ -772,10 +956,14 @@ function CreateListingForm({
         subscription_plan_id:
           pricingMode === "subscription" ? subscriptionPlanId : undefined,
         visibility_scope: visibilityScope,
+
         ...(sourceMode === "inventory"
           ? { inventory_item_id: inventoryItemId }
           : sourceMode === "events"
-            ? { catalog_capability: "core.events", catalog_item_id: eventId }
+            ? {
+                catalog_capability: "core.events",
+                catalog_item_id: eventId,
+              }
             : {
                 source_capability: sourceCapability,
                 source_type: sourceType,
@@ -807,311 +995,369 @@ function CreateListingForm({
           (pricingMode === "free" || Boolean(price)));
 
   return (
-    <div className="mt-4 flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      <div>
-        <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-500">
-          What are you selling?
-        </label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setSourceMode("inventory")}
-            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-              sourceMode === "inventory"
-                ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
-            }`}
-          >
-            From your inventory
-          </button>
-          <button
-            type="button"
-            onClick={() => setSourceMode("events")}
-            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-              sourceMode === "events"
-                ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
-            }`}
-          >
-            From your events
-          </button>
-          <button
-            type="button"
-            onClick={() => setSourceMode("manual")}
-            className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-              sourceMode === "manual"
-                ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
-            }`}
-          >
-            Something else
-          </button>
-        </div>
-      </div>
+    <Card className="border-primary/20 shadow-sm">
+      <CardHeader>
+        <CardTitle>Create listing</CardTitle>
+        <CardDescription>
+          Choose what you are selling, how it is priced, and who can see it.
+        </CardDescription>
+      </CardHeader>
 
-      {sourceMode === "inventory" ? (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-            Inventory item
-          </label>
-          <select
-            className={inputClass}
-            value={inventoryItemId}
-            onChange={(e) => setInventoryItemId(e.target.value)}
-          >
-            <option value="">Choose…</option>
-            {inventoryItems?.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title} ({item.price.currency}{" "}
-                {(item.price.total / 100).toFixed(2)})
-              </option>
-            ))}
-          </select>
-          {inventoryItems && inventoryItems.length === 0 && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-500">
-              No published inventory items yet — publish one first, or choose
-              "Something else" to list manually.
-            </p>
-          )}
-          <p className="text-xs text-neutral-500 dark:text-neutral-500">
-            Title, description, price, and images are copied from the item when
-            the listing is created — editing the item later won't change this
-            listing automatically.
-          </p>
-        </div>
-      ) : sourceMode === "events" ? (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-            Event
-          </label>
-          <select
-            className={inputClass}
-            value={eventId}
-            onChange={(e) => setEventId(e.target.value)}
-          >
-            <option value="">Choose…</option>
-            {containerEvents?.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.title} ({new Date(event.starts_at).toLocaleDateString()})
-              </option>
-            ))}
-          </select>
-          {containerEvents && containerEvents.length === 0 && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-500">
-              No published events yet — publish one under Events first.
-            </p>
-          )}
-          <p className="text-xs text-neutral-500 dark:text-neutral-500">
-            Buying this listing (including a free "Get it free" purchase)
-            registers the buyer as an attendee — there's no separate "join"
-            action; RSVPing and buying a ticket are the same flow.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-              Title
-            </label>
-            <input
-              className={inputClass}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+      <CardContent className="space-y-6">
+        <FormSection title="What are you selling?">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => setSourceMode("inventory")}
+              className={cn(
+                segmentedButtonClass,
+                sourceMode === "inventory"
+                  ? activeSegmentClass
+                  : inactiveSegmentClass,
+              )}
+            >
+              From inventory
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSourceMode("events")}
+              className={cn(
+                segmentedButtonClass,
+                sourceMode === "events"
+                  ? activeSegmentClass
+                  : inactiveSegmentClass,
+              )}
+            >
+              From events
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSourceMode("manual")}
+              className={cn(
+                segmentedButtonClass,
+                sourceMode === "manual"
+                  ? activeSegmentClass
+                  : inactiveSegmentClass,
+              )}
+            >
+              Something else
+            </button>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-              Description
-            </label>
-            <input
-              className={inputClass}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className="rounded-md bg-neutral-50 p-3 dark:bg-neutral-900">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-              What's being sold — a reference into another capability's own
-              data. For example, selling access to a Provisioning template:
-              capability <code>system.provisioning</code>, type{" "}
-              <code>template</code>, id = the template's code.
-            </p>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              <input
-                className={inputClass}
-                placeholder="source_capability"
-                value={sourceCapability}
-                onChange={(e) => setSourceCapability(e.target.value)}
+        </FormSection>
+
+        {sourceMode === "inventory" && (
+          <FormSection
+            title="Inventory item"
+            description="Listing details and images are copied from the selected item."
+          >
+            <Select value={inventoryItemId} onValueChange={setInventoryItemId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose an inventory item..." />
+              </SelectTrigger>
+
+              <SelectContent>
+                {inventoryItems?.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.title} ({item.price.currency}{" "}
+                    {(item.price.total / 100).toFixed(2)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {inventoryItems?.length === 0 && (
+              <FormHint>
+                No published inventory items yet. Publish one first, or choose
+                “Something else”.
+              </FormHint>
+            )}
+          </FormSection>
+        )}
+
+        {sourceMode === "events" && (
+          <FormSection
+            title="Event"
+            description="Buying this listing also registers the buyer as an attendee."
+          >
+            <Select value={eventId} onValueChange={setEventId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose an event..." />
+              </SelectTrigger>
+
+              <SelectContent>
+                {containerEvents?.map((event) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    {event.title} (
+                    {new Date(event.starts_at).toLocaleDateString()})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {containerEvents?.length === 0 && (
+              <FormHint>
+                No published events yet. Publish one under Events first.
+              </FormHint>
+            )}
+          </FormSection>
+        )}
+
+        {sourceMode === "manual" && (
+          <div className="space-y-5">
+            <FormField label="Title">
+              <Input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Listing title"
               />
-              <input
-                className={inputClass}
-                placeholder="source_type"
-                value={sourceType}
-                onChange={(e) => setSourceType(e.target.value)}
+            </FormField>
+
+            <FormField label="Description">
+              <Input
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Describe what is being sold"
               />
-              <input
-                className={inputClass}
-                placeholder="source_id"
-                value={sourceId}
-                onChange={(e) => setSourceId(e.target.value)}
-              />
+            </FormField>
+
+            <div className="rounded-xl border border-border bg-muted/50 p-4">
+              <p className="text-sm font-medium text-foreground">
+                Source reference
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Reference another capability's data, such as a provisioning
+                template.
+              </p>
+
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                <Input
+                  placeholder="source_capability"
+                  value={sourceCapability}
+                  onChange={(event) => setSourceCapability(event.target.value)}
+                />
+
+                <Input
+                  placeholder="source_type"
+                  value={sourceType}
+                  onChange={(event) => setSourceType(event.target.value)}
+                />
+
+                <Input
+                  placeholder="source_id"
+                  value={sourceId}
+                  onChange={(event) => setSourceId(event.target.value)}
+                />
+              </div>
             </div>
           </div>
-        </>
-      )}
+        )}
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-500">
-          Pricing
-        </label>
-        <div className="flex gap-2">
-          {(["free", "one_time", "subscription"] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setPricingMode(mode)}
-              className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-                pricingMode === mode
-                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                  : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
-              }`}
-            >
-              {mode === "free"
-                ? "Free"
-                : mode === "one_time"
-                  ? "One-time"
-                  : "Subscription"}
-            </button>
-          ))}
-        </div>
-      </div>
+        <Separator />
 
-      {pricingMode === "subscription" ? (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-            Subscription plan
-          </label>
-          <select
-            className={inputClass}
-            value={subscriptionPlanId}
-            onChange={(e) => setSubscriptionPlanId(e.target.value)}
-          >
-            <option value="">Choose…</option>
-            {plans?.map((plan) => (
-              <option key={plan.id} value={plan.id}>
-                {plan.name} ({plan.currency} {(plan.price / 100).toFixed(2)}/
-                {plan.billing_interval})
-              </option>
+        <FormSection title="Pricing">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {(["free", "one_time", "subscription"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setPricingMode(mode)}
+                className={cn(
+                  segmentedButtonClass,
+                  pricingMode === mode
+                    ? activeSegmentClass
+                    : inactiveSegmentClass,
+                )}
+              >
+                {mode === "free"
+                  ? "Free"
+                  : mode === "one_time"
+                    ? "One-time"
+                    : "Subscription"}
+              </button>
             ))}
-          </select>
-          {plans && plans.length === 0 && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-500">
-              No subscription plans on this container yet — create one under
-              Subscription first.
-            </p>
-          )}
-        </div>
-      ) : (
-        sourceMode === "manual" &&
-        pricingMode !== "free" && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-                Price
-              </label>
-              <input
-                className={inputClass}
+          </div>
+        </FormSection>
+
+        {pricingMode === "subscription" && (
+          <FormField
+            label="Subscription plan"
+            hint={
+              plans?.length === 0
+                ? "No subscription plans exist for this container yet."
+                : undefined
+            }
+          >
+            <Select
+              value={subscriptionPlanId}
+              onValueChange={setSubscriptionPlanId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a subscription plan..." />
+              </SelectTrigger>
+
+              <SelectContent>
+                {plans?.map((plan) => (
+                  <SelectItem key={plan.id} value={plan.id}>
+                    {plan.name} ({plan.currency} {(plan.price / 100).toFixed(2)}
+                    /{plan.billing_interval})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+        )}
+
+        {sourceMode === "manual" && pricingMode !== "free" && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Price">
+              <Input
                 type="number"
                 min="0"
                 step="0.01"
                 placeholder="9.99"
                 value={price}
-                onChange={(e) => setPrice(e.target.value)}
+                onChange={(event) => setPrice(event.target.value)}
               />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-                Currency
-              </label>
-              <input
-                className={inputClass}
+            </FormField>
+
+            <FormField label="Currency">
+              <Input
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                onChange={(event) => setCurrency(event.target.value)}
+                placeholder="USD"
               />
-            </div>
+            </FormField>
           </div>
-        )
-      )}
+        )}
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-          Payout wallet
-        </label>
-        <select
-          className={inputClass}
-          value={payoutWalletId}
-          onChange={(e) => setPayoutWalletId(e.target.value)}
-        >
-          <option value="">Choose…</option>
-          {wallets?.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.label || w.owner_type} ({w.currency})
-            </option>
-          ))}
-        </select>
-      </div>
+        <FormField label="Payout wallet">
+          <Select value={payoutWalletId} onValueChange={setPayoutWalletId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choose payout wallet..." />
+            </SelectTrigger>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-          Who can see this?
-        </label>
-        <div className="grid grid-cols-3 gap-2">
-          {VISIBILITY_SCOPE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setVisibilityScope(opt.value)}
-              title={opt.hint}
-              className={`rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors ${
-                visibilityScope === opt.value
-                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                  : "border-neutral-300 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+            <SelectContent>
+              {wallets?.map((wallet) => (
+                <SelectItem key={wallet.id} value={wallet.id}>
+                  {wallet.label || wallet.owner_type} ({wallet.currency})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+
+        <FormSection title="Visibility">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+            {VISIBILITY_SCOPE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setVisibilityScope(option.value)}
+                className={cn(
+                  "rounded-xl border p-4 text-left transition-colors",
+                  visibilityScope === option.value
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border bg-surface hover:bg-muted",
+                )}
+              >
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    visibilityScope === option.value
+                      ? "text-primary"
+                      : "text-foreground",
+                  )}
+                >
+                  {option.label}
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  {option.hint}
+                </p>
+              </button>
+            ))}
+          </div>
+        </FormSection>
+
+        <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
+          <Button
+            type="button"
+            onClick={() => mutation.mutate()}
+            disabled={!canSubmit || mutation.isPending}
+          >
+            {mutation.isPending ? "Creating..." : "Create listing"}
+          </Button>
+
+          <Button type="button" variant="ghost" onClick={onDone}>
+            Cancel
+          </Button>
+
+          {mutation.isError && (
+            <p className="text-sm text-error sm:ml-auto">
+              Couldn't create the listing.
+            </p>
+          )}
         </div>
-        <p className="text-[11px] text-neutral-500 dark:text-neutral-500">
-          {
-            VISIBILITY_SCOPE_OPTIONS.find((o) => o.value === visibilityScope)
-              ?.hint
-          }
-        </p>
-      </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => mutation.mutate()}
-          disabled={!canSubmit || mutation.isPending}
-          className={primaryButtonClass}
-        >
-          {mutation.isPending ? "Creating…" : "Create listing"}
-        </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="text-sm font-medium text-neutral-500 hover:text-black dark:hover:text-white"
-        >
-          Cancel
-        </button>
-        {mutation.isError && (
-          <p className="text-sm text-red-600 dark:text-red-400">
-            Couldn't create the listing.
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+
+        {description && (
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {description}
           </p>
         )}
       </div>
+
+      {children}
     </div>
+  );
+}
+
+function FormField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-foreground">{label}</label>
+
+      {children}
+
+      {hint && (
+        <p className="text-xs leading-5 text-muted-foreground">{hint}</p>
+      )}
+    </div>
+  );
+}
+
+function FormHint({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs leading-5 text-muted-foreground">
+      {children}
+    </p>
   );
 }
