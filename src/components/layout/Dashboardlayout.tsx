@@ -298,7 +298,7 @@ function ProfileMenu() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Capability drawer / aside — capability nav only; toggle lives in header   */
+/* Capability drawer / aside — capability nav + display toggle only          */
 /* -------------------------------------------------------------------------- */
 
 function CapabilityDrawer({
@@ -335,18 +335,22 @@ function CapabilityDrawer({
           "md:translate-x-0",
         ].join(" ")}
       >
-        <div className="flex h-16 shrink-0 items-center px-4 md:hidden">
+        <div className="flex h-16 shrink-0 items-center justify-between px-4">
           <button
             type="button"
             onClick={onClose}
             aria-label="Close navigation"
-            className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
           >
             <X size={18} />
           </button>
+
+          <div className="hidden md:block">
+            <NavDisplayToggle />
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-5">
           <CapabilityNav onNavigate={onClose} />
         </div>
       </aside>

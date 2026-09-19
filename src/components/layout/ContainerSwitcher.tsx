@@ -1,7 +1,6 @@
 // ContainerSwitcher.tsx
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
-
 import { useContainer } from "../context/ContainerContext";
 import { ContainerAvatar } from "../ui/ContainerAvatar";
 
@@ -80,7 +79,7 @@ export function ContainerSwitcher() {
                 You're not in any containers yet.
               </p>
             ) : (
-              containers.map((c: (typeof containers)[number]) => (
+              containers.map((c) => (
                 <button
                   key={c.id}
                   type="button"
