@@ -1,12 +1,11 @@
 // src/components/marketing/site-header.tsx
 import { useState } from "react";
 import { ArrowRight, Menu } from "lucide-react";
- 
+
 import { Logo } from "./logo";
 import { MobileNav } from "./mobile-nav";
 import { NAV_LINKS } from "../../../data/marketing";
 import { Button } from "../../../components/ui/button";
- 
 
 interface MarketingNavLink {
   label: string;
@@ -37,7 +36,7 @@ export function SiteHeader() {
 
             <div className="hidden md:block">
               <Button size="sm" asChild>
-                <a href="#get-started">
+                <a href="/signup">
                   Get Started
                   <ArrowRight />
                 </a>
