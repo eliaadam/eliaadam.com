@@ -1,3 +1,4 @@
+// DashboardLayout.tsx
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -14,34 +15,29 @@ import {
   X,
   ChevronDown,
   Sparkles,
+  LayoutGrid,
+  Rows3,
+  AlignLeft,
+  type LucideIcon,
 } from "lucide-react";
 
 import { useAuth } from "../context/Authcontext";
 import { useContainer } from "../context/ContainerContext";
 import { ThemeToggle } from "../context/ThemeContext";
+
 import { ContainerSwitcher } from "./ContainerSwitcher";
 import { CapabilityNavLink } from "./CapabilityNavLink";
 import { sdk } from "../../lib/sdk";
+import {
+  NavDisplayProvider,
+  useNavDisplay,
+  type NavDisplayMode,
+} from "../../context/NavDisplayContext";
 
 const staticNavItems = [
-  {
-    to: "/dashboard",
-    label: "Containers",
-    icon: Folders,
-    end: true,
-  },
-  {
-    to: "/dashboard/profile",
-    label: "Profile",
-    icon: User,
-    end: false,
-  },
-  {
-    to: "/dashboard/templates",
-    label: "Templates",
-    icon: Boxes,
-    end: false,
-  },
+  { to: "/dashboard", label: "Containers", icon: Folders, end: true },
+  { to: "/dashboard/profile", label: "Profile", icon: User, end: false },
+  { to: "/dashboard/templates", label: "Templates", icon: Boxes, end: false },
   {
     to: "/dashboard/invitations",
     label: "Invitations",
@@ -84,10 +80,60 @@ function useCapabilityNav() {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Nav display toggle (icons / icons+labels / labels) — desktop only          */
+/* -------------------------------------------------------------------------- */
+
+const NAV_DISPLAY_OPTIONS: {
+  mode: NavDisplayMode;
+  label: string;
+  icon: LucideIcon;
+}[] = [
+  { mode: "icons", label: "Icons only", icon: LayoutGrid },
+  { mode: "icons-label", label: "Icons & labels", icon: Rows3 },
+  { mode: "label", label: "Labels only", icon: AlignLeft },
+];
+
+function NavDisplayToggle() {
+  const { mode, setMode } = useNavDisplay();
+
+  return (
+    <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 md:flex">
+      {NAV_DISPLAY_OPTIONS.map((option) => {
+        const Icon = option.icon;
+        const active = option.mode === mode;
+
+        return (
+          <button
+            key={option.mode}
+            type="button"
+            onClick={() => setMode(option.mode)}
+            title={option.label}
+            aria-label={option.label}
+            aria-pressed={active}
+            className={[
+              "flex flex-1 items-center justify-center rounded-md py-1.5 transition-colors",
+              active
+                ? "bg-surface text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            ].join(" ")}
+          >
+            <Icon size={14} strokeWidth={1.8} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Static application navigation                                              */
 /* -------------------------------------------------------------------------- */
 
 function StaticNav({ onNavigate }: { onNavigate?: () => void }) {
+  const { mode } = useNavDisplay();
+  const showIcon = mode !== "label";
+  const showLabel = mode !== "icons";
+
   return (
     <nav className="flex flex-col gap-1">
       {staticNavItems.map(({ to, label, icon: Icon, end }) => (
@@ -96,18 +142,21 @@ function StaticNav({ onNavigate }: { onNavigate?: () => void }) {
           to={to}
           end={end}
           onClick={onNavigate}
+          title={label}
           className={({ isActive }) =>
             [
-              "flex items-center gap-3 rounded-lg px-3 py-2.5",
-              "text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              showLabel ? "" : "justify-center",
               isActive
                 ? "bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400"
-                : "text-muted-foreground hover:bg-background hover:text-foreground",
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             ].join(" ")
           }
         >
-          <Icon size={16} strokeWidth={1.8} />
-          <span>{label}</span>
+          {showIcon && (
+            <Icon size={16} strokeWidth={1.8} className="shrink-0" />
+          )}
+          {showLabel && <span className="truncate">{label}</span>}
         </NavLink>
       ))}
     </nav>
@@ -120,6 +169,7 @@ function StaticNav({ onNavigate }: { onNavigate?: () => void }) {
 
 function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
   const { data: capabilityNav } = useCapabilityNav();
+  const { mode } = useNavDisplay();
 
   if (!capabilityNav || capabilityNav.length === 0) {
     return null;
@@ -129,14 +179,23 @@ function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
     .slice()
     .sort((a, b) => (a.navigation?.order ?? 0) - (b.navigation?.order ?? 0));
 
+  const showSectionLabel = mode !== "icons";
+
   return (
     <div>
-      <div className="mb-2 flex items-center gap-2 px-3">
+      <div
+        className={[
+          "mb-2 flex items-center gap-2 px-3",
+          showSectionLabel ? "" : "justify-center",
+        ].join(" ")}
+      >
         <Sparkles size={13} className="text-brand-green-500" />
 
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Capabilities
-        </span>
+        {showSectionLabel && (
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Capabilities
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col gap-1">
@@ -151,19 +210,14 @@ function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Profile / application menu                                                 */
+/* Profile / account menu                                                     */
 /* -------------------------------------------------------------------------- */
 
 function ProfileMenu() {
   const { user, signOut } = useAuth();
-
   const [open, setOpen] = useState(false);
-
   const menuRef = useRef<HTMLDivElement>(null);
 
-  /*
-   * Close when clicking outside the menu.
-   */
   useEffect(() => {
     if (!open) return;
 
@@ -182,9 +236,6 @@ function ProfileMenu() {
     };
   }, [open]);
 
-  /*
-   * Close with Escape.
-   */
   useEffect(() => {
     if (!open) return;
 
@@ -203,18 +254,15 @@ function ProfileMenu() {
 
   return (
     <div ref={menuRef} className="relative">
-      {/* Profile trigger */}
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label="Open account menu"
         aria-expanded={open}
         className={[
-          "flex h-9 items-center gap-2 rounded-lg",
-          "border border-border bg-surface px-2",
-          "text-sm font-medium text-foreground",
-          "transition-colors",
-          "hover:border-brand-blue-500/40",
+          "flex h-9 items-center gap-2 rounded-lg bg-muted px-2",
+          "text-sm font-medium text-foreground transition-colors",
+          "hover:bg-muted/70",
           "focus:outline-none focus:ring-4 focus:ring-brand-blue-500/10",
         ].join(" ")}
       >
@@ -231,20 +279,9 @@ function ProfileMenu() {
         />
       </button>
 
-      {/* Context menu */}
       {open && (
-        <div
-          className={[
-            "absolute right-0 top-12 z-50",
-            "w-[280px] max-w-[calc(100vw-2rem)]",
-            "overflow-hidden rounded-2xl",
-            "border border-border bg-surface",
-            "shadow-xl shadow-black/10",
-            "dark:shadow-black/30",
-          ].join(" ")}
-        >
-          {/* Account identity */}
-          <div className="border-b border-border p-4">
+        <div className="absolute right-0 top-12 z-50 w-[260px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl bg-surface shadow-xl shadow-black/10 dark:shadow-black/30">
+          <div className="bg-muted/40 p-4">
             <div className="flex items-center gap-3">
               <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-gradient text-sm font-semibold text-white">
                 {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
@@ -254,7 +291,6 @@ function ProfileMenu() {
                 <p className="truncate text-sm font-semibold text-foreground">
                   {user?.name}
                 </p>
-
                 <p className="truncate text-xs text-muted-foreground">
                   {user?.email}
                 </p>
@@ -262,27 +298,11 @@ function ProfileMenu() {
             </div>
           </div>
 
-          {/* Application navigation */}
           <div className="p-2">
-            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Navigation
-            </p>
-
-            <StaticNav onNavigate={() => setOpen(false)} />
-          </div>
-
-          {/* Sign out */}
-          <div className="border-t border-border p-2">
             <button
               type="button"
               onClick={signOut}
-              className={[
-                "flex w-full items-center gap-3 rounded-lg",
-                "px-3 py-2.5 text-sm font-medium",
-                "text-muted-foreground",
-                "transition-colors",
-                "hover:bg-error/5 hover:text-error",
-              ].join(" ")}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-error/5 hover:text-error"
             >
               <LogOut size={16} />
               Sign out
@@ -295,7 +315,7 @@ function ProfileMenu() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Capability drawer                                                          */
+/* Navigation drawer (mobile overlay + desktop static aside)                  */
 /* -------------------------------------------------------------------------- */
 
 function CapabilityDrawer({
@@ -307,7 +327,6 @@ function CapabilityDrawer({
 }) {
   return (
     <>
-      {/* Mobile backdrop */}
       <div
         className={[
           "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden",
@@ -320,19 +339,16 @@ function CapabilityDrawer({
         aria-hidden="true"
       />
 
-      {/* Drawer */}
       <aside
         className={[
           "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col",
-          "border-r border-border bg-surface",
-          "shadow-xl md:static md:z-auto md:shadow-none",
+          "bg-background shadow-xl md:static md:z-auto md:shadow-none",
           "transition-transform duration-300 ease-out",
           open ? "translate-x-0" : "-translate-x-full",
           "md:translate-x-0",
         ].join(" ")}
       >
-        {/* Drawer header */}
-        <div className="flex h-16 items-center justify-between border-b border-border px-5">
+        <div className="flex h-16 items-center justify-between px-5">
           <img
             src="/images/mainlogo.png"
             alt="Sonic Pesa"
@@ -342,17 +358,24 @@ function CapabilityDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close capabilities"
-            className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-background hover:text-foreground md:hidden"
+            aria-label="Close navigation"
+            className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Drawer content */}
         <div className="flex-1 overflow-y-auto px-4 py-5">
           <div className="mb-5">
             <ContainerSwitcher />
+          </div>
+
+          <div className="mb-4">
+            <NavDisplayToggle />
+          </div>
+
+          <div className="mb-6">
+            <StaticNav onNavigate={onClose} />
           </div>
 
           <CapabilityNav onNavigate={onClose} />
@@ -366,16 +389,12 @@ function CapabilityDrawer({
 /* Dashboard layout                                                           */
 /* -------------------------------------------------------------------------- */
 
-export function DashboardLayout() {
+function DashboardLayoutContent() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
       <div className="flex min-h-screen">
-        {/* ------------------------------------------------------------------ */}
-        {/* Capability drawer                                                  */}
-        {/* ------------------------------------------------------------------ */}
-
         <div className="md:hidden">
           <CapabilityDrawer
             open={drawerOpen}
@@ -387,50 +406,36 @@ export function DashboardLayout() {
           <CapabilityDrawer open onClose={() => undefined} />
         </div>
 
-        {/* ------------------------------------------------------------------ */}
-        {/* Main application                                                   */}
-        {/* ------------------------------------------------------------------ */}
-
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* Top bar */}
-          <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md">
+          <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-md">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
-              {/* Mobile capability menu */}
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
-                aria-label="Open capabilities"
-                className={[
-                  "grid size-9 shrink-0 place-items-center",
-                  "rounded-lg border border-border bg-surface",
-                  "text-muted-foreground",
-                  "transition-colors",
-                  "hover:text-foreground md:hidden",
-                ].join(" ")}
+                aria-label="Open navigation"
+                className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors hover:text-foreground md:hidden"
               >
                 <Menu size={18} />
               </button>
 
-              {/* Brand */}
-              <div className="flex min-w-0 flex-1 items-center">
+              {/* Brand — only shown on mobile; desktop aside already carries the logo */}
+              <div className="flex min-w-0 flex-1 items-center md:hidden">
                 <img
                   src="/images/mainlogo.png"
                   alt="Sonic Pesa"
-                  className="h-7 w-auto object-contain md:h-8"
+                  className="h-7 w-auto object-contain"
                 />
               </div>
 
-              {/* Desktop spacing / utility area */}
+              <div className="hidden flex-1 md:block" />
+
               <div className="flex items-center gap-2">
                 <ThemeToggle />
-
-                {/* Profile menu exists on ALL screen sizes */}
                 <ProfileMenu />
               </div>
             </div>
           </header>
 
-          {/* Content */}
           <main className="flex-1">
             <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
               <Outlet />
@@ -439,5 +444,13 @@ export function DashboardLayout() {
         </div>
       </div>
     </div>
+  );
+}
+
+export function DashboardLayout() {
+  return (
+    <NavDisplayProvider>
+      <DashboardLayoutContent />
+    </NavDisplayProvider>
   );
 }
