@@ -64,6 +64,14 @@ const staticNavItems = [
   },
 ];
 
+// Aside width per display mode — the whole point of the toggle is that
+// the rail visibly grows/shrinks, GitHub-collapsed-sidebar style.
+const ASIDE_WIDTH: Record<NavDisplayMode, string> = {
+  icons: "72px",
+  "icons-label": "280px",
+  label: "220px",
+};
+
 function useCapabilityNav() {
   const { currentContainerId } = useContainer();
 
@@ -80,7 +88,7 @@ function useCapabilityNav() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Nav display toggle (icons / icons+labels / labels) — desktop only          */
+/* Nav display toggle (icons / icons+labels / labels)                        */
 /* -------------------------------------------------------------------------- */
 
 const NAV_DISPLAY_OPTIONS: {
@@ -95,9 +103,15 @@ const NAV_DISPLAY_OPTIONS: {
 
 function NavDisplayToggle() {
   const { mode, setMode } = useNavDisplay();
+  const showLabel = mode !== "icons";
 
   return (
-    <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 md:flex">
+    <div
+      className={[
+        "hidden items-center gap-1 rounded-lg bg-muted p-1 md:flex",
+        showLabel ? "" : "flex-col",
+      ].join(" ")}
+    >
       {NAV_DISPLAY_OPTIONS.map((option) => {
         const Icon = option.icon;
         const active = option.mode === mode;
@@ -126,45 +140,7 @@ function NavDisplayToggle() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Static application navigation                                              */
-/* -------------------------------------------------------------------------- */
-
-function StaticNav({ onNavigate }: { onNavigate?: () => void }) {
-  const { mode } = useNavDisplay();
-  const showIcon = mode !== "label";
-  const showLabel = mode !== "icons";
-
-  return (
-    <nav className="flex flex-col gap-1">
-      {staticNavItems.map(({ to, label, icon: Icon, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          onClick={onNavigate}
-          title={label}
-          className={({ isActive }) =>
-            [
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-              showLabel ? "" : "justify-center",
-              isActive
-                ? "bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            ].join(" ")
-          }
-        >
-          {showIcon && (
-            <Icon size={16} strokeWidth={1.8} className="shrink-0" />
-          )}
-          {showLabel && <span className="truncate">{label}</span>}
-        </NavLink>
-      ))}
-    </nav>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Capability navigation                                                      */
+/* Capability navigation                                                     */
 /* -------------------------------------------------------------------------- */
 
 function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -189,7 +165,7 @@ function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
           showSectionLabel ? "" : "justify-center",
         ].join(" ")}
       >
-        <Sparkles size={13} className="text-brand-green-500" />
+        <Sparkles size={13} className="text-brand-green-500 shrink-0" />
 
         {showSectionLabel && (
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -210,7 +186,7 @@ function CapabilityNav({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Profile / account menu                                                     */
+/* Profile / account context menu — carries the static app navigation        */
 /* -------------------------------------------------------------------------- */
 
 function ProfileMenu() {
@@ -280,7 +256,8 @@ function ProfileMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-[260px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl bg-surface shadow-xl shadow-black/10 dark:shadow-black/30">
+        <div className="absolute right-0 top-12 z-50 w-[280px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl bg-surface shadow-xl shadow-black/10 dark:shadow-black/30">
+          {/* Account identity */}
           <div className="bg-muted/40 p-4">
             <div className="flex items-center gap-3">
               <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-gradient text-sm font-semibold text-white">
@@ -298,6 +275,36 @@ function ProfileMenu() {
             </div>
           </div>
 
+          {/* Static application navigation */}
+          <div className="p-2">
+            <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Navigation
+            </p>
+
+            <nav className="flex flex-col gap-1">
+              {staticNavItems.map(({ to, label, icon: Icon, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) =>
+                    [
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ].join(" ")
+                  }
+                >
+                  <Icon size={16} strokeWidth={1.8} />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+
+          {/* Sign out */}
           <div className="p-2">
             <button
               type="button"
@@ -315,7 +322,7 @@ function ProfileMenu() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Navigation drawer (mobile overlay + desktop static aside)                  */
+/* Capability drawer / aside — width now reacts to nav display mode          */
 /* -------------------------------------------------------------------------- */
 
 function CapabilityDrawer({
@@ -325,6 +332,9 @@ function CapabilityDrawer({
   open: boolean;
   onClose: () => void;
 }) {
+  const { mode } = useNavDisplay();
+  const width = ASIDE_WIDTH[mode];
+
   return (
     <>
       <div
@@ -340,15 +350,16 @@ function CapabilityDrawer({
       />
 
       <aside
+        style={{ width: open ? width : undefined }}
         className={[
-          "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col",
+          "fixed inset-y-0 left-0 z-50 flex flex-col",
           "bg-background shadow-xl md:static md:z-auto md:shadow-none",
-          "transition-transform duration-300 ease-out",
-          open ? "translate-x-0" : "-translate-x-full",
+          "transition-[width,transform] duration-300 ease-out",
+          open ? "translate-x-0 w-[280px]" : "-translate-x-full w-[280px]",
           "md:translate-x-0",
         ].join(" ")}
       >
-        <div className="flex h-16 items-center justify-between px-5">
+        <div className="flex h-16 shrink-0 items-center justify-between px-5">
           <img
             src="/images/mainlogo.png"
             alt="Sonic Pesa"
@@ -365,17 +376,13 @@ function CapabilityDrawer({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-5">
           <div className="mb-5">
             <ContainerSwitcher />
           </div>
 
           <div className="mb-4">
             <NavDisplayToggle />
-          </div>
-
-          <div className="mb-6">
-            <StaticNav onNavigate={onClose} />
           </div>
 
           <CapabilityNav onNavigate={onClose} />
@@ -391,6 +398,7 @@ function CapabilityDrawer({
 
 function DashboardLayoutContent() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { mode } = useNavDisplay();
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
@@ -402,7 +410,10 @@ function DashboardLayoutContent() {
           />
         </div>
 
-        <div className="hidden md:flex md:w-[280px] md:flex-none">
+        <div
+          style={{ width: ASIDE_WIDTH[mode] }}
+          className="hidden shrink-0 transition-[width] duration-300 ease-out md:flex"
+        >
           <CapabilityDrawer open onClose={() => undefined} />
         </div>
 
@@ -418,7 +429,7 @@ function DashboardLayoutContent() {
                 <Menu size={18} />
               </button>
 
-              {/* Brand — only shown on mobile; desktop aside already carries the logo */}
+              {/* Brand — mobile only; desktop aside already carries the logo */}
               <div className="flex min-w-0 flex-1 items-center md:hidden">
                 <img
                   src="/images/mainlogo.png"
