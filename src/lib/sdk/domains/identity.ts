@@ -124,12 +124,14 @@ function archiveActor(actorId: string, containerId: string): Promise<Actor> {
     container_id: containerId,
   });
 }
+
 function updateMyProfile(input: {
   display_name?: string;
   name?: string;
 }): Promise<Actor> {
   return api.post<Actor>("/api/identity/actors/me/", input);
 }
+
 export const identity = {
   register,
   login,
