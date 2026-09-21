@@ -9,6 +9,13 @@ export const APPLICATIONS: readonly ApplicationDefinition[] = [
         description: 'SonicPesa main application',
         enabled: true,
     },
+    {
+        code: 'main',
+        hostname: 'localhost',
+        name: 'SonicPesa',
+        description: 'SonicPesa main application',
+        enabled: true,
+    },
 
     {
         code: 'docs',
