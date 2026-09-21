@@ -244,7 +244,15 @@ export function WalletsPageExample() {
       {/* ...wallet list... */}
 
       <Show permission="core.payment.payment.refund">
-        <button className="text-sm text-error">Refund this payment</button>
+        <PermissionButton
+          permission="core.payment.wallet.create_shared"
+          onClick={() => {
+            /* open create-shared-wallet dialog */
+          }}
+          className="rounded-lg bg-brand-blue-500 px-3 py-2 text-sm font-medium text-white"
+        >
+          Create shared wallet
+        </PermissionButton>
       </Show>
     </FeatureGate>
   );
