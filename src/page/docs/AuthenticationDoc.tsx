@@ -6,7 +6,7 @@ import {
 } from "../../components/payment-gateway/DocsPrimitives";
 
 export function AuthenticationDoc() {
-  const baseUrl = "https://sysc.sonicpesa.com/api/gateway/v1";
+  const baseUrl = "https://services.halasoftware.com/api/gateway/v1";
 
   return (
     <>

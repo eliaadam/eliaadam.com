@@ -21,7 +21,7 @@ export function TerminalCard() {
         <code>
           <span className="text-slate-500">$</span>{" "}
           <span className="text-slate-200">
-            curl -X POST https://api.sonicpesa.com/v1/pay
+            curl -X POST https://api.halasoftware.com/v1/pay
           </span>
           {"\n"}
           {"  "}

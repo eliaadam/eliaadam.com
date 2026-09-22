@@ -21,7 +21,7 @@ interface Envelope<T> {
 // origin as every other request, instead of duplicating this
 // fallback logic and risking it drifting out of sync.
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://sysc.sonicpesa.com";
+  import.meta.env.VITE_API_BASE_URL || "https://services.halasoftware.com";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getAuthToken();

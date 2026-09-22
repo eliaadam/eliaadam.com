@@ -11,8 +11,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "./Authcontext";
 import { sdk, type Container } from "../../lib/sdk";
- 
-const STORAGE_KEY = "sonicpesa.current-container-id";
+
+const STORAGE_KEY = "halasoftware.current-container-id";
 
 type ContainerContextValue = {
   containers: Container[];

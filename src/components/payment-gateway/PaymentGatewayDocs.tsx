@@ -22,8 +22,8 @@ const codeBlockClass =
 export function PaymentGatewayDocs() {
   const baseUrl =
     typeof window !== "undefined"
-      ? `https://sysc.sonicpesa.com/api/gateway/v1/`
-      : "https://sysc.sonicpesa.com/api/gateway/v1/";
+      ? `https://services.halasoftware.com/api/gateway/v1/`
+      : "https://services.halasoftware.com/api/gateway/v1/";
 
   return (
     <div className="flex flex-col gap-8 text-sm leading-relaxed">

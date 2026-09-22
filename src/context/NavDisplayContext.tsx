@@ -9,7 +9,7 @@ import {
 
 export type NavDisplayMode = "icons" | "icons-label" | "label";
 
-const STORAGE_KEY = "sonicpesa.nav-display-mode";
+const STORAGE_KEY = "halasoftware.nav-display-mode";
 
 // Fixed cycle order the single toggle button steps through.
 const CYCLE: NavDisplayMode[] = ["icons", "icons-label", "label"];
