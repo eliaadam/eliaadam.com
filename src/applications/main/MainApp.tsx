@@ -59,6 +59,9 @@ import { PaymentReportingWalletDetail } from "../../page/dashboard/PaymentReport
 import { SubscribeToPlan } from "../../page/dashboard/SubscribeToPlan";
 import { PaymentGatewayApprovals } from "../../page/dashboard/admin/PaymentGatewayApprovals";
 import { PaymentGatewaySettings } from "../../page/dashboard/admin/PaymentGatewaySettings";
+import { FulfillmentDashboard } from "../../page/dashboard/FulfillmentDashboard";
+import { MyFulfillments } from "../../page/dashboard/MyFulfillments";
+import { LogisticsDashboard } from "../../page/dashboard/LogisticsDashboard";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -199,6 +202,20 @@ function MainApp() {
                   />
                   <Route path="marketplace" element={<Marketplace />} />
                   <Route path="my-purchases" element={<MyPurchases />} />
+                  <Route path="my-fulfillments" element={<MyFulfillments />} />
+                  {/* Static "fulfillment" route, same priority
+                      reasoning as "inventory"/"events" above. Matches
+                      FulfillmentCapability's own navigation().route
+                      exactly. */}
+                  <Route
+                    path="fulfillment"
+                    element={<FulfillmentDashboard />}
+                  />
+                  {/* Static "logistics" route, same priority
+                      reasoning as "fulfillment"/"inventory"/"events"
+                      above. Matches LogisticsCapability's own
+                      navigation().route exactly. */}
+                  <Route path="logistics" element={<LogisticsDashboard />} />
                   <Route path="admin/hub" element={<AdminHub />} />
                   <Route path="admin/actors" element={<Actors />} />
                   <Route
