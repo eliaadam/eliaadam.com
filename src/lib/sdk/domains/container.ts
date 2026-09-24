@@ -344,6 +344,18 @@ function getContainerAvatarUrl(
     `/api/container/containers/${containerId}/avatar-url/`,
   );
 }
+
+function renameContainer(
+  containerId: string,
+  input: { name?: string; display_name?: string },
+): Promise<Container> {
+  return api.post<Container>(
+    `/api/container/containers/${containerId}/rename/`,
+    input,
+  );
+}
+
+
 export const container = {
   getContainer,
   getContainerBySlug,
@@ -364,6 +376,7 @@ export const container = {
   rejectJoinRequest,
   getContainerPolicy,
   applyContainerPolicy,
+  renameContainer,
   activateContainer,
   suspendContainer,
   archiveContainer,

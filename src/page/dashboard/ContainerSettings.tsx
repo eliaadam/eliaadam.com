@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Camera } from "lucide-react";
+import { ArrowLeft, Camera, Pencil } from "lucide-react";
 import { sdk, type Visibility } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
 import { Avatar } from "../../components/Avatar";
@@ -19,17 +19,6 @@ const POLICY_DEFAULTS = {
   allowed_child_kinds: "",
 };
 
-/**
- * Every write here (policy changes, activate/suspend/archive/restore,
- * and now the avatar) is owner-only server-side — but there's no
- * endpoint to ask "am I the owner" up front, the same situation as
- * `JoinRequests.tsx`. This page shows the form to any member (viewing
- * policy only requires membership) and surfaces a clear message on a
- * 403 from an actual write attempt, rather than trying to predict the
- * answer client-side. The avatar section follows this exact same
- * philosophy — the upload control is always visible, a 403 from the
- * actual upload attempt is what tells a non-owner they can't do this.
- */
 export function ContainerSettings() {
   const { containerId } = useParams<{ containerId: string }>();
   const queryClient = useQueryClient();
@@ -86,6 +75,20 @@ export function ContainerSettings() {
       setForbiddenAction(action);
     }
   };
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+
+  const renameMutation = useMutation({
+    mutationFn: () =>
+      sdk.container.renameContainer(containerId!, { display_name: nameInput }),
+    onSuccess: () => {
+      setForbiddenAction(null);
+      setIsEditingName(false);
+      invalidateContainer();
+    },
+    onError: handle403("rename this container"),
+  });
 
   const avatarMutation = useMutation({
     mutationFn: (file: File) =>
@@ -217,9 +220,48 @@ export function ContainerSettings() {
           />
         </div>
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">
-            {container.display_name}
-          </h1>
+          {isEditingName ? (
+            <div className="flex items-center gap-2">
+              <input
+                className={inputClass}
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => renameMutation.mutate()}
+                disabled={renameMutation.isPending || !nameInput.trim()}
+                className="rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60 dark:bg-white dark:text-black"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditingName(false)}
+                className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium dark:border-neutral-700"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold tracking-tight">
+                {container.display_name}
+              </h1>
+              <button
+                type="button"
+                onClick={() => {
+                  setNameInput(container.display_name);
+                  setIsEditingName(true);
+                }}
+                aria-label="Rename container"
+                className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
+          )}
           <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-500">
             {container.slug} · {container.status}
           </p>

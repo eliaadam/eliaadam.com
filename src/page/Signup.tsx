@@ -42,6 +42,10 @@ function useReveal<T extends HTMLElement>(threshold = 0.15) {
   return { ref, visible };
 }
 
+// Replace the Sonic Pesa-specific content in AuthHeader and MarketingPanel
+// with the following.
+
+// AuthHeader
 function AuthHeader({
   isDark,
   onToggleTheme,
@@ -54,7 +58,7 @@ function AuthHeader({
       <Link to="/" className="flex items-center gap-2.5">
         <img
           src="/images/mainlogo.png"
-          alt="Sonic Pesa"
+          alt="Smart Digital Solutions"
           className="h-9 w-auto object-contain"
         />
       </Link>
@@ -71,6 +75,7 @@ function AuthHeader({
   );
 }
 
+// MarketingPanel
 function MarketingPanel() {
   return (
     <section className="relative hidden min-h-[calc(100vh-80px)] overflow-hidden lg:flex lg:flex-1 lg:items-center">
@@ -91,37 +96,40 @@ function MarketingPanel() {
       <div className="relative mx-auto w-full max-w-2xl px-8 py-16 xl:px-16">
         <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-brand-green-500/20 bg-brand-green-500/5 px-3 py-1.5 text-xs font-medium text-brand-green-600 dark:text-brand-green-400">
           <Sparkles size={13} />
-          Start your Sonic Pesa journey
+          Smart digital solutions for modern industries
         </div>
 
         <h2 className="max-w-xl text-4xl font-semibold tracking-tight text-foreground xl:text-5xl">
-          One account.{" "}
+          Smart Digital{" "}
           <span className="bg-brand-gradient bg-clip-text text-transparent">
-            More possibilities.
+            Solutions
           </span>
+          <br />
+          for Modern Industries
         </h2>
 
         <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground xl:text-lg">
-          Create your account and get access to a simpler, connected way of
-          managing your financial experience.
+          A technology company delivering intelligent software, hands-on
+          training, and consultancy services to help organizations operate
+          efficiently, accurately, and digitally.
         </p>
 
         <div className="mt-9 grid max-w-lg gap-3">
           {[
             {
-              icon: UserRound,
-              title: "One simple identity",
-              text: "Your account gives you a single place to access Sonic Pesa.",
+              icon: Zap,
+              title: "Intelligent software",
+              text: "Digital tools designed to streamline operations, improve accuracy, and simplify everyday workflows.",
             },
             {
               icon: ShieldCheck,
-              title: "Built with security in mind",
-              text: "Modern authentication keeps your account protected.",
+              title: "Practical expertise",
+              text: "Hands-on training and consultancy that help teams confidently adopt and use digital solutions.",
             },
             {
-              icon: Zap,
-              title: "Ready when you are",
-              text: "Get started quickly and keep moving without unnecessary friction.",
+              icon: Sparkles,
+              title: "Built for modern industries",
+              text: "Supporting construction, healthcare, education, agriculture, and businesses through digital transformation.",
             },
           ].map(({ icon: Icon, title, text }) => (
             <div
@@ -144,18 +152,18 @@ function MarketingPanel() {
           ))}
         </div>
 
-        <div className="mt-9 flex items-center gap-6 text-xs text-muted-foreground">
+        <div className="mt-9 flex flex-wrap items-center gap-6 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Check size={14} className="text-success" />
-            Simple
+            Efficient
           </span>
           <span className="flex items-center gap-1.5">
             <Check size={14} className="text-success" />
-            Secure
+            Accurate
           </span>
           <span className="flex items-center gap-1.5">
             <Check size={14} className="text-success" />
-            Connected
+            Digital
           </span>
         </div>
       </div>
