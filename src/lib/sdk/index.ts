@@ -14,6 +14,9 @@ import { inventory } from "./domains/inventory";
 import { events } from "./domains/events";
 import { paymentGateway } from "./domains/paymentGateway";
 import { paymentReporting } from "./domains/paymentReporting";
+import { order } from "./domains/order";
+import { fulfillment } from "./domains/fulfillment";
+import { logistics } from "./domains/logistics";
 
 /**
  * Single entry point for every domain's API client.
@@ -41,7 +44,10 @@ export const sdk = {
   inventory,
   events,
   paymentGateway,
-  paymentReporting
+  paymentReporting,
+  order,
+  fulfillment,
+  logistics
 };
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";
@@ -170,3 +176,21 @@ export type {
   CreateEventInput,
   UpdateEventInput,
 } from "./domains/events";
+export type {
+  OrderStatus,
+  OrderLineResult,
+  Order,
+  CartLineInput,
+  CreateOrderInput,
+} from "./domains/order";
+export type {
+  FulfillmentType,
+  FulfillmentStatus,
+  Fulfillment,
+} from "./domains/fulfillment";
+export type {
+  ShipmentStatus,
+  ShipmentEventStatus,
+  Shipment,
+  ShipmentEvent,
+} from "./domains/logistics";
