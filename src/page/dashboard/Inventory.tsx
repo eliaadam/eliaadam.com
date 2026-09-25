@@ -19,6 +19,41 @@ const inputClass =
 const primaryButtonClass =
   "rounded-md bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black";
 
+/**
+ * These three strings are the ones capabilities.core.fulfillment
+ * actually registers a fulfillment_registry handler for (see
+ * infrastructure/handlers.py's own HANDLERS_BY_ITEM_TYPE) — a
+ * listing created from an item with any OTHER item_type silently
+ * gets no automatic fulfillment at all (surfacing's own documented,
+ * expected fallback for an unregistered source_type: payment-only,
+ * no error). item_type itself stays open-ended at the schema level
+ * (inventory's own domain never restricts it), so this is a UI-only
+ * constraint — a "Custom…" escape hatch below still allows any
+ * string, for a genuine future case with no automatic fulfillment at
+ * all (e.g. something handled entirely through surfacing's own
+ * subscription pricing_mode). Free-text entry here previously made
+ * silently losing fulfillment the DEFAULT outcome for anyone not
+ * typing the exact right string — this makes the safe path the easy
+ * one instead.
+ */
+const KNOWN_ITEM_TYPES: { value: string; label: string; hint: string }[] = [
+  {
+    value: "digital_product",
+    label: "Digital product",
+    hint: "Access is granted automatically the moment payment succeeds.",
+  },
+  {
+    value: "physical_product",
+    label: "Physical product",
+    hint: "Creates a shipment for Logistics to deliver once payment succeeds.",
+  },
+  {
+    value: "service",
+    label: "Service",
+    hint: "Creates a booking you mark scheduled/performed yourself, from Fulfillment.",
+  },
+];
+
 function statusClasses(status: InventoryItemStatus): string {
   if (status === "active") {
     return "bg-neutral-100 text-black dark:bg-neutral-900 dark:text-white";
@@ -688,6 +723,10 @@ function ItemForm({
   const [itemType, setItemType] = useState(
     existing?.item_type ?? "digital_product",
   );
+  const isKnownType = KNOWN_ITEM_TYPES.some((t) => t.value === itemType);
+  const [useCustomType, setUseCustomType] = useState(
+    Boolean(existing) && !isKnownType,
+  );
   const [description, setDescription] = useState(existing?.description ?? "");
   const [baseAmount, setBaseAmount] = useState(
     existing ? String(existing.price.base_amount / 100) : "",
@@ -782,12 +821,54 @@ function ItemForm({
             <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
               Type
             </label>
-            <input
-              className={inputClass}
-              placeholder="digital_product, service, …"
-              value={itemType}
-              onChange={(e) => setItemType(e.target.value)}
-            />
+            {useCustomType ? (
+              <>
+                <input
+                  className={inputClass}
+                  placeholder="Custom item type…"
+                  value={itemType}
+                  onChange={(e) => setItemType(e.target.value)}
+                />
+                <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                  A custom type gets no automatic fulfillment — you'll need to
+                  handle delivery for this yourself.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseCustomType(false);
+                    setItemType("digital_product");
+                  }}
+                  className="self-start text-[11px] font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+                >
+                  Choose from the list instead
+                </button>
+              </>
+            ) : (
+              <>
+                <select
+                  className={inputClass}
+                  value={itemType}
+                  onChange={(e) => setItemType(e.target.value)}
+                >
+                  {KNOWN_ITEM_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-500">
+                  {KNOWN_ITEM_TYPES.find((t) => t.value === itemType)?.hint}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setUseCustomType(true)}
+                  className="self-start text-[11px] font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+                >
+                  Use a custom type instead
+                </button>
+              </>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

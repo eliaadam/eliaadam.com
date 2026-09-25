@@ -62,6 +62,7 @@ import { PaymentGatewaySettings } from "../../page/dashboard/admin/PaymentGatewa
 import { FulfillmentDashboard } from "../../page/dashboard/FulfillmentDashboard";
 import { MyFulfillments } from "../../page/dashboard/MyFulfillments";
 import { LogisticsDashboard } from "../../page/dashboard/LogisticsDashboard";
+import { MyOrders } from "../../page/dashboard/MyOrders";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -202,6 +203,7 @@ function MainApp() {
                   />
                   <Route path="marketplace" element={<Marketplace />} />
                   <Route path="my-purchases" element={<MyPurchases />} />
+                  <Route path="my-orders" element={<MyOrders />} />
                   <Route path="my-fulfillments" element={<MyFulfillments />} />
                   {/* Static "fulfillment" route, same priority
                       reasoning as "inventory"/"events" above. Matches

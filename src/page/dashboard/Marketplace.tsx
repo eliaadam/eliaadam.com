@@ -692,21 +692,28 @@ function BuyForm({
     enabled: Boolean(currentContainerId),
   });
 
+  // Routed through capabilities.core.order rather than calling
+  // sdk.surfacing.purchase() directly — a single-line, quantity=1
+  // cart behaves identically to a direct purchase underneath (order
+  // just calls surfacing.purchase() once), but now produces a real
+  // Order record the buyer can look back at (see MyOrders.tsx).
   const mutation = useMutation({
     mutationFn: () =>
-      sdk.surfacing.purchase({
-        listing_id: listing.id,
+      sdk.order.createOrder({
         paying_wallet_id: walletId,
+        lines: [{ listing_id: listing.id, quantity: 1 }],
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["surfacing"] });
+      queryClient.invalidateQueries({ queryKey: ["order"] });
     },
   });
 
-  const result = mutation.data;
+  const orderResult = mutation.data;
+  const lineResult = orderResult?.line_results[0];
 
-  if (result) {
-    if (result.status === "completed") {
+  if (orderResult && lineResult) {
+    if (lineResult.purchase_status === "completed") {
       return (
         <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/5 p-3 text-xs text-success">
           <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
@@ -719,7 +726,7 @@ function BuyForm({
       );
     }
 
-    if (result.status === "subscribed") {
+    if (lineResult.purchase_status === "subscribed") {
       return (
         <div className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/5 p-3 text-xs text-success">
           <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
@@ -728,7 +735,7 @@ function BuyForm({
       );
     }
 
-    if (result.status === "fulfillment_failed") {
+    if (lineResult.purchase_status === "fulfillment_failed") {
       return (
         <div className="flex items-start gap-2 rounded-lg border border-warning/20 bg-warning/5 p-3 text-xs text-warning-foreground">
           <AlertTriangle size={15} className="mt-0.5 shrink-0" />
@@ -740,13 +747,30 @@ function BuyForm({
       );
     }
 
-    if (result.status === "subscription_failed") {
+    if (lineResult.purchase_status === "subscription_failed") {
       return (
         <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/5 p-3 text-xs text-error">
           <AlertTriangle size={15} className="mt-0.5 shrink-0" />
           <span>
             Couldn't set up the subscription. Check the wallet balance and try
             again.
+          </span>
+        </div>
+      );
+    }
+
+    if (lineResult.purchase_status === "payment_failed") {
+      // NEW — order.createOrder() catches this internally rather than
+      // throwing (see capabilities.core.order's own order_service.py
+      // module docstring), so this outcome now arrives as a normal,
+      // successful mutation.data with a failed line, never via
+      // mutation.isError below.
+      return (
+        <div className="flex items-start gap-2 rounded-lg border border-error/20 bg-error/5 p-3 text-xs text-error">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+          <span>
+            {lineResult.error ??
+              "Couldn't complete the purchase. Check the wallet balance and try again."}
           </span>
         </div>
       );
@@ -796,6 +820,13 @@ function BuyForm({
       )}
 
       {payMode === "direct" && canPayDirect ? (
+        // NOTE: still goes through paymentGateway.requestDirectPurchase()
+        // directly, NOT through order — its own backend implementation
+        // was never confirmed this session (whether it calls
+        // surfacing.purchase() internally, or something else), so this
+        // path is deliberately left untouched rather than rewired on a
+        // guess. A direct-pay purchase still won't produce an Order
+        // record — a known, separate gap from the wallet path above.
         <DirectPayFlow
           onSubmit={(buyerPhone) =>
             sdk.paymentGateway.requestDirectPurchase(listing.id, {
@@ -858,8 +889,8 @@ function BuyForm({
 
           {mutation.isError && (
             <p className="rounded-md border border-error/20 bg-error/5 px-3 py-2 text-xs text-error">
-              Couldn't complete the purchase. Check the wallet balance and try
-              again.
+              Couldn't complete the purchase. Something unexpected went wrong
+              — try again.
             </p>
           )}
         </>
