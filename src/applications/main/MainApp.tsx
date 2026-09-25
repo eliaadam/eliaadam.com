@@ -63,6 +63,7 @@ import { PaymentGatewaySettings } from "../../page/dashboard/admin/PaymentGatewa
 import { FulfillmentDashboard } from "../../page/dashboard/FulfillmentDashboard";
 import { MyFulfillments } from "../../page/dashboard/MyFulfillments";
 import { LogisticsDashboard } from "../../page/dashboard/LogisticsDashboard";
+import { Carriers } from "../../page/dashboard/Carriers";
 import { MyOrders } from "../../page/dashboard/MyOrders";
 import { Cart } from "../../page/dashboard/Cart";
 import { CartProvider } from "../../context/CartContext";
@@ -229,6 +230,7 @@ function MainApp() {
                       above. Matches LogisticsCapability's own
                       navigation().route exactly. */}
                     <Route path="logistics" element={<LogisticsDashboard />} />
+                    <Route path="carriers" element={<Carriers />} />
                     <Route path="admin/hub" element={<AdminHub />} />
                     <Route path="admin/actors" element={<Actors />} />
                     <Route

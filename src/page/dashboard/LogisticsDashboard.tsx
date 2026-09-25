@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Package, Truck } from "lucide-react";
 import {
@@ -9,6 +10,11 @@ import {
 } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
 import { useContainer } from "../../components/context/ContainerContext";
+import { FleetTab } from "./logistics/FleetTab";
+import { PersonnelTab } from "./logistics/PersonnelTab";
+import { TripsTab } from "./logistics/TripsTab";
+import { MyAssignmentsTab } from "./logistics/MyAssignmentsTab";
+import { CarrierProfileTab } from "./logistics/CarrierProfileTab";
 
 /**
  * Management view for capabilities.core.logistics — matches
@@ -55,28 +61,46 @@ const EVENT_STATUS_OPTIONS: ShipmentEventStatus[] = [
 
 export function LogisticsDashboard() {
   const { currentContainerId } = useContainer();
-  const [activeTab, setActiveTab] = useState<"seller" | "claim" | "carrier">(
-    "seller",
-  );
+  const [activeTab, setActiveTab] = useState<
+    | "seller"
+    | "claim"
+    | "carrier"
+    | "fleet"
+    | "personnel"
+    | "trips"
+    | "assignments"
+    | "profile"
+  >("seller");
 
   if (!currentContainerId) {
     return (
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Select a container first — shipments belong to whichever container
-        you're currently in, as either seller or carrier.
+        Select a container first — shipments belong to whichever
+        container you're currently in, as either seller or carrier.
       </p>
     );
   }
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-xl font-semibold tracking-tight">Logistics</h1>
-      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Track what this container needs delivered, browse jobs open to any
-        carrier, and manage what this container has taken on to deliver.
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Logistics</h1>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+            Track what this container needs delivered, run its own
+            fleet and personnel, and manage what it's taken on to
+            deliver.
+          </p>
+        </div>
+        <Link
+          to="/dashboard/carriers"
+          className="flex-none text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+        >
+          Browse carriers →
+        </Link>
+      </div>
 
-      <div className="mt-4 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="mt-4 overflow-x-auto border-b border-neutral-200 dark:border-neutral-800">
         <div className="flex gap-5">
           <TabButton
             active={activeTab === "seller"}
@@ -96,6 +120,36 @@ export function LogisticsDashboard() {
           >
             My deliveries
           </TabButton>
+          <TabButton
+            active={activeTab === "fleet"}
+            onClick={() => setActiveTab("fleet")}
+          >
+            Fleet
+          </TabButton>
+          <TabButton
+            active={activeTab === "personnel"}
+            onClick={() => setActiveTab("personnel")}
+          >
+            Personnel
+          </TabButton>
+          <TabButton
+            active={activeTab === "trips"}
+            onClick={() => setActiveTab("trips")}
+          >
+            Trips
+          </TabButton>
+          <TabButton
+            active={activeTab === "assignments"}
+            onClick={() => setActiveTab("assignments")}
+          >
+            My assignments
+          </TabButton>
+          <TabButton
+            active={activeTab === "profile"}
+            onClick={() => setActiveTab("profile")}
+          >
+            Carrier profile
+          </TabButton>
         </div>
       </div>
 
@@ -108,6 +162,15 @@ export function LogisticsDashboard() {
         )}
         {activeTab === "carrier" && (
           <CarrierShipmentsTab containerId={currentContainerId} />
+        )}
+        {activeTab === "fleet" && <FleetTab containerId={currentContainerId} />}
+        {activeTab === "personnel" && (
+          <PersonnelTab containerId={currentContainerId} />
+        )}
+        {activeTab === "trips" && <TripsTab containerId={currentContainerId} />}
+        {activeTab === "assignments" && <MyAssignmentsTab />}
+        {activeTab === "profile" && (
+          <CarrierProfileTab containerId={currentContainerId} />
         )}
       </div>
     </div>
@@ -151,7 +214,9 @@ function SellerShipmentsTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">
+        Loading…
+      </p>
     );
   }
 
@@ -300,7 +365,9 @@ function ClaimPoolTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">
+        Loading…
+      </p>
     );
   }
 
@@ -313,8 +380,8 @@ function ClaimPoolTab({ containerId }: { containerId: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-neutral-500 dark:text-neutral-500">
-        Open to any carrier — claiming acts on behalf of your currently selected
-        container.
+        Open to any carrier — claiming acts on behalf of your currently
+        selected container.
       </p>
       <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
         {shipments?.map((s) => (
@@ -395,7 +462,9 @@ function CarrierShipmentsTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">
+        Loading…
+      </p>
     );
   }
 
