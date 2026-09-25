@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, Receipt } from "lucide-react";
 import { sdk, type Order, type OrderStatus } from "../../lib/sdk";
+import { FulfillmentTracking } from "./FulfillmentTracking";
 
 /**
  * Buyer-side "My Orders" — the grouping view over one or more
@@ -11,6 +12,17 @@ import { sdk, type Order, type OrderStatus } from "../../lib/sdk";
  * purchase_id — not duplicated here (see capabilities.core.order's
  * own domain/entities.py module docstring on this "thin grouping,
  * not a re-implementation" design).
+ *
+ * Each line now deep-links into its own Fulfillment record, when one
+ * exists, via line_result.fulfillment_id (see capabilities.core.
+ * order's own OrderLineResult.fulfillment_id docstring for exactly
+ * how that gets there — captured from data order already received
+ * from surfacing.purchase() but previously discarded; no new
+ * surfacing endpoint was needed). fulfillment_id is only ever set
+ * for a core.inventory-backed purchase (the only source capability
+ * capabilities.core.fulfillment registers a handler for) — null for
+ * a subscription or any other source, in which case a line stays
+ * unexpandable.
  */
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
@@ -36,8 +48,8 @@ export function MyOrders() {
     <div className="max-w-xl">
       <h1 className="text-xl font-semibold tracking-tight">My orders</h1>
       <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Every checkout, grouped — drill into a line for the individual
-        purchase behind it.
+        Every checkout, grouped — drill into a line for the individual purchase
+        and delivery status behind it.
       </p>
 
       {isLoading && (
@@ -104,7 +116,10 @@ function OrderRow({ order }: { order: Order }) {
       {expanded && (
         <ul className="mt-3 flex flex-col gap-2 border-l border-neutral-200 pl-3 dark:border-neutral-800">
           {order.line_results.map((line, i) => (
-            <OrderLineRow key={line.purchase_id ?? `${order.id}-${i}`} line={line} />
+            <OrderLineRow
+              key={line.purchase_id ?? `${order.id}-${i}`}
+              line={line}
+            />
           ))}
         </ul>
       )}
@@ -113,6 +128,8 @@ function OrderRow({ order }: { order: Order }) {
 }
 
 function OrderLineRow({ line }: { line: Order["line_results"][number] }) {
+  const [showFulfillment, setShowFulfillment] = useState(false);
+
   const { data: listing } = useQuery({
     queryKey: ["surfacing", "listing", line.listing_id],
     queryFn: () => sdk.surfacing.getListing(line.listing_id),
@@ -121,25 +138,44 @@ function OrderLineRow({ line }: { line: Order["line_results"][number] }) {
   const isClean =
     line.purchase_status === "completed" ||
     line.purchase_status === "subscribed";
+  const canExpand = Boolean(line.fulfillment_id);
 
   return (
     <li className="text-xs">
-      <div className="flex items-center justify-between gap-2">
+      <div
+        className={`flex items-center justify-between gap-2 ${canExpand ? "cursor-pointer" : ""}`}
+        onClick={() => canExpand && setShowFulfillment((v) => !v)}
+      >
         <p className="truncate font-medium text-neutral-700 dark:text-neutral-300">
           {listing?.title ?? "Loading…"}
         </p>
-        <span
-          className={
-            isClean
-              ? "text-neutral-500 dark:text-neutral-500"
-              : "font-medium text-red-600 dark:text-red-400"
-          }
-        >
-          {line.purchase_status.replace("_", " ")}
-        </span>
+        <div className="flex flex-none items-center gap-1.5">
+          <span
+            className={
+              isClean
+                ? "text-neutral-500 dark:text-neutral-500"
+                : "font-medium text-red-600 dark:text-red-400"
+            }
+          >
+            {line.purchase_status.replace("_", " ")}
+          </span>
+          {canExpand &&
+            (showFulfillment ? (
+              <ChevronUp size={12} className="text-neutral-400" />
+            ) : (
+              <ChevronDown size={12} className="text-neutral-400" />
+            ))}
+        </div>
       </div>
+
       {!isClean && line.error && (
         <p className="mt-0.5 text-red-600 dark:text-red-400">{line.error}</p>
+      )}
+
+      {showFulfillment && line.fulfillment_id && (
+        <div className="mt-2">
+          <FulfillmentTracking fulfillmentId={line.fulfillment_id} />
+        </div>
       )}
     </li>
   );

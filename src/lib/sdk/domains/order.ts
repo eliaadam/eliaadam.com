@@ -14,13 +14,8 @@ import { api } from "../../query/Api";
  * `listItems()` — matching what the backend actually returns, not
  * pretending the generic unwrap handles it.
  *
- * NOTHING IN THIS CODEBASE CALLS `createOrder()` YET — the existing
- * "Buy" flow (Marketplace.tsx's own `BuyForm`) calls
- * `sdk.surfacing.purchase()` directly, the single-listing purchase
- * path this domain was built to sit ALONGSIDE (grouping one or more
- * such purchases into one checkout action), not replace. Wiring
- * `BuyForm` to this instead is a deliberate, separate decision, not
- * assumed here.
+ * `createOrder()` is now the real path Marketplace.tsx's own
+ * `BuyForm` calls, wired through from surfacing.purchase() directly.
  */
 
 export type OrderStatus = "completed" | "partially_failed" | "failed";
@@ -29,6 +24,17 @@ export interface OrderLineResult {
   listing_id: string;
   purchase_status: string;
   purchase_id: string | null;
+  /** Set only for a purchase backed by core.inventory (the only
+   * capability capabilities.core.fulfillment registers a handler
+   * for) — the id of the real Fulfillment record this line's
+   * purchase created, if any. null for anything else, including
+   * subscriptions. Lets a buyer drill straight from an order line
+   * into `sdk.fulfillment.getFulfillment(fulfillment_id)` without
+   * needing a purchase-detail endpoint that doesn't actually exist
+   * (surfacing's own urls.py has no single-purchase GET route at
+   * all — confirmed directly against the real source, not
+   * assumed). */
+  fulfillment_id: string | null;
   error: string | null;
 }
 

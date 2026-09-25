@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, PackageSearch } from "lucide-react";
+import { sdk, type Fulfillment } from "../../lib/sdk";
 import {
-  sdk,
-  type Fulfillment,
-  type FulfillmentStatus,
-} from "../../lib/sdk";
+  FULFILLMENT_STATUS_STYLES,
+  statusLabel,
+  FulfillmentDetail,
+} from "./FulfillmentTracking";
 
 /**
  * Buyer-side, read-only tracking view — the direct answer to "how do
@@ -15,6 +16,13 @@ import {
  * capabilities.core.logistics' own shipment_service.py) — nothing on
  * this page writes anything.
  *
+ * The expandable content itself (shipment tracking timeline / digital
+ * access detail dump) is the shared FulfillmentDetail component,
+ * extracted once MyOrders.tsx needed the same view via an order
+ * line's own fulfillment_id — this page still owns its own status
+ * badge in the row header (it already has the fetched Fulfillment
+ * object directly from listMyFulfillments(), no need to re-fetch).
+ *
  * digital's own "completed" detail payload is shown as a generic
  * key-value dump, not a polished "Download" button or similar — the
  * real shape of that payload (whatever listing.metadata carried
@@ -23,30 +31,6 @@ import {
  * Showing whatever keys are actually there is honest; guessing at a
  * specific key name like "download_url" would not be.
  */
-
-const STATUS_STYLES: Record<FulfillmentStatus, string> = {
-  completed: "bg-black text-white dark:bg-white dark:text-black",
-  in_progress:
-    "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
-  pending:
-    "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
-  failed: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
-};
-
-function statusLabel(item: Fulfillment): string {
-  if (item.status === "completed") {
-    if (item.fulfillment_type === "digital") return "access granted";
-    if (item.fulfillment_type === "physical") return "delivered";
-    return "completed";
-  }
-  if (item.status === "in_progress") {
-    if (item.fulfillment_type === "physical") return "shipping";
-    return "in progress";
-  }
-  if (item.status === "failed") return "needs attention";
-  if (item.fulfillment_type === "service") return "awaiting scheduling";
-  return "pending";
-}
 
 function typeLabel(type: Fulfillment["fulfillment_type"]): string {
   if (type === "digital") return "Digital";
@@ -66,8 +50,8 @@ export function MyFulfillments() {
         What you've bought
       </h1>
       <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Track access, service bookings, and deliveries for everything
-        you've purchased.
+        Track access, service bookings, and deliveries for everything you've
+        purchased.
       </p>
 
       {isLoading && (
@@ -109,13 +93,11 @@ function FulfillmentRow({ item }: { item: Fulfillment }) {
     typeof item.detail.shipment_id === "string"
       ? item.detail.shipment_id
       : null;
-
-  const digitalDetailEntries =
-    item.status === "completed" && item.fulfillment_type === "digital"
-      ? Object.entries(item.detail)
-      : [];
-
-  const canExpand = Boolean(shipmentId) || digitalDetailEntries.length > 0;
+  const hasDigitalDetail =
+    item.status === "completed" &&
+    item.fulfillment_type === "digital" &&
+    Object.keys(item.detail).length > 0;
+  const canExpand = Boolean(shipmentId) || hasDigitalDetail;
 
   return (
     <li className="px-4 py-3.5">
@@ -142,7 +124,7 @@ function FulfillmentRow({ item }: { item: Fulfillment }) {
 
         <div className="flex flex-none items-center gap-2">
           <span
-            className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[item.status]}`}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium ${FULFILLMENT_STATUS_STYLES[item.status]}`}
           >
             {statusLabel(item)}
           </span>
@@ -155,77 +137,11 @@ function FulfillmentRow({ item }: { item: Fulfillment }) {
         </div>
       </div>
 
-      {expanded && shipmentId && <ShipmentTracking shipmentId={shipmentId} />}
-
-      {expanded && digitalDetailEntries.length > 0 && (
-        <div className="mt-3 rounded-md border border-neutral-200 p-3 dark:border-neutral-800">
-          <dl className="flex flex-col gap-1">
-            {digitalDetailEntries.map(([key, value]) => (
-              <div key={key} className="flex gap-2 text-xs">
-                <dt className="flex-none font-medium text-neutral-500 dark:text-neutral-500">
-                  {key}
-                </dt>
-                <dd className="truncate text-neutral-700 dark:text-neutral-300">
-                  {typeof value === "string" ? value : JSON.stringify(value)}
-                </dd>
-              </div>
-            ))}
-          </dl>
+      {expanded && (
+        <div className="mt-3">
+          <FulfillmentDetail fulfillment={item} />
         </div>
       )}
     </li>
-  );
-}
-
-function ShipmentTracking({ shipmentId }: { shipmentId: string }) {
-  const { data: shipment } = useQuery({
-    queryKey: ["logistics", "shipment", shipmentId],
-    queryFn: () => sdk.logistics.getShipment(shipmentId),
-  });
-
-  const { data: events } = useQuery({
-    queryKey: ["logistics", "shipment-events", shipmentId],
-    queryFn: () => sdk.logistics.listShipmentEvents(shipmentId),
-  });
-
-  return (
-    <div className="mt-3 rounded-md border border-neutral-200 p-3 dark:border-neutral-800">
-      {shipment && (
-        <p className="text-xs font-medium">
-          Shipment status:{" "}
-          <span className="capitalize">
-            {shipment.status.replace("_", " ")}
-          </span>
-        </p>
-      )}
-
-      {events && events.length > 0 && (
-        <ol className="mt-2 flex flex-col gap-2 border-l border-neutral-200 pl-3 dark:border-neutral-800">
-          {events.map((e) => (
-            <li key={e.id} className="text-xs">
-              <p className="font-medium capitalize text-neutral-700 dark:text-neutral-300">
-                {e.status.replace("_", " ")}
-              </p>
-              {e.occurred_at && (
-                <p className="text-neutral-500 dark:text-neutral-500">
-                  {new Date(e.occurred_at).toLocaleString()}
-                </p>
-              )}
-              {e.note && (
-                <p className="mt-0.5 text-neutral-600 dark:text-neutral-400">
-                  {e.note}
-                </p>
-              )}
-            </li>
-          ))}
-        </ol>
-      )}
-
-      {events && events.length === 0 && (
-        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-500">
-          No tracking updates yet.
-        </p>
-      )}
-    </div>
   );
 }
