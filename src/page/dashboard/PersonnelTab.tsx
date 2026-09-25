@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, UserCog } from "lucide-react";
-import { sdk, type Operator, type OperatorStatus } from "../../../lib/sdk";
-import { useAuth } from "../../../components/context/Authcontext";
-
+import { useAuth } from "../../components/context/Authcontext";
+import { sdk } from "../../lib/sdk";
+import type { OperatorStatus, Operator } from "../../lib/sdk/domains/logistics";
+ 
 /**
  * Fleet-admin surface for Operator — registration, self-or-manage
  * updates, suspend/reactivate/deactivate. "My operator profile" sits

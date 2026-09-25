@@ -1,14 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Truck, Users, X } from "lucide-react";
-import {
-  sdk,
-  type TransportUnit,
-  type TransportUnitParticipantRole,
-  type TransportUnitStatus,
-} from "../../../lib/sdk";
-import { useAuth } from "../../../components/context/Authcontext";
-
+import type { TransportUnit, TransportUnitParticipantRole, TransportUnitStatus } from "../../lib/sdk/domains/logistics";
+import { sdk } from "../../lib/sdk";
+import { useAuth } from "../../components/context/Authcontext";
+ 
 /**
  * Fleet-admin surface for TransportUnit. Status updates
  * (maintenance/reactivate) are Ownership-OR-Authority — a real

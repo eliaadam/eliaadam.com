@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Route as RouteIcon, Truck } from "lucide-react";
-import { sdk, type Trip, type TripStatus } from "../../../lib/sdk";
+import type { Trip, TripStatus } from "../../lib/sdk/domains/logistics";
+import { sdk } from "../../lib/sdk";
+ 
 
 /**
  * Dispatcher surface for Trip (+ Route, folded into the same "trip"

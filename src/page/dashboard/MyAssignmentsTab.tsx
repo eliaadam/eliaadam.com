@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, PlayCircle, Truck, XCircle } from "lucide-react";
-import { sdk, type Trip, type TripStatus } from "../../../lib/sdk";
+import { sdk } from "../../lib/sdk";
+import type { TripStatus, Trip } from "../../lib/sdk/domains/logistics";
 
 /**
  * "My assignments" — actor-scoped (pattern #5), no permission or

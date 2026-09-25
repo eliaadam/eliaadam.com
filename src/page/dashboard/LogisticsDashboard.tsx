@@ -10,11 +10,12 @@ import {
 } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
 import { useContainer } from "../../components/context/ContainerContext";
-import { FleetTab } from "./logistics/FleetTab";
-import { PersonnelTab } from "./logistics/PersonnelTab";
-import { TripsTab } from "./logistics/TripsTab";
-import { MyAssignmentsTab } from "./logistics/MyAssignmentsTab";
-import { CarrierProfileTab } from "./logistics/CarrierProfileTab";
+import { CarrierProfileTab } from "./CarrierProfileTab";
+import { FleetTab } from "./FleetTab";
+import { MyAssignmentsTab } from "./MyAssignmentsTab";
+import { PersonnelTab } from "./PersonnelTab";
+import { TripsTab } from "./TripsTab";
+ 
 
 /**
  * Management view for capabilities.core.logistics — matches

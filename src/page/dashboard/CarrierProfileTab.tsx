@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "../../../lib/query/Api";
-import { sdk } from "../../../lib/sdk";
+import { ApiError } from "../../lib/query/Api";
+import { sdk } from "../../lib/sdk";
 
 /**
  * Manages this container's OWN public carrier-discovery profile — a
@@ -25,7 +25,11 @@ export function CarrierProfileTab({ containerId }: { containerId: string }) {
   const [description, setDescription] = useState("");
   const [editing, setEditing] = useState(false);
 
-  const { data: profile, isLoading, error } = useQuery({
+  const {
+    data: profile,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["logistics", "carrier-profile", containerId],
     queryFn: () => sdk.logistics.getCarrierProfileForContainer(containerId),
     retry: false,
@@ -64,9 +68,7 @@ export function CarrierProfileTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">
-        Loading…
-      </p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
     );
   }
 
@@ -76,8 +78,8 @@ export function CarrierProfileTab({ containerId }: { containerId: string }) {
         <div>
           <p className="text-sm font-medium">No carrier profile yet</p>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
-            Creating one makes this container discoverable in the public
-            carrier browse.
+            Creating one makes this container discoverable in the public carrier
+            browse.
           </p>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -101,8 +103,8 @@ export function CarrierProfileTab({ containerId }: { containerId: string }) {
         </button>
         {notLicensed && (
           <p className="text-xs text-red-600 dark:text-red-400">
-            This container doesn't have Logistics licensed yet — that's
-            required before a carrier profile can be created.
+            This container doesn't have Logistics licensed yet — that's required
+            before a carrier profile can be created.
           </p>
         )}
         {createMutation.isError && !notLicensed && (
