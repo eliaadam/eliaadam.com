@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../../components/context/Authcontext";
 import { ContainerProvider } from "../../components/context/ContainerContext";
+
 import { ThemeProvider } from "../../components/context/ThemeContext";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { DashboardLayout } from "../../components/layout/Dashboardlayout";
@@ -63,6 +64,8 @@ import { FulfillmentDashboard } from "../../page/dashboard/FulfillmentDashboard"
 import { MyFulfillments } from "../../page/dashboard/MyFulfillments";
 import { LogisticsDashboard } from "../../page/dashboard/LogisticsDashboard";
 import { MyOrders } from "../../page/dashboard/MyOrders";
+import { Cart } from "../../page/dashboard/Cart";
+import { CartProvider } from "../../context/CartContext";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -78,81 +81,82 @@ function MainApp() {
         <AuthProvider>
           <BrowserRouter>
             <ContainerProvider>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/docs" element={<DocsLayout />}>
-                  <Route
-                    index
-                    element={<Navigate to="account-creation" replace />}
-                  />
-                  <Route
-                    path="account-creation"
-                    element={<AccountCreationDoc />}
-                  />
-                  <Route
-                    path="container-instantiation"
-                    element={<ContainerInstantiationDoc />}
-                  />
-                  <Route path="credentials" element={<CredentialsDoc />} />
-                  <Route
-                    path="authentication"
-                    element={<AuthenticationDoc />}
-                  />
-                  <Route path="collection" element={<CollectionDoc />} />
-                  <Route path="idempotency" element={<IdempotencyDoc />} />
-                  <Route path="payouts" element={<PayoutsDoc />} />
-                </Route>
-                <Route path="/signin" element={<Signin />} />
-                <Route path="/signup" element={<Signup />} />
-                {/* Genuinely public — no auth, outside ProtectedRoute
+              <CartProvider>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/docs" element={<DocsLayout />}>
+                    <Route
+                      index
+                      element={<Navigate to="account-creation" replace />}
+                    />
+                    <Route
+                      path="account-creation"
+                      element={<AccountCreationDoc />}
+                    />
+                    <Route
+                      path="container-instantiation"
+                      element={<ContainerInstantiationDoc />}
+                    />
+                    <Route path="credentials" element={<CredentialsDoc />} />
+                    <Route
+                      path="authentication"
+                      element={<AuthenticationDoc />}
+                    />
+                    <Route path="collection" element={<CollectionDoc />} />
+                    <Route path="idempotency" element={<IdempotencyDoc />} />
+                    <Route path="payouts" element={<PayoutsDoc />} />
+                  </Route>
+                  <Route path="/signin" element={<Signin />} />
+                  <Route path="/signup" element={<Signup />} />
+                  {/* Genuinely public — no auth, outside ProtectedRoute
                     entirely. Matches "anonymous responses allowed" at
                     the platform level. */}
-                <Route path="/f/:formId" element={<PublicFormFill />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<Containers />} />
-                  <Route path="profile" element={<Profile />} />
+                  <Route path="/f/:formId" element={<PublicFormFill />} />
                   <Route
-                    path="containers/:containerId/members"
-                    element={<ContainerMembers />}
-                  />
-                  <Route
-                    path="containers/:containerId/join-requests"
-                    element={<JoinRequests />}
-                  />
-                  <Route
-                    path="subscribe/plan/:planId"
-                    element={<SubscribeToPlan />}
-                  />
-                  <Route
-                    path="containers/:containerId/settings"
-                    element={<ContainerSettings />}
-                  />
-                  <Route path="templates" element={<Templates />} />
-                  <Route
-                    path="templates/:templateCode/requests"
-                    element={<InstantiationRequests />}
-                  />
-                  <Route
-                    path="payment-reporting"
-                    element={<PaymentReporting />}
-                  />
-                  <Route
-                    path="payment-reporting/wallets/:walletId"
-                    element={<PaymentReportingWalletDetail />}
-                  />
-                  <Route path="invitations" element={<Invitations />} />
-                  <Route
-                    path="my-instantiation-requests"
-                    element={<MyInstantiationRequests />}
-                  />
-                  {/* Static "form" route takes priority over the
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route index element={<Containers />} />
+                    <Route path="profile" element={<Profile />} />
+                    <Route
+                      path="containers/:containerId/members"
+                      element={<ContainerMembers />}
+                    />
+                    <Route
+                      path="containers/:containerId/join-requests"
+                      element={<JoinRequests />}
+                    />
+                    <Route
+                      path="subscribe/plan/:planId"
+                      element={<SubscribeToPlan />}
+                    />
+                    <Route
+                      path="containers/:containerId/settings"
+                      element={<ContainerSettings />}
+                    />
+                    <Route path="templates" element={<Templates />} />
+                    <Route
+                      path="templates/:templateCode/requests"
+                      element={<InstantiationRequests />}
+                    />
+                    <Route
+                      path="payment-reporting"
+                      element={<PaymentReporting />}
+                    />
+                    <Route
+                      path="payment-reporting/wallets/:walletId"
+                      element={<PaymentReportingWalletDetail />}
+                    />
+                    <Route path="invitations" element={<Invitations />} />
+                    <Route
+                      path="my-instantiation-requests"
+                      element={<MyInstantiationRequests />}
+                    />
+                    {/* Static "form" route takes priority over the
                       dynamic :capabilityRoute catch-all below — React
                       Router ranks a literal segment above a param
                       segment regardless of declaration order. This is
@@ -162,91 +166,102 @@ function MainApp() {
                       licensed, so the sidebar link and this route
                       agree without needing to touch
                       CapabilityPlaceholder at all. */}
-                  <Route path="form" element={<Forms />} />
-                  <Route path="form/:formId" element={<FormEditor />} />
-                  <Route path="form/:formId/fill" element={<FormFill />} />
-                  <Route
-                    path="form/:formId/responses"
-                    element={<FormResponses />}
-                  />
-                  {/* Static "communication" route, same priority
+                    <Route path="form" element={<Forms />} />
+                    <Route path="form/:formId" element={<FormEditor />} />
+                    <Route path="form/:formId/fill" element={<FormFill />} />
+                    <Route
+                      path="form/:formId/responses"
+                      element={<FormResponses />}
+                    />
+                    {/* Static "communication" route, same priority
                       reasoning as "form" above. */}
-                  <Route path="communication" element={<Communication />} />
-                  <Route
-                    path="communication/:conversationId"
-                    element={<Communication />}
-                  />
-                  {/* Static "payment" route, same priority reasoning
+                    <Route path="communication" element={<Communication />} />
+                    <Route
+                      path="communication/:conversationId"
+                      element={<Communication />}
+                    />
+                    {/* Static "payment" route, same priority reasoning
                       as "form"/"communication" above. Now the single,
                       tabbed consolidation — see this file's own note
                       above on what moved inline. */}
-                  <Route path="payment" element={<Payment />} />
-                  <Route
-                    path="payment/wallets/:walletId"
-                    element={<PaymentWalletDetail />}
-                  />
-                  <Route path="payment-gateway" element={<PaymentGateway />} />
-                  {/* Static "inventory" route, same priority reasoning
+                    <Route path="payment" element={<Payment />} />
+                    <Route
+                      path="payment/wallets/:walletId"
+                      element={<PaymentWalletDetail />}
+                    />
+                    <Route
+                      path="payment-gateway"
+                      element={<PaymentGateway />}
+                    />
+                    {/* Static "inventory" route, same priority reasoning
                       as "payment"/"form"/"communication" above.
                       Matches InventoryCapability's own
                       navigation().route exactly. */}
-                  <Route path="inventory" element={<Inventory />} />
-                  {/* Static "events" route, same priority reasoning as
+                    <Route path="inventory" element={<Inventory />} />
+                    {/* Static "events" route, same priority reasoning as
                       "inventory"/"payment"/"form" above. Matches
                       EventsCapability's own navigation().route
                       exactly. */}
-                  <Route path="events" element={<Events />} />
-                  <Route path="subscription" element={<Subscription />} />
-                  <Route
-                    path="my-subscriptions"
-                    element={<MySubscriptions />}
-                  />
-                  <Route path="marketplace" element={<Marketplace />} />
-                  <Route path="my-purchases" element={<MyPurchases />} />
-                  <Route path="my-orders" element={<MyOrders />} />
-                  <Route path="my-fulfillments" element={<MyFulfillments />} />
-                  {/* Static "fulfillment" route, same priority
+                    <Route path="events" element={<Events />} />
+                    <Route path="subscription" element={<Subscription />} />
+                    <Route
+                      path="my-subscriptions"
+                      element={<MySubscriptions />}
+                    />
+                    <Route path="marketplace" element={<Marketplace />} />
+                    <Route path="cart" element={<Cart />} />
+                    <Route path="my-purchases" element={<MyPurchases />} />
+                    <Route path="my-orders" element={<MyOrders />} />
+                    <Route
+                      path="my-fulfillments"
+                      element={<MyFulfillments />}
+                    />
+                    {/* Static "fulfillment" route, same priority
                       reasoning as "inventory"/"events" above. Matches
                       FulfillmentCapability's own navigation().route
                       exactly. */}
-                  <Route
-                    path="fulfillment"
-                    element={<FulfillmentDashboard />}
-                  />
-                  {/* Static "logistics" route, same priority
+                    <Route
+                      path="fulfillment"
+                      element={<FulfillmentDashboard />}
+                    />
+                    {/* Static "logistics" route, same priority
                       reasoning as "fulfillment"/"inventory"/"events"
                       above. Matches LogisticsCapability's own
                       navigation().route exactly. */}
-                  <Route path="logistics" element={<LogisticsDashboard />} />
-                  <Route path="admin/hub" element={<AdminHub />} />
-                  <Route path="admin/actors" element={<Actors />} />
-                  <Route
-                    path="admin/containers"
-                    element={<ContainerHierarchy />}
-                  />
-                  <Route
-                    path="admin/all-containers"
-                    element={<AllContainers />}
-                  />
-                  <Route
-                    path="admin/license-container"
-                    element={<LicenseContainer />}
-                  />
-                  <Route path="admin/provisioning" element={<Provisioning />} />
-                  <Route
-                    path="admin/payment-gateway-approvals"
-                    element={<PaymentGatewayApprovals />}
-                  />
-                  <Route
-                    path="admin/payment-gateway-settings"
-                    element={<PaymentGatewaySettings />}
-                  />
-                  <Route
-                    path=":capabilityRoute"
-                    element={<CapabilityPlaceholder />}
-                  />
-                </Route>
-              </Routes>
+                    <Route path="logistics" element={<LogisticsDashboard />} />
+                    <Route path="admin/hub" element={<AdminHub />} />
+                    <Route path="admin/actors" element={<Actors />} />
+                    <Route
+                      path="admin/containers"
+                      element={<ContainerHierarchy />}
+                    />
+                    <Route
+                      path="admin/all-containers"
+                      element={<AllContainers />}
+                    />
+                    <Route
+                      path="admin/license-container"
+                      element={<LicenseContainer />}
+                    />
+                    <Route
+                      path="admin/provisioning"
+                      element={<Provisioning />}
+                    />
+                    <Route
+                      path="admin/payment-gateway-approvals"
+                      element={<PaymentGatewayApprovals />}
+                    />
+                    <Route
+                      path="admin/payment-gateway-settings"
+                      element={<PaymentGatewaySettings />}
+                    />
+                    <Route
+                      path=":capabilityRoute"
+                      element={<CapabilityPlaceholder />}
+                    />
+                  </Route>
+                </Routes>
+              </CartProvider>
             </ContainerProvider>
           </BrowserRouter>
         </AuthProvider>

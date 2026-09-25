@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -9,6 +10,7 @@ import {
   Plus,
   Search,
   ShoppingBag,
+  ShoppingCart,
 } from "lucide-react";
 import {
   sdk,
@@ -20,6 +22,7 @@ import { API_BASE_URL } from "../../lib/query/Api";
 import { getListingCardBody } from "../../lib/registries/listingCardRegistry";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageMarketplaceListings } from "../../lib/hooks/useCanManageMarketplaceListings";
+
 import { DirectPayFlow } from "../../components/payment-gateway/DirectPayFlow";
 
 import { cn } from "../../design-system/lib/utils";
@@ -41,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
+import { useCart } from "../../context/CartContext";
 
 const segmentedButtonClass =
   "rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors";
@@ -57,6 +61,7 @@ function formatPrice(price: number, currency: string) {
 export function Marketplace() {
   const { currentContainerId } = useContainer();
   const { data: canManage } = useCanManageMarketplaceListings();
+  const { totalCount: cartCount } = useCart();
 
   const [activeTab, setActiveTab] = useState<"manage" | "browse">("browse");
   const [showCreate, setShowCreate] = useState(false);
@@ -160,18 +165,33 @@ export function Marketplace() {
             </p>
           </div>
 
-          {showManageTab && (
-            <Button
-              type="button"
-              onClick={() => {
-                setActiveTab("manage");
-                setShowCreate(true);
-              }}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/dashboard/cart"
+              className="relative flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
             >
-              <Plus />
-              New listing
-            </Button>
-          )}
+              <ShoppingCart size={16} />
+              Cart
+              {cartCount > 0 && (
+                <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
+            {showManageTab && (
+              <Button
+                type="button"
+                onClick={() => {
+                  setActiveTab("manage");
+                  setShowCreate(true);
+                }}
+              >
+                <Plus />
+                New listing
+              </Button>
+            )}
+          </div>
         </header>
 
         {showManageTab && (
@@ -647,8 +667,16 @@ function DefaultListingCardBody({ listing }: { listing: Listing }) {
 
 function BrowseListingCard({ listing }: { listing: Listing }) {
   const [showBuy, setShowBuy] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const { addItem } = useCart();
 
   const CustomBody = getListingCardBody(listing.source_capability);
+
+  const handleAddToCart = () => {
+    addItem(listing);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1500);
+  };
 
   return (
     <Card className="flex flex-col overflow-hidden transition-shadow hover:shadow-md">
@@ -659,13 +687,23 @@ function BrowseListingCard({ listing }: { listing: Listing }) {
           <DefaultListingCardBody listing={listing} />
         )}
 
-        <div className="mt-auto pt-2">
+        <div className="mt-auto flex items-center gap-2 pt-2">
           {showBuy ? (
             <BuyForm listing={listing} onDone={() => setShowBuy(false)} />
           ) : (
-            <Button type="button" size="sm" onClick={() => setShowBuy(true)}>
-              {listing.pricing_mode === "free" ? "Get it free" : "Buy"}
-            </Button>
+            <>
+              <Button type="button" size="sm" onClick={() => setShowBuy(true)}>
+                {listing.pricing_mode === "free" ? "Get it free" : "Buy"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleAddToCart}
+              >
+                {justAdded ? "Added" : "Add to cart"}
+              </Button>
+            </>
           )}
         </div>
       </CardContent>
@@ -889,8 +927,8 @@ function BuyForm({
 
           {mutation.isError && (
             <p className="rounded-md border border-error/20 bg-error/5 px-3 py-2 text-xs text-error">
-              Couldn't complete the purchase. Something unexpected went wrong
-              — try again.
+              Couldn't complete the purchase. Something unexpected went wrong —
+              try again.
             </p>
           )}
         </>

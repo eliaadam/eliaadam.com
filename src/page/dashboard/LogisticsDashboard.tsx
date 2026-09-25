@@ -62,8 +62,8 @@ export function LogisticsDashboard() {
   if (!currentContainerId) {
     return (
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Select a container first — shipments belong to whichever
-        container you're currently in, as either seller or carrier.
+        Select a container first — shipments belong to whichever container
+        you're currently in, as either seller or carrier.
       </p>
     );
   }
@@ -72,9 +72,8 @@ export function LogisticsDashboard() {
     <div className="max-w-3xl">
       <h1 className="text-xl font-semibold tracking-tight">Logistics</h1>
       <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        Track what this container needs delivered, browse jobs open to
-        any carrier, and manage what this container has taken on to
-        deliver.
+        Track what this container needs delivered, browse jobs open to any
+        carrier, and manage what this container has taken on to deliver.
       </p>
 
       <div className="mt-4 border-b border-neutral-200 dark:border-neutral-800">
@@ -152,9 +151,7 @@ function SellerShipmentsTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">
-        Loading…
-      </p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
     );
   }
 
@@ -303,9 +300,7 @@ function ClaimPoolTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">
-        Loading…
-      </p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
     );
   }
 
@@ -318,8 +313,8 @@ function ClaimPoolTab({ containerId }: { containerId: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-neutral-500 dark:text-neutral-500">
-        Open to any carrier — claiming acts on behalf of your currently
-        selected container.
+        Open to any carrier — claiming acts on behalf of your currently selected
+        container.
       </p>
       <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
         {shipments?.map((s) => (
@@ -400,9 +395,7 @@ function CarrierShipmentsTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">
-        Loading…
-      </p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
     );
   }
 

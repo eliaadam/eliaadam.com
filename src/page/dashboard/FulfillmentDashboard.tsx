@@ -1,18 +1,32 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, PlayCircle, XCircle } from "lucide-react";
-import {
-  sdk,
-  type Fulfillment,
-  type FulfillmentStatus,
-} from "../../lib/sdk";
+import { sdk, type Fulfillment, type FulfillmentStatus } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
 import { useContainer } from "../../components/context/ContainerContext";
+import { FulfillmentDetail } from "./FulfillmentTracking";
 
 /**
  * Vendor-side management view for capabilities.core.fulfillment —
  * matches FulfillmentCapability's own navigation().route="fulfillment"
  * exactly (see domains/capability/manifests/fulfillment_capability.py).
+ *
+ * PHYSICAL FULFILLMENTS DEFER TO LOGISTICS ENTIRELY once a real
+ * shipment exists — start-progress/complete/fail are hidden for those
+ * (see isPhysicalWithShipment below), showing the live shipment
+ * status inline instead. Earlier versions of this dashboard showed
+ * these three actions for every fulfillment type uniformly, which let
+ * a vendor manually mark a physical fulfillment "completed" with a
+ * single click — completely bypassing the real, honest path (a
+ * carrier actually recording a "delivered" ShipmentEvent, which
+ * triggers logistics' own callback into fulfillment.complete()).
+ * That gave a physical shipment two independent, inconsistent paths
+ * to "completed": the real one and a shortcut that could fire before
+ * the shipment was ever even dispatched. digital/service are
+ * unaffected — digital is already terminal (completed) the instant
+ * it's created, so it never reached this branch anyway; service has
+ * no other path to completion at all and keeps the manual actions as
+ * its only route forward.
  *
  * PERMISSION GATING: no useCanManageFulfillment-style hook is used
  * here — I haven't confirmed one exists (unlike
@@ -62,8 +76,8 @@ export function FulfillmentDashboard() {
   if (!currentContainerId) {
     return (
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Select a container first — fulfillments belong to whichever
-        container you're currently in.
+        Select a container first — fulfillments belong to whichever container
+        you're currently in.
       </p>
     );
   }
@@ -71,16 +85,15 @@ export function FulfillmentDashboard() {
   const pending = fulfillments?.filter((f) => f.status === "pending") ?? [];
   const inProgress =
     fulfillments?.filter((f) => f.status === "in_progress") ?? [];
-  const completed =
-    fulfillments?.filter((f) => f.status === "completed") ?? [];
+  const completed = fulfillments?.filter((f) => f.status === "completed") ?? [];
   const failed = fulfillments?.filter((f) => f.status === "failed") ?? [];
 
   return (
     <div className="max-w-3xl">
       <h1 className="text-xl font-semibold tracking-tight">Fulfillment</h1>
       <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-        What this container owes its buyers — digital access, service
-        bookings, and physical shipments.
+        What this container owes its buyers — digital access, service bookings,
+        and physical shipments.
       </p>
 
       {forbiddenAction && (
@@ -104,8 +117,8 @@ export function FulfillmentDashboard() {
         <div className="mt-6 rounded-lg border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
           <p className="text-sm font-medium">No fulfillments yet</p>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
-            These are created automatically whenever a buyer purchases
-            something this container sells through the marketplace.
+            These are created automatically whenever a buyer purchases something
+            this container sells through the marketplace.
           </p>
         </div>
       )}
@@ -218,6 +231,9 @@ function FulfillmentRow({
   });
 
   const isTerminal = item.status === "completed" || item.status === "failed";
+  const isPhysicalWithShipment =
+    item.fulfillment_type === "physical" &&
+    typeof item.detail.shipment_id === "string";
 
   return (
     <li className="flex flex-col gap-3 px-4 py-3.5">
@@ -246,7 +262,7 @@ function FulfillmentRow({
             )}
         </div>
 
-        {!isTerminal && (
+        {!isTerminal && !isPhysicalWithShipment && (
           <div className="flex flex-none items-center gap-2">
             {item.status === "pending" && (
               <button
@@ -279,6 +295,18 @@ function FulfillmentRow({
           </div>
         )}
       </div>
+
+      {isPhysicalWithShipment && !isTerminal && (
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 p-2.5 dark:border-neutral-800 dark:bg-neutral-900/50">
+          <p className="text-xs text-neutral-500 dark:text-neutral-500">
+            Owned by Logistics from here — this completes automatically once the
+            carrier records delivery, not from this dashboard.
+          </p>
+          <div className="mt-2">
+            <FulfillmentDetail fulfillment={item} />
+          </div>
+        </div>
+      )}
 
       {showFailForm && (
         <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50/50 p-2.5 dark:border-red-900/40 dark:bg-red-900/10">
