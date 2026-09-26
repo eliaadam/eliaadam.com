@@ -2,12 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package } from "lucide-react";
-import {
-  sdk,
-  type Shipment,
-  type ShipmentEventStatus,
-  type ShipmentStatus,
-} from "../../lib/sdk";
+import { sdk, type Shipment, type ShipmentStatus } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
 import { useContainer } from "../../components/context/ContainerContext";
 import { FleetTab } from "./logistics/FleetTab";
@@ -15,6 +10,9 @@ import { PersonnelTab } from "./logistics/PersonnelTab";
 import { MyDeliveriesTab } from "./logistics/MyDeliveriesTab";
 
 import { CarrierProfileTab } from "./logistics/CarrierProfileTab";
+import { RoutesTab } from "./RoutesTab";
+import { MyAssignmentsTab } from "./MyAssignmentsTab";
+import { JobRequestsTab } from "./JobRequestsTab";
 
 /**
  * Management view for capabilities.core.logistics — matches
@@ -51,13 +49,6 @@ function statusClasses(status: ShipmentStatus): string {
   }
   return "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"; // assigned/picked_up/in_transit
 }
-
-const EVENT_STATUS_OPTIONS: ShipmentEventStatus[] = [
-  "picked_up",
-  "in_transit",
-  "delivered",
-  "failed",
-];
 
 export function LogisticsDashboard() {
   const { currentContainerId } = useContainer();

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Inbox } from "lucide-react";
-import { sdk, type CarrierJobRequest, type CarrierJobRequestStatus } from "../../../lib/sdk";
-
+import type { CarrierJobRequest, CarrierJobRequestStatus } from "../../lib/sdk/domains/logistics";
+import { sdk } from "../../lib/sdk";
+ 
 /**
  * A carrier container's own inbox — requests asking it to take on a
  * job, wrapping the platform's own shared request/approval primitive

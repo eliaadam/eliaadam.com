@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Plus, Route as RouteIcon, X } from "lucide-react";
-import { sdk, type Route } from "../../../lib/sdk";
+import { sdk } from "../../lib/sdk";
+import type { Route } from "../../lib/sdk/domains/logistics";
+ 
 
 /**
  * Standing fleet/personnel relationships per Route — "this operator
