@@ -13,9 +13,7 @@ import { useContainer } from "../../components/context/ContainerContext";
 import { FleetTab } from "./logistics/FleetTab";
 import { PersonnelTab } from "./logistics/PersonnelTab";
 import { MyDeliveriesTab } from "./logistics/MyDeliveriesTab";
-import { RoutesTab } from "./logistics/RoutesTab";
-import { MyAssignmentsTab } from "./logistics/MyAssignmentsTab";
-import { JobRequestsTab } from "./logistics/JobRequestsTab";
+ 
 import { CarrierProfileTab } from "./logistics/CarrierProfileTab";
 
 /**
