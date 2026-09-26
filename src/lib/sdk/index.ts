@@ -17,6 +17,7 @@ import { paymentReporting } from "./domains/paymentReporting";
 import { order } from "./domains/order";
 import { fulfillment } from "./domains/fulfillment";
 import { logistics } from "./domains/logistics";
+import { projects } from "./domains/projects";
 
 /**
  * Single entry point for every domain's API client.
@@ -47,7 +48,8 @@ export const sdk = {
   paymentReporting,
   order,
   fulfillment,
-  logistics
+  logistics,
+  projects
 };
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";

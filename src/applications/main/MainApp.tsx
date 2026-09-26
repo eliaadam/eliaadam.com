@@ -67,6 +67,9 @@ import { Carriers } from "../../page/dashboard/Carriers";
 import { MyOrders } from "../../page/dashboard/MyOrders";
 import { Cart } from "../../page/dashboard/Cart";
 import { CartProvider } from "../../context/CartContext";
+import { MyTasks } from "../../page/dashboard/MyTasks";
+import { ProjectsDashboard } from "../../page/dashboard/ProjectsDashboard";
+import { ProjectDetail } from "../../page/dashboard/ProjectDetail";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -157,6 +160,12 @@ function MainApp() {
                       path="my-instantiation-requests"
                       element={<MyInstantiationRequests />}
                     />
+                    <Route path="projects" element={<ProjectsDashboard />} />
+                    <Route
+                      path="projects/:projectId"
+                      element={<ProjectDetail />}
+                    />
+                    <Route path="my-tasks" element={<MyTasks />} />
                     {/* Static "form" route takes priority over the
                       dynamic :capabilityRoute catch-all below — React
                       Router ranks a literal segment above a param
