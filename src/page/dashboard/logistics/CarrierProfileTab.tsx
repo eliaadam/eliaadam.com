@@ -32,8 +32,8 @@ export function CarrierAvatar({
   avatarUrl,
   size = 36,
 }: {
-  displayName: string;
-  avatarUrl: string | null;
+  displayName: string | null | undefined;
+  avatarUrl: string | null | undefined;
   size?: number;
 }) {
   if (avatarUrl) {
@@ -46,7 +46,13 @@ export function CarrierAvatar({
       />
     );
   }
-  const initial = displayName.trim().charAt(0).toUpperCase() || "?";
+  // displayName is typed as required string on CarrierProfile, but
+  // that's a compile-time promise only — a legacy profile (backfilled
+  // with "" by migration 0005, not undefined) or a genuinely
+  // malformed response can still hand this undefined/null/"" at
+  // runtime, and this component must not crash the whole page over
+  // one missing field.
+  const initial = (displayName ?? "").trim().charAt(0).toUpperCase();
   return (
     <div
       style={{ width: size, height: size }}
@@ -334,7 +340,7 @@ function EditProfileForm({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
-  const [displayName, setDisplayName] = useState(profile.display_name);
+  const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? "");
   const [description, setDescription] = useState(profile.description);
 
