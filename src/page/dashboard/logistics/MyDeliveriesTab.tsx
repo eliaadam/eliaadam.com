@@ -8,13 +8,9 @@ import {
   Route as RouteIcon,
   Truck,
 } from "lucide-react";
-import {
-  sdk,
-  type Shipment,
-  type ShipmentEventStatus,
-  type Trip,
-  type TripStatus,
-} from "../../../lib/sdk";
+import { sdk, type Shipment, type ShipmentEventStatus } from "../../../lib/sdk";
+import { MessageButton } from "../../../components/messaging/MessageButton";
+import type { Trip, TripStatus } from "../../../lib/sdk/domains/logistics";
 
 /**
  * The unified carrier-side "what this container has taken on to
@@ -113,8 +109,8 @@ export function MyDeliveriesTab({ containerId }: { containerId: string }) {
 
       {trips && trips.length === 0 && !showCreateTrip && (
         <p className="text-xs text-neutral-500 dark:text-neutral-500">
-          No trips yet — group several shipments into one manifest, or
-          just assign shipments directly below.
+          No trips yet — group several shipments into one manifest, or just
+          assign shipments directly below.
         </p>
       )}
 
@@ -252,6 +248,14 @@ function TripGroupRow({ trip }: { trip: Trip }) {
         )}
       </div>
 
+      <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+        <MessageButton
+          containerId={trip.container_id}
+          otherActorId={trip.operator_actor_id}
+          label="Message operator"
+        />
+      </div>
+
       {showFailForm && (
         <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50/50 p-2.5 dark:border-red-900/40 dark:bg-red-900/10">
           <input
@@ -370,6 +374,11 @@ function DirectShipmentRow({ shipment }: { shipment: Shipment }) {
 
         {!isTerminal && (
           <div className="flex flex-none items-center gap-2">
+            <MessageButton
+              containerId={shipment.carrier_container_id!}
+              otherActorId={shipment.buyer_actor_id}
+              label="Message buyer"
+            />
             {!shipment.assigned_driver_actor_id && (
               <button
                 type="button"
@@ -538,11 +547,10 @@ function CreateTripForm({
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
       <p className="rounded-md border border-amber-200 bg-amber-50/50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/10 dark:text-amber-300">
-        Only shipments currently published to the claim pool can be
-        added to a trip — this is the only way to see genuinely
-        unassigned shipments right now. Ask the selling container to
-        publish for claim first if you don't see what you're looking
-        for.
+        Only shipments currently published to the claim pool can be added to a
+        trip — this is the only way to see genuinely unassigned shipments right
+        now. Ask the selling container to publish for claim first if you don't
+        see what you're looking for.
       </p>
 
       <div className="grid grid-cols-2 gap-3">
@@ -665,8 +673,8 @@ function CreateTripForm({
         </button>
         {mutation.isError && (
           <p className="text-xs text-red-600 dark:text-red-400">
-            Couldn't create this trip — one of the selected shipments may
-            no longer be available.
+            Couldn't create this trip — one of the selected shipments may no
+            longer be available.
           </p>
         )}
       </div>

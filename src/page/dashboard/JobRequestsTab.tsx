@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Inbox } from "lucide-react";
-import type { CarrierJobRequest, CarrierJobRequestStatus } from "../../lib/sdk/domains/logistics";
+import type {
+  CarrierJobRequest,
+  CarrierJobRequestStatus,
+} from "../../lib/sdk/domains/logistics";
 import { sdk } from "../../lib/sdk";
- 
+import { MessageButton } from "../../components/messaging/MessageButton";
+
 /**
  * A carrier container's own inbox — requests asking it to take on a
  * job, wrapping the platform's own shared request/approval primitive
@@ -151,31 +155,38 @@ function RequestRow({ request }: { request: CarrierJobRequest }) {
           )}
         </div>
 
-        {request.status === "pending" && (
-          <div className="flex flex-none items-center gap-2">
-            <button
-              type="button"
-              onClick={() => approveMutation.mutate()}
-              disabled={approveMutation.isPending}
-              className={primaryButtonClass}
-            >
-              {approveMutation.isPending ? "Approving…" : "Approve"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowRejectForm((v) => !v)}
-              className="rounded-md px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
-            >
-              Reject
-            </button>
-          </div>
-        )}
+        <div className="flex flex-none items-center gap-2">
+          <MessageButton
+            containerId={request.target_id}
+            otherActorId={request.requester_actor_id}
+            label="Message"
+          />
+          {request.status === "pending" && (
+            <>
+              <button
+                type="button"
+                onClick={() => approveMutation.mutate()}
+                disabled={approveMutation.isPending}
+                className={primaryButtonClass}
+              >
+                {approveMutation.isPending ? "Approving…" : "Approve"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRejectForm((v) => !v)}
+                className="rounded-md px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+              >
+                Reject
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {approveMutation.isError && (
         <p className="text-xs text-red-600 dark:text-red-400">
-          Couldn't approve this request — the referenced shipment may
-          no longer be available.
+          Couldn't approve this request — the referenced shipment may no longer
+          be available.
         </p>
       )}
 

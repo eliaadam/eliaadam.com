@@ -1,30 +1,5 @@
 import { api } from "../../query/Api";
-
-/**
- * Typed client for `capabilities.core.communication`'s REST API
- * (`/api/communication/...`).
- *
- * Every endpoint here is enforced server-side via BOTH a container-level
- * Authority `require_permission` check AND a per-record participant/role
- * check in the application layer — a 403 from either is reported
- * identically. The acting actor is always resolved from the bearer
- * token, NOT from a request body field, so none of these functions take
- * an `actorId` for the CALLER's own identity. `addParticipant` /
- * `removeParticipant` / `setParticipantRole` still take an `actorId`
- * because that identifies who's being acted upon, not who's acting.
- *
- * Response shapes: list endpoints return `{"data": [...]}` (auto-
- * unwrapped by `api.get()`); single-item endpoints return the
- * projection flattened directly, no wrapper.
- *
- * Known interface-layer gaps (see API reference):
- * - No realtime transport — polling only.
- * - `message.view` gates both sending and reading messages; there's no
- *   distinct "send" permission wired up yet despite existing in the
- *   manifest.
- * - Search (`listMessages` with `q`) is `icontains`, not indexed.
- */
-
+ 
 export type ConversationType = "direct" | "group";
 export type ParticipantRole = "member" | "moderator" | "admin";
 export type ConversationStatus = "active" | "archived";

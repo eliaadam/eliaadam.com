@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Send, Truck } from "lucide-react";
-import {
-  sdk,
-  type CarrierJobRequestStatus,
-  type CarrierProfile,
-} from "../../lib/sdk";
+import { sdk } from "../../lib/sdk";
 import { useAuth } from "../../components/context/Authcontext";
 import { useContainer } from "../../components/context/ContainerContext";
+import { MessageButton } from "../../components/messaging/MessageButton";
+import type {
+  CarrierJobRequestStatus,
+  CarrierProfile,
+} from "../../lib/sdk/domains/logistics";
+import { CarrierAvatar } from "./logistics/CarrierProfileTab";
 
 /**
  * The public carrier-discovery browse — open to any authenticated
@@ -90,11 +92,20 @@ export function Carriers() {
                       : "Existing shipment"}{" "}
                     → carrier {r.target_id}
                   </span>
-                  <span
-                    className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClasses(r.status)}`}
-                  >
-                    {r.status}
-                  </span>
+                  <div className="flex flex-none items-center gap-2">
+                    {r.decided_by_actor_id && (
+                      <MessageButton
+                        containerId={r.target_id}
+                        otherActorId={r.decided_by_actor_id}
+                        label="Message"
+                      />
+                    )}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClasses(r.status)}`}
+                    >
+                      {r.status}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -140,13 +151,22 @@ function CarrierRow({ carrier }: { carrier: CarrierProfile }) {
   return (
     <li className="flex flex-col gap-3 px-4 py-3.5">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm text-neutral-700 dark:text-neutral-300">
-            {carrier.description}
-          </p>
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
-            {carrier.transport_modes.join(", ")}
-          </p>
+        <div className="flex min-w-0 items-start gap-2.5">
+          <CarrierAvatar
+            displayName={carrier.display_name}
+            avatarUrl={carrier.avatar_url}
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">
+              {carrier.display_name}
+            </p>
+            <p className="mt-0.5 text-sm text-neutral-700 dark:text-neutral-300">
+              {carrier.description}
+            </p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-500">
+              {carrier.transport_modes.join(", ")}
+            </p>
+          </div>
         </div>
         <button
           type="button"
@@ -288,8 +308,7 @@ function RequestCarrierForm({
       ) : (
         <div className="flex flex-col gap-2">
           <p className="text-[11px] text-neutral-500 dark:text-neutral-500">
-            No existing shipment — one is created only if this carrier
-            accepts.
+            No existing shipment — one is created only if this carrier accepts.
           </p>
           <input
             className={inputClass}

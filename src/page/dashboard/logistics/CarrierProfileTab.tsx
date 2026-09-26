@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Truck } from "lucide-react";
 import { ApiError } from "../../../lib/query/Api";
-import { sdk, type CarrierProfile } from "../../../lib/sdk";
+import { sdk } from "../../../lib/sdk";
+import type { CarrierProfile } from "../../../lib/sdk/domains/logistics";
 
 /**
  * Manages this container's OWN carrier-discovery profiles — a
@@ -12,6 +13,10 @@ import { sdk, type CarrierProfile } from "../../../lib/sdk";
  * domain enforced exactly one per container; that constraint has
  * been dropped entirely (see the backend's own CarrierProfileState
  * module docstring).
+ *
+ * display_name/avatar_url give a profile a real identity in the
+ * public browse — before this, a carrier card showed only what it
+ * does (transport_modes/description), not who it is.
  */
 
 const inputClass =
@@ -21,6 +26,36 @@ const primaryButtonClass =
   "rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black";
 
 const TRANSPORT_MODE_OPTIONS = ["land", "sea", "air"];
+
+export function CarrierAvatar({
+  displayName,
+  avatarUrl,
+  size = 36,
+}: {
+  displayName: string;
+  avatarUrl: string | null;
+  size?: number;
+}) {
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        style={{ width: size, height: size }}
+        className="flex-none rounded-full object-cover"
+      />
+    );
+  }
+  const initial = displayName.trim().charAt(0).toUpperCase() || "?";
+  return (
+    <div
+      style={{ width: size, height: size }}
+      className="flex flex-none items-center justify-center rounded-full bg-neutral-200 text-xs font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+    >
+      {initial || <Truck size={14} />}
+    </div>
+  );
+}
 
 export function CarrierProfileTab({ containerId }: { containerId: string }) {
   const [showCreate, setShowCreate] = useState(false);
@@ -36,9 +71,8 @@ export function CarrierProfileTab({ containerId }: { containerId: string }) {
         <div>
           <p className="text-sm font-medium">Carrier profiles</p>
           <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-500">
-            Each profile is an independent listing in the public
-            carrier browse — one per service line, if you run more
-            than one.
+            Each profile is an independent listing in the public carrier browse
+            — one per service line, if you run more than one.
           </p>
         </div>
         <button
@@ -67,8 +101,8 @@ export function CarrierProfileTab({ containerId }: { containerId: string }) {
       {profiles && profiles.length === 0 && !showCreate && (
         <div className="rounded-lg border border-dashed border-neutral-300 p-8 text-center dark:border-neutral-700">
           <p className="text-sm text-neutral-500 dark:text-neutral-500">
-            No carrier profiles yet — create one to appear in the
-            public carrier browse.
+            No carrier profiles yet — create one to appear in the public carrier
+            browse.
           </p>
         </div>
       )}
@@ -113,17 +147,28 @@ function ProfileCard({ profile }: { profile: CarrierProfile }) {
 
   return (
     <li className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      <div className="flex items-center justify-between">
-        <span
-          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-            profile.status === "active"
-              ? "bg-neutral-100 text-black dark:bg-neutral-900 dark:text-white"
-              : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
-          }`}
-        >
-          {profile.status}
-        </span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <CarrierAvatar
+            displayName={profile.display_name}
+            avatarUrl={profile.avatar_url}
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">
+              {profile.display_name}
+            </p>
+            <span
+              className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                profile.status === "active"
+                  ? "bg-neutral-100 text-black dark:bg-neutral-900 dark:text-white"
+                  : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+              }`}
+            >
+              {profile.status}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-none items-center gap-2">
           <button
             type="button"
             onClick={() => setEditing(true)}
@@ -170,14 +215,18 @@ function CreateProfileForm({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
+  const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [transportMode, setTransportMode] = useState("land");
   const [description, setDescription] = useState("");
 
   const mutation = useMutation({
     mutationFn: () =>
       sdk.logistics.createCarrierProfile(containerId, {
+        display_name: displayName,
         transport_modes: [transportMode],
         description,
+        avatar_url: avatarUrl || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -192,8 +241,32 @@ function CreateProfileForm({
     mutation.error instanceof ApiError &&
     mutation.error.status === 409;
 
+  const canSubmit = Boolean(displayName.trim() && description.trim());
+
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Display name
+        </label>
+        <input
+          className={inputClass}
+          placeholder="How this profile appears in the browse…"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Avatar URL (optional)
+        </label>
+        <input
+          className={inputClass}
+          placeholder="https://…"
+          value={avatarUrl}
+          onChange={(e) => setAvatarUrl(e.target.value)}
+        />
+      </div>
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
           Mode
@@ -225,7 +298,7 @@ function CreateProfileForm({
         <button
           type="button"
           onClick={() => mutation.mutate()}
-          disabled={!description.trim() || mutation.isPending}
+          disabled={!canSubmit || mutation.isPending}
           className={primaryButtonClass}
         >
           {mutation.isPending ? "Creating…" : "Create profile"}
@@ -240,8 +313,8 @@ function CreateProfileForm({
       </div>
       {notLicensed && (
         <p className="text-xs text-red-600 dark:text-red-400">
-          This container doesn't have Logistics licensed yet — that's
-          required before a carrier profile can be created.
+          This container doesn't have Logistics licensed yet — that's required
+          before a carrier profile can be created.
         </p>
       )}
       {mutation.isError && !notLicensed && (
@@ -261,12 +334,16 @@ function EditProfileForm({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
+  const [displayName, setDisplayName] = useState(profile.display_name);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? "");
   const [description, setDescription] = useState(profile.description);
 
   const mutation = useMutation({
     mutationFn: () =>
       sdk.logistics.updateCarrierProfile(profile.id, {
+        display_name: displayName,
         description,
+        avatar_url: avatarUrl || undefined,
         transport_modes: profile.transport_modes,
       }),
     onSuccess: () => {
@@ -281,6 +358,27 @@ function EditProfileForm({
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Display name
+        </label>
+        <input
+          className={inputClass}
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Avatar URL
+        </label>
+        <input
+          className={inputClass}
+          placeholder="https://…"
+          value={avatarUrl}
+          onChange={(e) => setAvatarUrl(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
           Description
         </label>
         <textarea
@@ -293,7 +391,9 @@ function EditProfileForm({
         <button
           type="button"
           onClick={() => mutation.mutate()}
-          disabled={!description.trim() || mutation.isPending}
+          disabled={
+            !displayName.trim() || !description.trim() || mutation.isPending
+          }
           className={primaryButtonClass}
         >
           {mutation.isPending ? "Saving…" : "Save"}

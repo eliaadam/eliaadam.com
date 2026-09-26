@@ -176,8 +176,10 @@ export type CarrierProfileStatus = "active" | "inactive";
 export interface CarrierProfile {
   id: string;
   container_id: string;
+  display_name: string;
   transport_modes: string[];
   description: string;
+  avatar_url: string | null;
   status: CarrierProfileStatus;
   created_at: string | null;
   updated_at: string | null;
@@ -636,13 +638,17 @@ function failTrip(tripId: string, reason?: string): Promise<Trip> {
 // -- Carrier profiles ------------------------------------------------
 
 export interface CreateCarrierProfileInput {
+  display_name: string;
   transport_modes: string[];
   description: string;
+  avatar_url?: string;
 }
 
 export interface UpdateCarrierProfileInput {
+  display_name?: string;
   transport_modes?: string[];
   description?: string;
+  avatar_url?: string;
 }
 
 /** The public carrier-discovery browse — open to any authenticated
