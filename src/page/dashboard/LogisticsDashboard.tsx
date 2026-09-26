@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Package, Truck } from "lucide-react";
+import { Package } from "lucide-react";
 import {
   sdk,
   type Shipment,
@@ -10,12 +10,13 @@ import {
 } from "../../lib/sdk";
 import { ApiError } from "../../lib/query/Api";
 import { useContainer } from "../../components/context/ContainerContext";
-import { CarrierProfileTab } from "./CarrierProfileTab";
-import { FleetTab } from "./FleetTab";
-import { MyAssignmentsTab } from "./MyAssignmentsTab";
-import { PersonnelTab } from "./PersonnelTab";
-import { TripsTab } from "./TripsTab";
- 
+import { FleetTab } from "./logistics/FleetTab";
+import { PersonnelTab } from "./logistics/PersonnelTab";
+import { MyDeliveriesTab } from "./logistics/MyDeliveriesTab";
+import { RoutesTab } from "./logistics/RoutesTab";
+import { MyAssignmentsTab } from "./logistics/MyAssignmentsTab";
+import { JobRequestsTab } from "./logistics/JobRequestsTab";
+import { CarrierProfileTab } from "./logistics/CarrierProfileTab";
 
 /**
  * Management view for capabilities.core.logistics — matches
@@ -65,19 +66,20 @@ export function LogisticsDashboard() {
   const [activeTab, setActiveTab] = useState<
     | "seller"
     | "claim"
-    | "carrier"
+    | "deliveries"
     | "fleet"
     | "personnel"
-    | "trips"
+    | "routes"
     | "assignments"
+    | "requests"
     | "profile"
   >("seller");
 
   if (!currentContainerId) {
     return (
       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Select a container first — shipments belong to whichever
-        container you're currently in, as either seller or carrier.
+        Select a container first — shipments belong to whichever container
+        you're currently in, as either seller or carrier.
       </p>
     );
   }
@@ -88,9 +90,8 @@ export function LogisticsDashboard() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Logistics</h1>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            Track what this container needs delivered, run its own
-            fleet and personnel, and manage what it's taken on to
-            deliver.
+            Track what this container needs delivered, run its own fleet and
+            personnel, and manage what it's taken on to deliver.
           </p>
         </div>
         <Link
@@ -116,8 +117,8 @@ export function LogisticsDashboard() {
             Claim pool
           </TabButton>
           <TabButton
-            active={activeTab === "carrier"}
-            onClick={() => setActiveTab("carrier")}
+            active={activeTab === "deliveries"}
+            onClick={() => setActiveTab("deliveries")}
           >
             My deliveries
           </TabButton>
@@ -134,16 +135,22 @@ export function LogisticsDashboard() {
             Personnel
           </TabButton>
           <TabButton
-            active={activeTab === "trips"}
-            onClick={() => setActiveTab("trips")}
+            active={activeTab === "routes"}
+            onClick={() => setActiveTab("routes")}
           >
-            Trips
+            Routes
           </TabButton>
           <TabButton
             active={activeTab === "assignments"}
             onClick={() => setActiveTab("assignments")}
           >
             My assignments
+          </TabButton>
+          <TabButton
+            active={activeTab === "requests"}
+            onClick={() => setActiveTab("requests")}
+          >
+            Job requests
           </TabButton>
           <TabButton
             active={activeTab === "profile"}
@@ -161,15 +168,20 @@ export function LogisticsDashboard() {
         {activeTab === "claim" && (
           <ClaimPoolTab containerId={currentContainerId} />
         )}
-        {activeTab === "carrier" && (
-          <CarrierShipmentsTab containerId={currentContainerId} />
+        {activeTab === "deliveries" && (
+          <MyDeliveriesTab containerId={currentContainerId} />
         )}
         {activeTab === "fleet" && <FleetTab containerId={currentContainerId} />}
         {activeTab === "personnel" && (
           <PersonnelTab containerId={currentContainerId} />
         )}
-        {activeTab === "trips" && <TripsTab containerId={currentContainerId} />}
+        {activeTab === "routes" && (
+          <RoutesTab containerId={currentContainerId} />
+        )}
         {activeTab === "assignments" && <MyAssignmentsTab />}
+        {activeTab === "requests" && (
+          <JobRequestsTab containerId={currentContainerId} />
+        )}
         {activeTab === "profile" && (
           <CarrierProfileTab containerId={currentContainerId} />
         )}
@@ -215,9 +227,7 @@ function SellerShipmentsTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">
-        Loading…
-      </p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
     );
   }
 
@@ -366,9 +376,7 @@ function ClaimPoolTab({ containerId }: { containerId: string }) {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">
-        Loading…
-      </p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
     );
   }
 
@@ -381,8 +389,8 @@ function ClaimPoolTab({ containerId }: { containerId: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-neutral-500 dark:text-neutral-500">
-        Open to any carrier — claiming acts on behalf of your currently
-        selected container.
+        Open to any carrier — claiming acts on behalf of your currently selected
+        container.
       </p>
       <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
         {shipments?.map((s) => (
@@ -449,198 +457,6 @@ function ClaimableShipmentRow({
       >
         {claimMutation.isPending ? "Claiming…" : "Claim"}
       </button>
-    </li>
-  );
-}
-
-// ── Tab: My deliveries (carrier side) ───────────────────────────
-
-function CarrierShipmentsTab({ containerId }: { containerId: string }) {
-  const { data: shipments, isLoading } = useQuery({
-    queryKey: ["logistics", "as-carrier", containerId],
-    queryFn: () => sdk.logistics.listForContainerAsCarrier(containerId),
-  });
-
-  if (isLoading) {
-    return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">
-        Loading…
-      </p>
-    );
-  }
-
-  if (shipments && shipments.length === 0) {
-    return (
-      <EmptyState message="Nothing taken on yet — assigned or claimed shipments will show up here." />
-    );
-  }
-
-  return (
-    <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-      {shipments?.map((s) => (
-        <CarrierShipmentRow key={s.id} shipment={s} />
-      ))}
-    </ul>
-  );
-}
-
-function CarrierShipmentRow({ shipment }: { shipment: Shipment }) {
-  const queryClient = useQueryClient();
-  const [showDriverForm, setShowDriverForm] = useState(false);
-  const [driverActorId, setDriverActorId] = useState("");
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [eventStatus, setEventStatus] =
-    useState<ShipmentEventStatus>("picked_up");
-  const [eventNote, setEventNote] = useState("");
-
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["logistics", "as-carrier"] });
-    queryClient.invalidateQueries({
-      queryKey: ["logistics", "shipment-events", shipment.id],
-    });
-  };
-
-  const assignDriverMutation = useMutation({
-    mutationFn: () => sdk.logistics.assignDriver(shipment.id, driverActorId),
-    onSuccess: () => {
-      setShowDriverForm(false);
-      setDriverActorId("");
-      invalidate();
-    },
-  });
-
-  const recordEventMutation = useMutation({
-    mutationFn: () =>
-      sdk.logistics.recordShipmentEvent(
-        shipment.id,
-        eventStatus,
-        eventNote || undefined,
-      ),
-    onSuccess: () => {
-      setShowEventForm(false);
-      setEventNote("");
-      invalidate();
-    },
-  });
-
-  const isTerminal =
-    shipment.status === "delivered" || shipment.status === "failed";
-
-  return (
-    <li className="flex flex-col gap-3 px-4 py-3.5">
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span
-              className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClasses(shipment.status)}`}
-            >
-              {shipment.status.replace("_", " ")}
-            </span>
-          </div>
-          <p className="mt-1 truncate text-xs text-neutral-500 dark:text-neutral-500">
-            Buyer {shipment.buyer_actor_id}
-            {shipment.assigned_driver_actor_id &&
-              ` · Driver ${shipment.assigned_driver_actor_id}`}
-          </p>
-        </div>
-
-        {!isTerminal && (
-          <div className="flex flex-none items-center gap-2">
-            {!shipment.assigned_driver_actor_id && (
-              <button
-                type="button"
-                onClick={() => setShowDriverForm((v) => !v)}
-                className="rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
-              >
-                Assign driver…
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowEventForm((v) => !v)}
-              className={primaryButtonClass}
-            >
-              <span className="flex items-center gap-1">
-                <Truck size={12} />
-                Update tracking
-              </span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {showDriverForm && (
-        <div className="flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-2.5 dark:border-neutral-800 dark:bg-neutral-900/50">
-          <input
-            className={inputClass}
-            placeholder="Driver actor id…"
-            value={driverActorId}
-            onChange={(e) => setDriverActorId(e.target.value)}
-            autoFocus
-          />
-          <button
-            type="button"
-            onClick={() => assignDriverMutation.mutate()}
-            disabled={!driverActorId.trim() || assignDriverMutation.isPending}
-            className={`flex-none ${primaryButtonClass}`}
-          >
-            {assignDriverMutation.isPending ? "Assigning…" : "Assign"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDriverForm(false)}
-            className="flex-none text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {showEventForm && (
-        <div className="flex flex-col gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-2.5 dark:border-neutral-800 dark:bg-neutral-900/50">
-          <div className="flex items-center gap-2">
-            <select
-              className={`${inputClass} max-w-[9rem]`}
-              value={eventStatus}
-              onChange={(e) =>
-                setEventStatus(e.target.value as ShipmentEventStatus)
-              }
-            >
-              {EVENT_STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s.replace("_", " ")}
-                </option>
-              ))}
-            </select>
-            <input
-              className={inputClass}
-              placeholder="Note (optional)…"
-              value={eventNote}
-              onChange={(e) => setEventNote(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => recordEventMutation.mutate()}
-              disabled={recordEventMutation.isPending}
-              className={primaryButtonClass}
-            >
-              <span className="flex items-center gap-1">
-                <CheckCircle2 size={12} />
-                {recordEventMutation.isPending ? "Saving…" : "Record"}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowEventForm(false)}
-              className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </li>
   );
 }

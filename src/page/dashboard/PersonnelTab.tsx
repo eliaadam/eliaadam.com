@@ -4,7 +4,7 @@ import { Plus, UserCog } from "lucide-react";
 import { useAuth } from "../../components/context/Authcontext";
 import { sdk } from "../../lib/sdk";
 import type { OperatorStatus, Operator } from "../../lib/sdk/domains/logistics";
- 
+
 /**
  * Fleet-admin surface for Operator — registration, self-or-manage
  * updates, suspend/reactivate/deactivate. "My operator profile" sits

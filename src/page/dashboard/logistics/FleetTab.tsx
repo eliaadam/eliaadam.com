@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Truck, Users, X } from "lucide-react";
-import type { TransportUnit, TransportUnitParticipantRole, TransportUnitStatus } from "../../lib/sdk/domains/logistics";
-import { sdk } from "../../lib/sdk";
-import { useAuth } from "../../components/context/Authcontext";
- 
+import {
+  sdk,
+  type TransportUnit,
+  type TransportUnitParticipantRole,
+  type TransportUnitStatus,
+} from "../../../lib/sdk";
+import { useAuth } from "../../../components/context/Authcontext";
+
 /**
  * Fleet-admin surface for TransportUnit. Status updates
  * (maintenance/reactivate) are Ownership-OR-Authority — a real
@@ -337,6 +341,8 @@ function ParticipantsSection({
   );
 }
 
+const TRANSPORT_MODE_OPTIONS = ["land", "sea", "air"];
+
 function RegisterUnitForm({
   containerId,
   onDone,
@@ -345,6 +351,7 @@ function RegisterUnitForm({
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
+  const [transportMode, setTransportMode] = useState("land");
   const [identifier, setIdentifier] = useState("");
   const [makeModel, setMakeModel] = useState("");
   const [capacityDescription, setCapacityDescription] = useState("");
@@ -352,7 +359,7 @@ function RegisterUnitForm({
   const mutation = useMutation({
     mutationFn: () =>
       sdk.logistics.registerTransportUnit(containerId, {
-        transport_mode: "land",
+        transport_mode: transportMode,
         identifier,
         make_model: makeModel,
         capacity_description: capacityDescription,
@@ -371,7 +378,23 @@ function RegisterUnitForm({
     <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
-          Plate number
+          Mode
+        </label>
+        <select
+          className={inputClass}
+          value={transportMode}
+          onChange={(e) => setTransportMode(e.target.value)}
+        >
+          {TRANSPORT_MODE_OPTIONS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Identifier (plate, hull, or tail number)
         </label>
         <input
           className={inputClass}

@@ -107,6 +107,56 @@ export interface Route {
   created_at: string | null;
 }
 
+/** A STANDING relationship — "this operator regularly runs this
+ * route" — independent of any specific Trip. Distinct from a single
+ * Trip's own one-off route_id choice. */
+export interface RouteOperatorAssignment {
+  id: string;
+  route_id: string;
+  operator_actor_id: string;
+  added_by_actor_id: string | null;
+  assigned_at: string | null;
+}
+
+export interface RouteTransportUnitAssignment {
+  id: string;
+  route_id: string;
+  transport_unit_id: string;
+  added_by_actor_id: string | null;
+  assigned_at: string | null;
+}
+
+export type CarrierJobRequestStatus = "pending" | "approved" | "rejected";
+
+/** An existing-shipment request: {"kind": "existing_shipment",
+ * "shipment_id": "..."}. A custom-job request — no existing Shipment
+ * at all, created fresh on approval — carries pickup/dropoff/cargo
+ * description directly instead. */
+export type CarrierJobRequestPayload =
+  | { kind: "existing_shipment"; shipment_id: string }
+  | {
+      kind: "custom_job";
+      seller_container_id: string;
+      buyer_actor_id: string;
+      pickup_description?: string;
+      dropoff_description?: string;
+      cargo_description?: string;
+    };
+
+export interface CarrierJobRequest {
+  id: string;
+  request_type: string;
+  requester_actor_id: string;
+  target_type: string;
+  target_id: string;
+  status: CarrierJobRequestStatus;
+  payload: Record<string, unknown>;
+  requested_at: string | null;
+  decided_at: string | null;
+  decided_by_actor_id: string | null;
+  decision_reason: string | null;
+}
+
 export type TripStatus = "planned" | "in_transit" | "completed" | "failed";
 
 export interface Trip {
@@ -460,6 +510,66 @@ async function listRoutes(containerId: string): Promise<Route[]> {
   return result.results;
 }
 
+async function listRouteOperatorAssignments(
+  routeId: string,
+): Promise<RouteOperatorAssignment[]> {
+  const result = await api.get<{ results: RouteOperatorAssignment[] }>(
+    `/api/logistics/routes/${routeId}/operators/`,
+  );
+  return result.results;
+}
+
+/** A STANDING assignment — persists independent of any specific
+ * Trip. See RouteOperatorAssignment's own type docstring. */
+function assignRouteOperator(
+  routeId: string,
+  operatorActorId: string,
+): Promise<RouteOperatorAssignment> {
+  return api.post<RouteOperatorAssignment>(
+    `/api/logistics/routes/${routeId}/operators/`,
+    { operator_actor_id: operatorActorId },
+  );
+}
+
+function removeRouteOperatorAssignment(
+  routeId: string,
+  operatorActorId: string,
+): Promise<{ removed: boolean }> {
+  return api.post<{ removed: boolean }>(
+    `/api/logistics/routes/${routeId}/operators/remove/`,
+    { operator_actor_id: operatorActorId },
+  );
+}
+
+async function listRouteTransportUnitAssignments(
+  routeId: string,
+): Promise<RouteTransportUnitAssignment[]> {
+  const result = await api.get<{ results: RouteTransportUnitAssignment[] }>(
+    `/api/logistics/routes/${routeId}/transport-units/`,
+  );
+  return result.results;
+}
+
+function assignRouteTransportUnit(
+  routeId: string,
+  transportUnitId: string,
+): Promise<RouteTransportUnitAssignment> {
+  return api.post<RouteTransportUnitAssignment>(
+    `/api/logistics/routes/${routeId}/transport-units/`,
+    { transport_unit_id: transportUnitId },
+  );
+}
+
+function removeRouteTransportUnitAssignment(
+  routeId: string,
+  transportUnitId: string,
+): Promise<{ removed: boolean }> {
+  return api.post<{ removed: boolean }>(
+    `/api/logistics/routes/${routeId}/transport-units/remove/`,
+    { transport_unit_id: transportUnitId },
+  );
+}
+
 // -- Trips -------------------------------------------------------------
 
 export interface CreateTripInput {
@@ -537,7 +647,10 @@ export interface UpdateCarrierProfileInput {
 
 /** The public carrier-discovery browse — open to any authenticated
  * actor. See the backend's own domain/entities.py module docstring
- * on why this is not a real surfacing.Listing browse. */
+ * on why this is not a real surfacing.Listing browse. Now returns
+ * every active profile across every carrier — a container running
+ * several independent service lines shows up once per profile, not
+ * once per container. */
 async function listCarriers(): Promise<CarrierProfile[]> {
   const result = await api.get<{ results: CarrierProfile[] }>(
     "/api/logistics/carriers/",
@@ -545,49 +658,128 @@ async function listCarriers(): Promise<CarrierProfile[]> {
   return result.results;
 }
 
-/** Public, same as listCarriers — a 404 means this container has no
- * carrier profile yet, not necessarily an error worth surfacing as
- * one. */
-function getCarrierProfileForContainer(
+/** Public, same as listCarriers. A container may have more than one
+ * profile (one per independent service line) — this returns all of
+ * them, not a single Optional. */
+async function listCarrierProfilesForContainer(
   containerId: string,
-): Promise<CarrierProfile> {
-  return api.get<CarrierProfile>(
-    `/api/logistics/containers/${containerId}/carrier-profile/`,
+): Promise<CarrierProfile[]> {
+  const result = await api.get<{ results: CarrierProfile[] }>(
+    `/api/logistics/containers/${containerId}/carrier-profiles/`,
   );
+  return result.results;
+}
+
+function getCarrierProfile(profileId: string): Promise<CarrierProfile> {
+  return api.get<CarrierProfile>(`/api/logistics/carrier-profiles/${profileId}/`);
 }
 
 /** Authority-only (carrier_profile.manage). Requires core.logistics
  * to actually be licensed on this container — a 409 here most likely
- * means it isn't. */
+ * means it isn't. No uniqueness check — a container may create as
+ * many independent profiles as it wants. */
 function createCarrierProfile(
   containerId: string,
   input: CreateCarrierProfileInput,
 ): Promise<CarrierProfile> {
   return api.post<CarrierProfile>(
-    `/api/logistics/containers/${containerId}/carrier-profile/`,
+    `/api/logistics/containers/${containerId}/carrier-profiles/`,
     input,
   );
 }
 
 function updateCarrierProfile(
-  containerId: string,
+  profileId: string,
   input: UpdateCarrierProfileInput,
 ): Promise<CarrierProfile> {
   return api.post<CarrierProfile>(
-    `/api/logistics/containers/${containerId}/carrier-profile/update/`,
+    `/api/logistics/carrier-profiles/${profileId}/update/`,
     input,
   );
 }
 
-function deactivateCarrierProfile(containerId: string): Promise<CarrierProfile> {
+/** Hides this ONE profile from the public browse — any other profile
+ * the same container has stays unaffected. */
+function deactivateCarrierProfile(profileId: string): Promise<CarrierProfile> {
   return api.post<CarrierProfile>(
-    `/api/logistics/containers/${containerId}/carrier-profile/deactivate/`,
+    `/api/logistics/carrier-profiles/${profileId}/deactivate/`,
   );
 }
 
-function reactivateCarrierProfile(containerId: string): Promise<CarrierProfile> {
+function reactivateCarrierProfile(profileId: string): Promise<CarrierProfile> {
   return api.post<CarrierProfile>(
-    `/api/logistics/containers/${containerId}/carrier-profile/reactivate/`,
+    `/api/logistics/carrier-profiles/${profileId}/reactivate/`,
+  );
+}
+
+// -- Carrier job requests ------------------------------------------------
+//
+// Wraps the platform's own shared request/approval primitive
+// (domains.requests) rather than a parallel mechanism — "request a
+// specific carrier to take a job, they accept or decline." Open to
+// any authenticated actor to CREATE (same "anyone may initiate" shape
+// purchasing itself already has); approving/rejecting requires
+// shipment.manage on the target carrier container.
+
+/** Open to any authenticated actor — requesting a carrier doesn't
+ * require any special role, same as browsing the marketplace. */
+function createCarrierJobRequest(
+  carrierContainerId: string,
+  payload: CarrierJobRequestPayload,
+): Promise<CarrierJobRequest> {
+  return api.post<CarrierJobRequest>("/api/logistics/carrier-job-requests/", {
+    carrier_container_id: carrierContainerId,
+    payload,
+  });
+}
+
+/** Every request this actor themselves has made, actor-scoped. */
+async function listMyCarrierJobRequests(): Promise<CarrierJobRequest[]> {
+  const result = await api.get<{ results: CarrierJobRequest[] }>(
+    "/api/logistics/carrier-job-requests/mine/",
+  );
+  return result.results;
+}
+
+/** A carrier's own inbox — pending (and past) requests asking this
+ * container to take on a job. */
+async function listCarrierJobRequestsForCarrier(
+  containerId: string,
+  status?: CarrierJobRequestStatus,
+): Promise<CarrierJobRequest[]> {
+  const query = status ? `?status=${status}` : "";
+  const result = await api.get<{ results: CarrierJobRequest[] }>(
+    `/api/logistics/containers/${containerId}/carrier-job-requests/${query}`,
+  );
+  return result.results;
+}
+
+function getCarrierJobRequest(requestId: string): Promise<CarrierJobRequest> {
+  return api.get<CarrierJobRequest>(
+    `/api/logistics/carrier-job-requests/${requestId}/`,
+  );
+}
+
+/** Triggers the actual assignment/creation atomically with the
+ * approval itself — if it fails (e.g. the referenced shipment was
+ * claimed by someone else in the meantime), the whole thing rolls
+ * back and the request stays pending. Returns both the updated
+ * request and the resulting Shipment. */
+function approveCarrierJobRequest(
+  requestId: string,
+): Promise<{ request: CarrierJobRequest; shipment: Shipment }> {
+  return api.post<{ request: CarrierJobRequest; shipment: Shipment }>(
+    `/api/logistics/carrier-job-requests/${requestId}/approve/`,
+  );
+}
+
+function rejectCarrierJobRequest(
+  requestId: string,
+  reason?: string,
+): Promise<CarrierJobRequest> {
+  return api.post<CarrierJobRequest>(
+    `/api/logistics/carrier-job-requests/${requestId}/reject/`,
+    reason ? { reason } : undefined,
   );
 }
 
@@ -624,6 +816,12 @@ export const logistics = {
   removeTransportUnitParticipant,
   createRoute,
   listRoutes,
+  listRouteOperatorAssignments,
+  assignRouteOperator,
+  removeRouteOperatorAssignment,
+  listRouteTransportUnitAssignments,
+  assignRouteTransportUnit,
+  removeRouteTransportUnitAssignment,
   createTrip,
   listTrips,
   listMyTrips,
@@ -632,9 +830,16 @@ export const logistics = {
   completeTrip,
   failTrip,
   listCarriers,
-  getCarrierProfileForContainer,
+  listCarrierProfilesForContainer,
+  getCarrierProfile,
   createCarrierProfile,
   updateCarrierProfile,
   deactivateCarrierProfile,
   reactivateCarrierProfile,
+  createCarrierJobRequest,
+  listMyCarrierJobRequests,
+  listCarrierJobRequestsForCarrier,
+  getCarrierJobRequest,
+  approveCarrierJobRequest,
+  rejectCarrierJobRequest,
 };
