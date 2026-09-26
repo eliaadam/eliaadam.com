@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Search, ShoppingBag } from "lucide-react";
 import { type Listing, type ListingCategory } from "../../../lib/sdk";
 import { getListingCardBody } from "../../../lib/registries/listingCardRegistry";
-import { useCart } from "../../../components/context/CartContext";
+
 import { cn } from "../../../design-system/lib/utils";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent } from "../../../components/ui/card";
@@ -11,6 +11,8 @@ import { Separator } from "../../../components/ui/separator";
 import { ListingImageCarousel } from "./ListingImageCarousel";
 import { BuyForm } from "./BuyForm";
 import { formatPrice } from "./shared";
+import { useCart } from "../../../context/CartContext";
+import { MessageContainerButton } from "../../../components/messaging/MessageContainerOwnerButton";
 
 /** Split out of what used to be one large Marketplace.tsx. */
 
@@ -207,6 +209,10 @@ function BrowseListingCard({ listing }: { listing: Listing }) {
               >
                 {justAdded ? "Added" : "Add to cart"}
               </Button>
+              <MessageContainerButton
+                containerId={listing.container_id}
+                label="Message seller"
+              />
             </>
           )}
         </div>

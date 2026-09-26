@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Send, Truck } from "lucide-react";
-import { sdk } from "../../lib/sdk";
+
 import { useAuth } from "../../components/context/Authcontext";
 import { useContainer } from "../../components/context/ContainerContext";
+import { CarrierAvatar } from "./logistics/CarrierProfileTab";
 import { MessageButton } from "../../components/messaging/MessageButton";
 import type {
   CarrierJobRequestStatus,
   CarrierProfile,
 } from "../../lib/sdk/domains/logistics";
-import { CarrierAvatar } from "./logistics/CarrierProfileTab";
+import { sdk } from "../../lib/sdk";
+import { MessageContainerButton } from "../../components/messaging/MessageContainerOwnerButton";
 
 /**
  * The public carrier-discovery browse — open to any authenticated
@@ -168,14 +170,17 @@ function CarrierRow({ carrier }: { carrier: CarrierProfile }) {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowRequestForm((v) => !v)}
-          className={`flex flex-none items-center gap-1 ${primaryButtonClass}`}
-        >
-          <Send size={12} />
-          {showRequestForm ? "Cancel" : "Request"}
-        </button>
+        <div className="flex flex-none items-center gap-2">
+          <MessageContainerButton containerId={carrier.container_id} />
+          <button
+            type="button"
+            onClick={() => setShowRequestForm((v) => !v)}
+            className={`flex items-center gap-1 ${primaryButtonClass}`}
+          >
+            <Send size={12} />
+            {showRequestForm ? "Cancel" : "Request"}
+          </button>
+        </div>
       </div>
 
       {showRequestForm && (
