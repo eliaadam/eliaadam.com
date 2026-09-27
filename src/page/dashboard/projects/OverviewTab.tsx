@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Project, ProjectStatus } from "../../../lib/sdk/domains/projects";
-import { sdk } from "../../../lib/sdk";
- 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { sdk, type Project, type ProjectStatus } from "../../../lib/sdk";
+
 /**
  * Project details, edit form, and lifecycle transitions. Every
  * transition button shows regardless of viewer — the backend's own
@@ -88,6 +87,8 @@ export function OverviewTab({ project }: { project: Project }) {
           Edit
         </button>
       </div>
+
+      <HealthSummary projectId={project.id} />
 
       <div className="grid grid-cols-2 gap-4 text-sm">
         {project.goals && (
@@ -233,6 +234,81 @@ export function OverviewTab({ project }: { project: Project }) {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+function HealthSummary({ projectId }: { projectId: string }) {
+  const { data: health } = useQuery({
+    queryKey: ["projects", "health", projectId],
+    queryFn: () => sdk.projects.getProjectHealth(projectId),
+  });
+
+  const { data: criticalPath } = useQuery({
+    queryKey: ["projects", "critical-path", projectId],
+    queryFn: () => sdk.projects.getCriticalPath(projectId),
+  });
+
+  if (!health) return null;
+
+  const spentPercent =
+    health.budget.planned_amount && health.budget.planned_amount > 0
+      ? Math.round(
+          (health.budget.spent_amount / health.budget.planned_amount) * 100,
+        )
+      : null;
+
+  return (
+    <div className="grid grid-cols-3 gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+      <div>
+        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Task completion
+        </p>
+        <p className="mt-1 text-lg font-semibold">
+          {health.task_completion.percent}%
+        </p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-500">
+          {health.task_completion.done}/{health.task_completion.total} tasks
+        </p>
+      </div>
+      <div>
+        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Budget
+        </p>
+        {health.budget.planned_amount != null ? (
+          <>
+            <p className="mt-1 text-lg font-semibold">{spentPercent}%</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
+              {health.budget.currency}{" "}
+              {(health.budget.spent_amount / 100).toFixed(2)} of{" "}
+              {(health.budget.planned_amount / 100).toFixed(2)}
+            </p>
+          </>
+        ) : (
+          <p className="mt-1 text-sm text-neutral-400 dark:text-neutral-600">
+            No budget set
+          </p>
+        )}
+      </div>
+      <div>
+        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+          Logged hours
+        </p>
+        <p className="mt-1 text-lg font-semibold">{health.logged_hours}h</p>
+      </div>
+
+      {criticalPath && criticalPath.path.length > 0 && (
+        <div className="col-span-3 border-t border-neutral-200 pt-3 dark:border-neutral-800">
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+            Critical path — {criticalPath.total_hours.toFixed(1)}h across{" "}
+            {criticalPath.path.length} task{criticalPath.path.length === 1 ? "" : "s"}
+          </p>
+          <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-600">
+            Every dependency is treated as "must finish before" for this
+            estimate — see the Tasks tab for the full dependency graph.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

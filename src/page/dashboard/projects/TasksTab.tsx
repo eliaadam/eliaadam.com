@@ -8,12 +8,7 @@ import {
   Plus,
   X,
 } from "lucide-react";
-import type {
-  Priority,
-  Task,
-  TaskStatus,
-} from "../../../lib/sdk/domains/projects";
-import { sdk } from "../../../lib/sdk";
+import { sdk, type Priority, type Task, type TaskStatus } from "../../../lib/sdk";
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
@@ -113,9 +108,7 @@ function TaskRow({ task, projectId }: { task: Task; projectId: string }) {
   const queryClient = useQueryClient();
 
   const invalidate = () =>
-    queryClient.invalidateQueries({
-      queryKey: ["projects", "tasks", projectId],
-    });
+    queryClient.invalidateQueries({ queryKey: ["projects", "tasks", projectId] });
 
   const startMutation = useMutation({
     mutationFn: () => sdk.projects.startTask(task.id),
@@ -167,13 +160,10 @@ function TaskRow({ task, projectId }: { task: Task; projectId: string }) {
               </span>
             </div>
             <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-500">
-              {task.assignee_actor_id
-                ? `Assigned to ${task.assignee_actor_id}`
-                : "Unassigned"}
+              {task.assignee_actor_id ? `Assigned to ${task.assignee_actor_id}` : "Unassigned"}
               {task.checklist_progress.total > 0 &&
                 ` · ${task.checklist_progress.done}/${task.checklist_progress.total} checklist`}
-              {task.due_date &&
-                ` · due ${new Date(task.due_date).toLocaleDateString()}`}
+              {task.due_date && ` · due ${new Date(task.due_date).toLocaleDateString()}`}
             </p>
           </div>
         </div>
@@ -247,6 +237,7 @@ function TaskRow({ task, projectId }: { task: Task; projectId: string }) {
           )}
           <AssigneeEditor task={task} projectId={projectId} />
           <ChecklistEditor task={task} projectId={projectId} />
+          <TimeTrackingSection task={task} />
           <DependenciesSection taskId={task.id} />
           <SubtasksSection parentTask={task} projectId={projectId} />
         </div>
@@ -342,17 +333,10 @@ function ChecklistEditor({
                 type="checkbox"
                 checked={item.done}
                 onChange={(e) =>
-                  toggleMutation.mutate({
-                    itemId: item.id,
-                    done: e.target.checked,
-                  })
+                  toggleMutation.mutate({ itemId: item.id, done: e.target.checked })
                 }
               />
-              <span
-                className={
-                  item.done ? "flex-1 text-neutral-400 line-through" : "flex-1"
-                }
-              >
+              <span className={item.done ? "flex-1 text-neutral-400 line-through" : "flex-1"}>
                 {item.text}
               </span>
               <button
@@ -383,6 +367,124 @@ function ChecklistEditor({
           Add
         </button>
       </div>
+    </div>
+  );
+}
+
+function TimeTrackingSection({ task }: { task: Task }) {
+  const queryClient = useQueryClient();
+  const [showLogForm, setShowLogForm] = useState(false);
+  const [durationMinutes, setDurationMinutes] = useState("");
+  const [note, setNote] = useState("");
+
+  const { data: entries } = useQuery({
+    queryKey: ["projects", "time-entries", task.id],
+    queryFn: () => sdk.projects.listTimeEntriesForTask(task.id),
+  });
+
+  const runningEntry = entries?.find((e) => e.is_running);
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({
+      queryKey: ["projects", "time-entries", task.id],
+    });
+
+  const startMutation = useMutation({
+    mutationFn: () => sdk.projects.startTimeEntry(task.id),
+    onSuccess: invalidate,
+  });
+  const stopMutation = useMutation({
+    mutationFn: (id: string) => sdk.projects.stopTimeEntry(id),
+    onSuccess: invalidate,
+  });
+  const logMutation = useMutation({
+    mutationFn: () =>
+      sdk.projects.logTimeEntry(task.id, {
+        duration_minutes: Number(durationMinutes),
+        note: note || undefined,
+      }),
+    onSuccess: () => {
+      setDurationMinutes("");
+      setNote("");
+      setShowLogForm(false);
+      invalidate();
+    },
+  });
+
+  const totalMinutes = (entries ?? []).reduce(
+    (sum, e) => sum + (e.duration_minutes ?? 0),
+    0,
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="flex items-center justify-between text-xs font-medium text-neutral-500 dark:text-neutral-500">
+        <span>Time logged</span>
+        {task.estimated_hours != null && (
+          <span>
+            {(totalMinutes / 60).toFixed(1)}h / {task.estimated_hours}h estimated
+          </span>
+        )}
+        {task.estimated_hours == null && totalMinutes > 0 && (
+          <span>{(totalMinutes / 60).toFixed(1)}h logged</span>
+        )}
+      </p>
+
+      <div className="flex items-center gap-2">
+        {runningEntry ? (
+          <button
+            type="button"
+            onClick={() => stopMutation.mutate(runningEntry.id)}
+            disabled={stopMutation.isPending}
+            className="rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-60"
+          >
+            Stop timer
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => startMutation.mutate()}
+            disabled={startMutation.isPending}
+            className={secondaryButtonClass}
+          >
+            Start timer
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setShowLogForm((v) => !v)}
+          className={secondaryButtonClass}
+        >
+          {showLogForm ? "Cancel" : "Log time manually"}
+        </button>
+      </div>
+
+      {showLogForm && (
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min="1"
+            className={`${inputClass} max-w-[8rem] text-xs`}
+            placeholder="Minutes"
+            value={durationMinutes}
+            onChange={(e) => setDurationMinutes(e.target.value)}
+          />
+          <input
+            className={`${inputClass} text-xs`}
+            placeholder="Note (optional)…"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => logMutation.mutate()}
+            disabled={!durationMinutes || logMutation.isPending}
+            className={secondaryButtonClass}
+          >
+            Log
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -425,8 +527,7 @@ function DependenciesSection({ taskId }: { taskId: string }) {
           {dependencies.map((d) => (
             <li key={d.id} className="flex items-center gap-2 text-xs">
               <span className="flex-1 truncate">
-                Task {d.depends_on_task_id} (
-                {d.dependency_type.replace(/_/g, " ")})
+                Task {d.depends_on_task_id} ({d.dependency_type.replace(/_/g, " ")})
               </span>
               <button
                 type="button"
@@ -458,8 +559,8 @@ function DependenciesSection({ taskId }: { taskId: string }) {
       </div>
       {addMutation.isError && (
         <p className="text-xs text-red-600 dark:text-red-400">
-          Couldn't add this dependency — it may create a cycle, or the tasks may
-          be in different projects.
+          Couldn't add this dependency — it may create a cycle, or the tasks
+          may be in different projects.
         </p>
       )}
     </div>
@@ -581,9 +682,7 @@ function CreateTaskForm({
         milestone_id: milestoneId || undefined,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["projects", "tasks", projectId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["projects", "tasks", projectId] });
       onDone();
     },
   });

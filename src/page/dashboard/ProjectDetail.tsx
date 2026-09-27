@@ -5,19 +5,21 @@ import { sdk } from "../../lib/sdk";
 import { OverviewTab } from "./projects/OverviewTab";
 import { MilestonesTab } from "./projects/MilestonesTab";
 import { TasksTab } from "./projects/TasksTab";
+import { RisksTab } from "./projects/RisksTab";
+import { BudgetTab } from "./projects/BudgetTab";
 import { ActivityTab } from "./projects/ActivityTab";
 
 /**
  * One project's own page — routed at /dashboard/projects/:projectId.
  * A project's content is substantial enough (milestones, tasks,
- * activity) to warrant its own page with sub-tabs rather than
- * expanding inline in the list view.
+ * risks, budget, activity) to warrant its own page with sub-tabs
+ * rather than expanding inline in the list view.
  */
 
 export function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "milestones" | "tasks" | "activity"
+    "overview" | "milestones" | "tasks" | "risks" | "budget" | "activity"
   >("overview");
 
   const { data: project, isLoading } = useQuery({
@@ -30,9 +32,7 @@ export function ProjectDetail() {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500 dark:text-neutral-500">
-        Loading…
-      </p>
+      <p className="text-sm text-neutral-500 dark:text-neutral-500">Loading…</p>
     );
   }
 
@@ -74,6 +74,18 @@ export function ProjectDetail() {
             Tasks
           </TabButton>
           <TabButton
+            active={activeTab === "risks"}
+            onClick={() => setActiveTab("risks")}
+          >
+            Risks
+          </TabButton>
+          <TabButton
+            active={activeTab === "budget"}
+            onClick={() => setActiveTab("budget")}
+          >
+            Budget
+          </TabButton>
+          <TabButton
             active={activeTab === "activity"}
             onClick={() => setActiveTab("activity")}
           >
@@ -86,6 +98,8 @@ export function ProjectDetail() {
         {activeTab === "overview" && <OverviewTab project={project} />}
         {activeTab === "milestones" && <MilestonesTab projectId={projectId} />}
         {activeTab === "tasks" && <TasksTab projectId={projectId} />}
+        {activeTab === "risks" && <RisksTab projectId={projectId} />}
+        {activeTab === "budget" && <BudgetTab projectId={projectId} />}
         {activeTab === "activity" && <ActivityTab projectId={projectId} />}
       </div>
     </div>
