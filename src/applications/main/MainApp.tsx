@@ -70,6 +70,9 @@ import { CartProvider } from "../../context/CartContext";
 import { MyTasks } from "../../page/dashboard/MyTasks";
 import { ProjectsDashboard } from "../../page/dashboard/ProjectsDashboard";
 import { ProjectDetail } from "../../page/dashboard/ProjectDetail";
+import { HRDashboard } from "../../page/dashboard/HRDashboard";
+import { EmployeeDetail } from "../../page/dashboard/EmployeeDetail";
+import { MyHR } from "../../page/dashboard/MyHR";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -166,6 +169,18 @@ function MainApp() {
                       element={<ProjectDetail />}
                     />
                     <Route path="my-tasks" element={<MyTasks />} />
+                    {/* Static "hr" route, same priority reasoning as
+                      "form"/"communication"/etc. below — ranked above
+                      the dynamic :capabilityRoute catch-all regardless
+                      of declaration order. "hr/employees/:employeeId"
+                      is a distinct two-segment path, so it can't
+                      collide with the single-segment catch-all either. */}
+                    <Route path="hr" element={<HRDashboard />} />
+                    <Route
+                      path="hr/employees/:employeeId"
+                      element={<EmployeeDetail />}
+                    />
+                    <Route path="my-hr" element={<MyHR />} />
                     {/* Static "form" route takes priority over the
                       dynamic :capabilityRoute catch-all below — React
                       Router ranks a literal segment above a param
