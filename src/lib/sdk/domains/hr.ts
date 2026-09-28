@@ -183,6 +183,51 @@ function removePositionSkillRequirement(
   );
 }
 
+/**
+ * "Role follows the seat" — a Position carries the role(s) its own
+ * occupant should hold. Granted/revoked automatically as an Employment
+ * is created, transferred, suspended, reactivated, or terminated; see
+ * EmploymentRoleGrant below for the resulting audit trail.
+ */
+export interface PositionRoleGrant {
+  id: string;
+  position_id: string;
+  role_code: string;
+  container_id: string;
+  created_at: string | null;
+}
+
+export interface CreatePositionRoleGrantInput {
+  role_code: string;
+  /** Defaults, server-side, to the position's own department
+   * container when omitted — pass this explicitly only for a
+   * regional/org-wide role that applies one level up. */
+  container_id?: string;
+}
+
+function addPositionRoleGrant(
+  positionId: string,
+  input: CreatePositionRoleGrantInput,
+): Promise<PositionRoleGrant> {
+  return api.post<PositionRoleGrant>(`/api/hr/positions/${positionId}/role-grants/`, input);
+}
+
+async function listPositionRoleGrants(positionId: string): Promise<PositionRoleGrant[]> {
+  const r = await api.get<{ results: PositionRoleGrant[] }>(
+    `/api/hr/positions/${positionId}/role-grants/`,
+  );
+  return r.results;
+}
+
+function removePositionRoleGrant(
+  positionId: string,
+  grantId: string,
+): Promise<{ removed: boolean }> {
+  return api.post<{ removed: boolean }>(
+    `/api/hr/positions/${positionId}/role-grants/${grantId}/remove/`,
+  );
+}
+
 // -- Employee / Employment / Contract / History -----------------------
 
 export type EmployeeStatus = "active" | "on_leave" | "terminated";
@@ -338,6 +383,29 @@ function terminateEmployment(employmentId: string, endDate: string): Promise<Emp
 
 async function listEmploymentHistory(employmentId: string): Promise<EmploymentHistoryEntry[]> {
   const r = await api.get<{ results: EmploymentHistoryEntry[] }>(`/api/hr/employments/${employmentId}/history/`);
+  return r.results;
+}
+
+export type EmploymentRoleGrantStatus = "active" | "revoked";
+
+/** The resulting audit trail of PositionRoleGrant's own "role follows
+ * the seat" — which real domains.authority RoleAssignment this
+ * employment received via its position, and whether it's still
+ * active. */
+export interface EmploymentRoleGrant {
+  id: string;
+  employment_id: string;
+  position_role_grant_id: string;
+  role_assignment_id: string;
+  status: EmploymentRoleGrantStatus;
+  granted_at: string | null;
+  revoked_at: string | null;
+}
+
+async function listEmploymentRoleGrants(employmentId: string): Promise<EmploymentRoleGrant[]> {
+  const r = await api.get<{ results: EmploymentRoleGrant[] }>(
+    `/api/hr/employments/${employmentId}/role-grants/`,
+  );
   return r.results;
 }
 
@@ -1468,10 +1536,11 @@ export const hr = {
   createPosition, listVacantPositions, getPosition, updatePosition,
   fillPosition, vacatePosition, freezePosition, closePosition,
   addPositionSkillRequirement, listPositionSkillRequirements, removePositionSkillRequirement,
+  addPositionRoleGrant, listPositionRoleGrants, removePositionRoleGrant,
   createEmployee, listEmployeesForContainer, getMyEmployeeProfile, getEmployee, updateEmployee,
   createEmployment, listEmploymentsForEmployee, getEmployment, listMyDirectReports,
   transferEmployment, suspendEmployment, reactivateEmployment, terminateEmployment,
-  listEmploymentHistory,
+  listEmploymentHistory, listEmploymentRoleGrants,
   createContract, listContractsForEmployment, activateContract, expireContract, terminateContract,
   createSkill, listSkillsForContainer, addEmployeeSkill, listEmployeeSkills,
   createJobOpening, listJobOpeningsForContainer, listOpenJobOpenings, getJobOpening,

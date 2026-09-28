@@ -73,6 +73,9 @@ import { ProjectDetail } from "../../page/dashboard/ProjectDetail";
 import { HRDashboard } from "../../page/dashboard/HRDashboard";
 import { EmployeeDetail } from "../../page/dashboard/EmployeeDetail";
 import { MyHR } from "../../page/dashboard/MyHR";
+import { CRMDashboard } from "../../page/dashboard/CRMDashboard";
+import { AccountDetail } from "../../page/dashboard/AccountDetail";
+import { MyCRM } from "../../page/dashboard/MyCRM";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -181,6 +184,19 @@ function MainApp() {
                       element={<EmployeeDetail />}
                     />
                     <Route path="my-hr" element={<MyHR />} />
+                    {/* Static "crm" route, same priority reasoning as
+                      "hr" above — ranked over the :capabilityRoute
+                      catch-all regardless of declaration order.
+                      "crm/accounts/:accountId" is a distinct
+                      three-segment path, so it can't collide with the
+                      single-segment catch-all either. Matches
+                      CRMCapability's own navigation().route exactly. */}
+                    <Route path="crm" element={<CRMDashboard />} />
+                    <Route
+                      path="crm/accounts/:accountId"
+                      element={<AccountDetail />}
+                    />
+                    <Route path="my-crm" element={<MyCRM />} />
                     {/* Static "form" route takes priority over the
                       dynamic :capabilityRoute catch-all below — React
                       Router ranks a literal segment above a param
