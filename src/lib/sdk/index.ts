@@ -22,6 +22,7 @@ import { hr } from "./domains/hr";
 import { crm } from "./domains/crm";  
 import { templateLibrary } from "./domains/templateLibrary";
 import { inventoryCatalog } from "./domains/inventoryCatalog";
+import { finance } from "./domains/finance";
 
 /**
  * Single entry point for every domain's API client.
@@ -57,7 +58,8 @@ export const sdk = {
   hr,
     crm,
     templateLibrary,
-    inventoryCatalog
+    inventoryCatalog,
+    finance
 };
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";

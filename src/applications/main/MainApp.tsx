@@ -3,11 +3,9 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "../../components/context/Authcontext";
 import { ContainerProvider } from "../../components/context/ContainerContext";
-
 import { ThemeProvider } from "../../components/context/ThemeContext";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { DashboardLayout } from "../../components/layout/Dashboardlayout";
-
 import { Signin } from "../../page/Signin";
 import { Signup } from "../../page/Signup";
 import { PublicFormFill } from "../../page/PublicFormFill";
@@ -32,20 +30,16 @@ import { FormEditor } from "../../page/dashboard/FormEditor";
 import { FormResponses } from "../../page/dashboard/FormResponses";
 import { FormFill } from "../../page/dashboard/FormFill";
 import { Communication } from "../../page/dashboard/Communication";
-
 import { Inventory } from "../../page/dashboard/Inventory";
 import { PaymentGateway } from "../../page/dashboard/PaymentGateway";
 import { Subscription } from "../../page/dashboard/Subscription";
 import { MySubscriptions } from "../../page/dashboard/MySubscriptions";
-
 import { MyPurchases } from "../../page/dashboard/MyPurchases";
-
 import { queryClient } from "../../lib/query/Queryclient";
 import HomePage from "../../page/home/HomePage";
 import { Payment } from "../../page/payment/Payment";
 import { PaymentWalletDetail } from "../../page/payment/PaymentWalletDetail";
 import { Events } from "../../page/dashboard/Events";
-
 import { AccountCreationDoc } from "../../page/docs/AccountCreationDoc";
 import { AuthenticationDoc } from "../../page/docs/AuthenticationDoc";
 import { CollectionDoc } from "../../page/docs/CollectionDoc";
@@ -78,6 +72,7 @@ import { AccountDetail } from "../../page/dashboard/AccountDetail";
 import { MyCRM } from "../../page/dashboard/MyCRM";
 import { TemplateLibraryDashboard } from "../../page/dashboard/TemplateLibraryDashboard";
 import { InventoryCatalogDashboard } from "../../page/dashboard/InventoryCatalogDashboard";
+import { FinanceDashboard } from "../../page/dashboard/FinanceDashboard";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -224,6 +219,7 @@ function MainApp() {
                       path="form/:formId/responses"
                       element={<FormResponses />}
                     />
+                    <Route path="finance" element={<FinanceDashboard />} />
                     {/* Static "communication" route, same priority
                       reasoning as "form" above. */}
                     <Route path="communication" element={<Communication />} />
