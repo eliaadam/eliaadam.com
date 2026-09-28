@@ -76,6 +76,8 @@ import { MyHR } from "../../page/dashboard/MyHR";
 import { CRMDashboard } from "../../page/dashboard/CRMDashboard";
 import { AccountDetail } from "../../page/dashboard/AccountDetail";
 import { MyCRM } from "../../page/dashboard/MyCRM";
+import { TemplateLibraryDashboard } from "../../page/dashboard/TemplateLibraryDashboard";
+import { InventoryCatalogDashboard } from "../../page/dashboard/InventoryCatalogDashboard";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -148,7 +150,7 @@ function MainApp() {
                       path="containers/:containerId/settings"
                       element={<ContainerSettings />}
                     />
-                    <Route path="templates" element={<Templates />} />
+                    <Route path="container-templates" element={<Templates />} />
                     <Route
                       path="templates/:templateCode/requests"
                       element={<InstantiationRequests />}
@@ -182,6 +184,14 @@ function MainApp() {
                     <Route
                       path="hr/employees/:employeeId"
                       element={<EmployeeDetail />}
+                    />
+                    <Route
+                      path="templates"
+                      element={<TemplateLibraryDashboard />}
+                    />
+                    <Route
+                      path="inventory-catalog"
+                      element={<InventoryCatalogDashboard />}
                     />
                     <Route path="my-hr" element={<MyHR />} />
                     {/* Static "crm" route, same priority reasoning as
