@@ -89,7 +89,7 @@ export function CreateIntentForm({
         </option>
         <option value="selcom">Selcom (mobile money, Tanzania)</option>
         <option value="flutterwave">
-          Flutterwave (card / bank, unverified integration)
+          Flutterwave (card / bank)
         </option>
       </select>
 
