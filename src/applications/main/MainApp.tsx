@@ -73,6 +73,8 @@ import { MyCRM } from "../../page/dashboard/MyCRM";
 import { TemplateLibraryDashboard } from "../../page/dashboard/TemplateLibraryDashboard";
 import { InventoryCatalogDashboard } from "../../page/dashboard/InventoryCatalogDashboard";
 import { FinanceDashboard } from "../../page/dashboard/FinanceDashboard";
+import { PosDashboard } from "../../page/dashboard/PosDashboard";
+import { CustomerCreditDashboard } from "../../page/dashboard/CustomerCreditDashboard";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -215,6 +217,11 @@ function MainApp() {
                     <Route path="form" element={<Forms />} />
                     <Route path="form/:formId" element={<FormEditor />} />
                     <Route path="form/:formId/fill" element={<FormFill />} />
+                    <Route path="pos" element={<PosDashboard />} />
+                    <Route
+                      path="customer-credit"
+                      element={<CustomerCreditDashboard />}
+                    />
                     <Route
                       path="form/:formId/responses"
                       element={<FormResponses />}

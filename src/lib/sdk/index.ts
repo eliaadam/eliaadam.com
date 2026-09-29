@@ -23,6 +23,8 @@ import { crm } from "./domains/crm";
 import { templateLibrary } from "./domains/templateLibrary";
 import { inventoryCatalog } from "./domains/inventoryCatalog";
 import { finance } from "./domains/finance";
+import { pos } from "./domains/pos";
+import { customerCredit } from "./domains/customerCredit";
 
 /**
  * Single entry point for every domain's API client.
@@ -59,8 +61,12 @@ export const sdk = {
     crm,
     templateLibrary,
     inventoryCatalog,
-    finance
+    finance,
+    pos,
+    customerCredit
 };
+
+export type { TransactionKind } from "./domains/customerCredit";
 
 export type { Actor, AuthSession, ListActorsParams } from "./domains/identity";
 export type { RegistryAsset } from "./domains/registry";
