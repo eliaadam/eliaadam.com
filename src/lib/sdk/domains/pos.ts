@@ -22,6 +22,16 @@ export interface SaleLine {
   line_total: number;
 }
 
+export interface SaleVoid {
+  id: string;
+  sale_id: string;
+  reason: string;
+  entry_id: string;
+  credit_transaction_id: string | null;
+  voided_by_actor_id: string | null;
+  voided_at: string | null;
+}
+
 export interface Sale {
   id: string;
   customer_id: string | null;
@@ -36,6 +46,8 @@ export interface Sale {
   cashier_actor_id: string | null;
   created_at: string | null;
   lines: SaleLine[];
+  /** Set once the sale has been voided — the original sale itself is never edited. */
+  void: SaleVoid | null;
 }
 
 export interface SaleLineInput {
@@ -87,4 +99,11 @@ function ringUpCreditSale(containerId: string, lines: SaleLineInput[], customerI
   return api.post<Sale>(`/api/pos/containers/${containerId}/sales/create/`, { payment_method: "credit", lines, customer_id: customerId });
 }
 
-export const pos = { listSales, getSale, ringUpCashSale, ringUpDirectSale, ringUpCreditSale };
+/** Reverses the sale (a mirror-image posting for cash/direct, a Customer
+ * Credit adjustment for credit) — the original sale record is never edited.
+ * 409 (`sale_already_voided`) if it's already been voided. */
+function voidSale(containerId: string, saleId: string, reason: string): Promise<Sale> {
+  return api.post<Sale>(`/api/pos/containers/${containerId}/sales/${saleId}/void/`, { reason });
+}
+
+export const pos = { listSales, getSale, ringUpCashSale, ringUpDirectSale, ringUpCreditSale, voidSale };
