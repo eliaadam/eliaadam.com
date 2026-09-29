@@ -25,6 +25,7 @@ import { inventoryCatalog } from "./domains/inventoryCatalog";
 import { finance } from "./domains/finance";
 import { pos } from "./domains/pos";
 import { customerCredit } from "./domains/customerCredit";
+import { retailFinanceSetup } from "./domains/retailFinanceSetup";
 
 /**
  * Single entry point for every domain's API client.
@@ -63,7 +64,8 @@ export const sdk = {
     inventoryCatalog,
     finance,
     pos,
-    customerCredit
+    customerCredit,
+    retailFinanceSetup
 };
 
 export type { TransactionKind } from "./domains/customerCredit";

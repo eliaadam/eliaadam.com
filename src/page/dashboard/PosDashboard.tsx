@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useContainer } from "../../components/context/ContainerContext";
 import { SellTab } from "./pos/SellTab";
 import { SalesTab } from "./pos/SalesTab";
+import { SetupGate } from "./pos/SetupGate";
 
 /** Point of Sale — ring up products and services, and take payment now
  * (cash or card/mobile money) or on credit. */
@@ -43,7 +44,11 @@ export function PosDashboard() {
       </div>
 
       <div className="mt-5">
-        {activeTab === "sell" && <SellTab containerId={currentContainerId} />}
+        {activeTab === "sell" && (
+          <SetupGate containerId={currentContainerId}>
+            <SellTab containerId={currentContainerId} />
+          </SetupGate>
+        )}
         {activeTab === "sales" && <SalesTab containerId={currentContainerId} />}
       </div>
     </div>
