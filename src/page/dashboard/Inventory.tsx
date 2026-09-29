@@ -1,6 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Package, X, Users } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Layers,
+  Package,
+  Plus,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
 import {
   sdk,
   type InventoryItem,
@@ -8,16 +17,147 @@ import {
   type OwnershipShape,
   type InventoryParticipant,
 } from "../../lib/sdk";
+import type {
+  ItemWithAttributes,
+  TreeItem,
+} from "../../lib/sdk/domains/inventoryCatalog";
 import { API_BASE_URL } from "../../lib/query/Api";
 import { useAuth } from "../../components/context/Authcontext";
 import { useContainer } from "../../components/context/ContainerContext";
 import { useCanManageInventory } from "../../lib/hooks/useCanManageInventory";
+import { ItemDetailsPanel } from "./inventory-catalog/ItemDetailsPanel";
+import { ExpiringTab } from "./inventory-catalog/ExpiringTab";
+import { FieldLabelsTab } from "./inventory-catalog/FieldLabelsTab";
+import {
+  errorMessage,
+  errorTextClass,
+  expiryClasses,
+  formatMoney,
+  inputClass as catalogInputClass,
+  secondaryButtonClass,
+} from "./inventory-catalog/ui";
+
+/* ------------------------------------------------------------------ */
+/* Shared styles                                                       */
+/* ------------------------------------------------------------------ */
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
 
 const primaryButtonClass =
   "rounded-md bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60 dark:bg-white dark:text-black";
+
+const ghostButtonClass =
+  "rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900";
+
+const emptyBoxClass =
+  "rounded-lg border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-500";
+
+/**
+ * Items and the catalog tree describe the same underlying inventory, so a
+ * change made in either tab (publish, archive, edit, branding…) refreshes
+ * both.
+ */
+function useInvalidateInventory() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
+    queryClient.invalidateQueries({ queryKey: ["inventory-catalog"] });
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Dashboard (tabs)                                                    */
+/* ------------------------------------------------------------------ */
+
+type Tab = "items" | "catalog" | "expiring" | "fields";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "items", label: "Items" },
+  { key: "catalog", label: "Catalog" },
+  { key: "expiring", label: "Expiring" },
+  { key: "fields", label: "Field labels" },
+];
+
+/**
+ * Inventory — one screen for everything a container sells: the sellable
+ * items (pricing, branding, ownership), the catalog tree of
+ * products/services, items nearing expiry, and the per-container labels
+ * that give the reserved generic fields their meaning.
+ */
+export function Inventory() {
+  const { currentContainerId } = useContainer();
+  const [activeTab, setActiveTab] = useState<Tab>("items");
+
+  if (!currentContainerId) {
+    return (
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        Select a container first — inventory belongs to whichever container
+        you're currently in.
+      </p>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl">
+      <h1 className="text-xl font-semibold tracking-tight">Inventory</h1>
+      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+        Manage what this container sells, organise it into a catalog, and record
+        the details your business needs.
+      </p>
+
+      {/* Scrolls horizontally on narrow screens instead of wrapping */}
+      <div
+        role="tablist"
+        aria-label="Inventory sections"
+        className="-mx-4 mt-4 overflow-x-auto border-b border-neutral-200 px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 dark:border-neutral-800 [&::-webkit-scrollbar]:hidden"
+      >
+        <div className="flex gap-5">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              id={`inventory-tab-${t.key}`}
+              aria-selected={activeTab === t.key}
+              aria-controls={`inventory-panel-${t.key}`}
+              onClick={() => setActiveTab(t.key)}
+              className={`whitespace-nowrap border-b-2 pb-2.5 text-sm font-medium transition-colors ${
+                activeTab === t.key
+                  ? "border-black text-black dark:border-white dark:text-white"
+                  : "border-transparent text-neutral-500 hover:text-black dark:text-neutral-500 dark:hover:text-white"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        role="tabpanel"
+        id={`inventory-panel-${activeTab}`}
+        aria-labelledby={`inventory-tab-${activeTab}`}
+        className="mt-5"
+      >
+        {activeTab === "items" && <ItemsTab containerId={currentContainerId} />}
+        {activeTab === "catalog" && (
+          <CatalogTab containerId={currentContainerId} />
+        )}
+        {activeTab === "expiring" && (
+          <ExpiringTab containerId={currentContainerId} />
+        )}
+        {activeTab === "fields" && (
+          <FieldLabelsTab containerId={currentContainerId} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+/* ITEMS TAB                                                           */
+/* ================================================================== */
 
 /**
  * These three strings are the ones capabilities.core.fulfillment
@@ -104,50 +244,37 @@ function shapeBadgeLabel(shape: OwnershipShape): string {
   }
 }
 
-export function Inventory() {
-  const { currentContainerId } = useContainer();
+function ItemsTab({ containerId }: { containerId: string }) {
   const { user } = useAuth();
   const { data: canManage } = useCanManageInventory();
   const [showCreate, setShowCreate] = useState(false);
 
   const { data: items, isLoading } = useQuery({
-    queryKey: ["inventory", "items", currentContainerId],
-    queryFn: () => sdk.inventory.listItems(currentContainerId!),
-    enabled: Boolean(currentContainerId),
+    queryKey: ["inventory", "items", containerId],
+    queryFn: () => sdk.inventory.listItems(containerId),
   });
-
-  if (!currentContainerId) {
-    return (
-      <p className="text-sm text-neutral-600 dark:text-neutral-400">
-        Select a container first — inventory items belong to whichever container
-        you're currently in.
-      </p>
-    );
-  }
 
   const drafts = items?.filter((i) => i.status === "draft") ?? [];
   const active = items?.filter((i) => i.status === "active") ?? [];
   const archived = items?.filter((i) => i.status === "archived") ?? [];
 
   return (
-    <div className="max-w-3xl">
+    <div>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Inventory</h1>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-            Products and services this container can sell — pricing,
-            descriptions, and branding, kept separate from where and how they're
-            actually listed.
-          </p>
-        </div>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          Products and services this container can sell — pricing, descriptions,
+          and branding, kept separate from where and how they're actually
+          listed.
+        </p>
         {canManage && (
           <button
             type="button"
             onClick={() => setShowCreate((v) => !v)}
+            aria-label="New item"
             className={`flex flex-none items-center gap-1.5 ${primaryButtonClass}`}
           >
             <Plus size={15} />
-            New item
+            <span className="hidden sm:inline">New item</span>
           </button>
         )}
       </div>
@@ -163,7 +290,7 @@ export function Inventory() {
 
       {showCreate && canManage && (
         <ItemForm
-          containerId={currentContainerId}
+          containerId={containerId}
           onDone={() => setShowCreate(false)}
         />
       )}
@@ -256,7 +383,6 @@ function ItemRow({
   currentActorId: string | undefined;
   canManage: boolean;
 }) {
-  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [managingBranding, setManagingBranding] = useState(false);
   const [managingParticipants, setManagingParticipants] = useState(false);
@@ -273,8 +399,7 @@ function ItemRow({
   const isParticipant = Boolean(item.ownership.is_owned_by_me);
   const canManageThis = isParticipant || canManage;
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
+  const invalidate = useInvalidateInventory();
 
   const publishMutation = useMutation({
     mutationFn: () => sdk.inventory.publishItem(item.id),
@@ -321,10 +446,12 @@ function ItemRow({
   }
 
   return (
-    <li className="flex items-center justify-between gap-4 px-4 py-3.5">
+    <li className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-medium">{item.title}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="max-w-full truncate text-sm font-medium">
+            {item.title}
+          </p>
           <span
             className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClasses(item.status)}`}
           >
@@ -356,12 +483,12 @@ function ItemRow({
         </p>
       </div>
       {canManageThis && (
-        <div className="flex flex-none items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:flex-none sm:flex-nowrap">
           {item.ownership.allows_participants && (
             <button
               type="button"
               onClick={() => setManagingParticipants(true)}
-              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+              className={`flex items-center gap-1 ${ghostButtonClass}`}
             >
               <Users size={13} />
               Participants
@@ -370,14 +497,14 @@ function ItemRow({
           <button
             type="button"
             onClick={() => setManagingBranding(true)}
-            className="rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+            className={ghostButtonClass}
           >
             Branding
           </button>
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="rounded-md px-2.5 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900"
+            className={ghostButtonClass}
           >
             Edit
           </button>
@@ -447,12 +574,14 @@ function ParticipantsSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Participants — {item.title}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-sm font-medium">
+          Participants — {item.title}
+        </p>
         <button
           type="button"
           onClick={onDone}
-          className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+          className="flex-none text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
         >
           Done
         </button>
@@ -489,7 +618,7 @@ function ParticipantsSection({
         </ul>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           className={inputClass}
           placeholder="Actor id to add…"
@@ -497,7 +626,7 @@ function ParticipantsSection({
           onChange={(e) => setNewActorId(e.target.value)}
         />
         <select
-          className={`${inputClass} max-w-[7rem]`}
+          className={`${inputClass} sm:max-w-[7rem]`}
           value={newRole}
           onChange={(e) => setNewRole(e.target.value as "admin" | "member")}
         >
@@ -570,11 +699,8 @@ function BrandingSection({
   item: InventoryItem;
   onDone: () => void;
 }) {
-  const queryClient = useQueryClient();
   const [role, setRole] = useState<string>("logo");
-
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
+  const invalidate = useInvalidateInventory();
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -606,19 +732,21 @@ function BrandingSection({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Branding — {item.title}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-sm font-medium">
+          Branding — {item.title}
+        </p>
         <button
           type="button"
           onClick={onDone}
-          className="text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
+          className="flex-none text-xs font-medium text-neutral-500 hover:text-black dark:hover:text-white"
         >
           Done
         </button>
       </div>
 
       {item.branding.assets.length > 0 && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {item.branding.assets.map((asset) => (
             <BrandingAssetTile
               key={asset.file_id}
@@ -633,7 +761,7 @@ function BrandingSection({
         </div>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <select
           className={`${inputClass} max-w-[8rem]`}
           value={role}
@@ -694,12 +822,13 @@ function BrandingAssetTile({
       <span className="absolute bottom-0 left-0 right-0 truncate bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
         {asset.role}
       </span>
+      {/* Always visible on touch screens (no hover); hover-reveal on desktop */}
       <button
         type="button"
         onClick={onRemove}
         disabled={removing}
         aria-label="Remove"
-        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-600 disabled:opacity-60 group-hover:opacity-100"
+        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:bg-red-600 disabled:opacity-60 sm:opacity-0 sm:group-hover:opacity-100"
       >
         <X size={11} />
       </button>
@@ -716,7 +845,7 @@ function ItemForm({
   existing?: InventoryItem;
   onDone: () => void;
 }) {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidateInventory();
   const isEdit = Boolean(existing);
 
   const [title, setTitle] = useState(existing?.title ?? "");
@@ -778,7 +907,7 @@ function ItemForm({
                 : undefined,
           }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
+      invalidate();
       onDone();
     },
   });
@@ -875,7 +1004,7 @@ function ItemForm({
             <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
               Who owns this?
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {OWNERSHIP_SHAPE_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -924,7 +1053,7 @@ function ItemForm({
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
             Price
@@ -980,7 +1109,7 @@ function ItemForm({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <input
           className={`${inputClass} max-w-[6rem]`}
           placeholder="USD"
@@ -995,7 +1124,7 @@ function ItemForm({
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={() => mutation.mutate()}
@@ -1023,6 +1152,300 @@ function ItemForm({
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+/* CATALOG TAB                                                         */
+/* ================================================================== */
+
+/** Hides archived items — but keeps an archived parent that still has
+ * visible children, so nothing is orphaned from view. */
+function prune(nodes: TreeItem[], showArchived: boolean): TreeItem[] {
+  return nodes.flatMap((n) => {
+    const children = prune(n.children, showArchived);
+    if (n.status === "archived" && !showArchived && children.length === 0)
+      return [];
+    return [{ ...n, children }];
+  });
+}
+
+function CatalogTab({ containerId }: { containerId: string }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const {
+    data: tree,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["inventory-catalog", "tree", containerId],
+    queryFn: () => sdk.inventoryCatalog.getItemTree(containerId),
+  });
+
+  const visible = useMemo(
+    () => prune(tree ?? [], showArchived),
+    [tree, showArchived],
+  );
+
+  const toggle = (id: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <div className="flex flex-col gap-3">
+        <LookupBox containerId={containerId} onPick={setSelectedId} />
+
+        <label className="flex w-fit items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+          <input
+            type="checkbox"
+            checked={showArchived}
+            onChange={(e) => setShowArchived(e.target.checked)}
+          />
+          Show archived
+        </label>
+
+        {isLoading && (
+          <p className="text-sm text-neutral-500 dark:text-neutral-500">
+            Loading…
+          </p>
+        )}
+        {isError && (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            Couldn't load the catalog.
+          </p>
+        )}
+        {tree && visible.length === 0 && (
+          <p className={emptyBoxClass}>
+            No items yet. Create items in the Items tab, then organise them
+            here.
+          </p>
+        )}
+
+        {visible.length > 0 && (
+          <ul className="rounded-lg border border-neutral-200 py-1 dark:border-neutral-800">
+            {visible.map((n) => (
+              <TreeRows
+                key={n.id}
+                node={n}
+                depth={0}
+                selectedId={selectedId}
+                collapsed={collapsed}
+                onToggle={toggle}
+                onSelect={setSelectedId}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div>
+        {selectedId && tree ? (
+          <ItemDetailsPanel
+            key={selectedId}
+            containerId={containerId}
+            itemId={selectedId}
+            tree={tree}
+            onSelect={setSelectedId}
+          />
+        ) : (
+          <p className={emptyBoxClass}>
+            Select an item to see and edit its details.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TreeRows({
+  node,
+  depth,
+  selectedId,
+  collapsed,
+  onToggle,
+  onSelect,
+}: {
+  node: TreeItem;
+  depth: number;
+  selectedId: string | null;
+  collapsed: Set<string>;
+  onToggle: (id: string) => void;
+  onSelect: (id: string) => void;
+}) {
+  const hasChildren = node.children.length > 0;
+  const isOpen = !collapsed.has(node.id);
+  const selected = node.id === selectedId;
+
+  return (
+    <li>
+      <div
+        className={`flex items-center gap-1.5 py-1.5 pr-3 text-sm ${
+          selected
+            ? "bg-neutral-100 dark:bg-neutral-900"
+            : "hover:bg-neutral-50 dark:hover:bg-neutral-900/60"
+        }`}
+        style={{ paddingLeft: 8 + depth * 18 }}
+      >
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => onToggle(node.id)}
+            className="flex-none text-neutral-400"
+            aria-label={isOpen ? "Collapse" : "Expand"}
+          >
+            {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+        ) : (
+          <span className="w-[14px] flex-none" />
+        )}
+        <button
+          type="button"
+          onClick={() => onSelect(node.id)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <span
+            className={`truncate ${
+              node.status === "archived"
+                ? "text-neutral-400 line-through dark:text-neutral-600"
+                : ""
+            }`}
+          >
+            {node.title}
+          </span>
+          {node.node.is_bundle && (
+            <Layers
+              size={12}
+              className="flex-none text-neutral-400"
+              aria-label="Bundle"
+            />
+          )}
+          {node.node.parent_item_id && node.node.quantity_in_parent !== 1 && (
+            <span className="flex-none text-[11px] text-neutral-500 dark:text-neutral-500">
+              ×{node.node.quantity_in_parent}
+            </span>
+          )}
+        </button>
+        {node.sku && (
+          <span className="hidden flex-none text-[11px] text-neutral-500 sm:inline dark:text-neutral-500">
+            {node.sku}
+          </span>
+        )}
+        {node.expiry_status && node.expiry_status !== "ok" && (
+          <span
+            className={`flex-none rounded-full px-1.5 py-0.5 text-[10px] font-medium ${expiryClasses(node.expiry_status)}`}
+          >
+            {node.expiry_status === "expired" ? "expired" : "soon"}
+          </span>
+        )}
+        <span className="flex-none text-[11px] text-neutral-500 dark:text-neutral-500">
+          {formatMoney(node.price.total, node.price.currency)}
+        </span>
+      </div>
+      {hasChildren && isOpen && (
+        <ul>
+          {node.children.map((c) => (
+            <TreeRows
+              key={c.id}
+              node={c}
+              depth={depth + 1}
+              selectedId={selectedId}
+              collapsed={collapsed}
+              onToggle={onToggle}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+function LookupBox({
+  containerId,
+  onPick,
+}: {
+  containerId: string;
+  onPick: (id: string) => void;
+}) {
+  const [code, setCode] = useState("");
+  const [results, setResults] = useState<ItemWithAttributes[] | null>(null);
+
+  const lookup = useMutation({
+    // A scan could be either — try the SKU, and the barcode too. The
+    // server returns the union.
+    mutationFn: (value: string) =>
+      sdk.inventoryCatalog.lookupItems(containerId, {
+        sku: value,
+        barcode: value,
+      }),
+    onSuccess: setResults,
+  });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (code.trim()) lookup.mutate(code.trim());
+        }}
+        className="flex items-center gap-2"
+      >
+        <div className="relative flex-1">
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+          />
+          <input
+            className={`${catalogInputClass} pl-8`}
+            placeholder="Scan or type a SKU / barcode…"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          />
+        </div>
+        <button
+          type="submit"
+          className={secondaryButtonClass}
+          disabled={lookup.isPending}
+        >
+          Find
+        </button>
+      </form>
+      {lookup.isError && (
+        <p className={errorTextClass}>
+          {errorMessage(lookup.error, "Lookup failed.")}
+        </p>
+      )}
+      {results && results.length === 0 && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-500">
+          Nothing matches that code.
+        </p>
+      )}
+      {results && results.length > 0 && (
+        <ul className="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+          {results.map((r) => (
+            <li key={r.item.id}>
+              <button
+                type="button"
+                onClick={() => onPick(r.item.id)}
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-neutral-50 dark:hover:bg-neutral-900"
+              >
+                <span className="truncate font-medium">{r.item.title}</span>
+                <span className="flex-none text-neutral-500 dark:text-neutral-500">
+                  {r.attributes.sku ?? r.attributes.barcode}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
