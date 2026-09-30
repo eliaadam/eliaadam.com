@@ -75,6 +75,7 @@ import { InventoryCatalogDashboard } from "../../page/dashboard/InventoryCatalog
 import { FinanceDashboard } from "../../page/dashboard/FinanceDashboard";
 import { PosDashboard } from "../../page/dashboard/PosDashboard";
 import { CustomerCreditDashboard } from "../../page/dashboard/CustomerCreditDashboard";
+import { EducationDashboard } from "../../page/dashboard/EducationDashboard";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -139,6 +140,7 @@ function MainApp() {
                       path="containers/:containerId/join-requests"
                       element={<JoinRequests />}
                     />
+                    <Route path="education" element={<EducationDashboard />} />
                     <Route
                       path="subscribe/plan/:planId"
                       element={<SubscribeToPlan />}

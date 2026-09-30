@@ -26,6 +26,11 @@ import { finance } from "./domains/finance";
 import { pos } from "./domains/pos";
 import { customerCredit } from "./domains/customerCredit";
 import { retailFinanceSetup } from "./domains/retailFinanceSetup";
+import { educationAcademic } from "./domains/educationAcademic";
+import { educationEnrollment } from "./domains/educationEnrollment";
+import { educationAdmissions } from "./domains/educationAdmissions";
+import { educationAttendance } from "./domains/educationAttendance";
+import { educationAssessment } from "./domains/educationAssessment";
 
 /**
  * Single entry point for every domain's API client.
@@ -65,7 +70,8 @@ export const sdk = {
     finance,
     pos,
     customerCredit,
-    retailFinanceSetup
+    retailFinanceSetup,
+    educationAcademic, educationEnrollment, educationAdmissions, educationAttendance, educationAssessment 
 };
 
 export type { TransactionKind } from "./domains/customerCredit";
