@@ -76,6 +76,9 @@ import { FinanceDashboard } from "../../page/dashboard/FinanceDashboard";
 import { PosDashboard } from "../../page/dashboard/PosDashboard";
 import { CustomerCreditDashboard } from "../../page/dashboard/CustomerCreditDashboard";
 import { EducationDashboard } from "../../page/dashboard/EducationDashboard";
+import { QuizDashboard } from "../../page/dashboard/QuizDashboard";
+import { ContentDashboard } from "../../page/dashboard/ContentDashboard";
+import { PublicContentView } from "../../page/PublicContentView";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -122,6 +125,10 @@ function MainApp() {
                     entirely. Matches "anonymous responses allowed" at
                     the platform level. */}
                   <Route path="/f/:formId" element={<PublicFormFill />} />
+                  <Route
+                    path="/c/:containerId/:slug"
+                    element={<PublicContentView />}
+                  />
                   <Route
                     path="/dashboard"
                     element={
@@ -188,6 +195,8 @@ function MainApp() {
                       path="templates"
                       element={<TemplateLibraryDashboard />}
                     />
+                    <Route path="quiz" element={<QuizDashboard />} />
+                    <Route path="content" element={<ContentDashboard />} />
                     <Route
                       path="inventory-catalog"
                       element={<InventoryCatalogDashboard />}
