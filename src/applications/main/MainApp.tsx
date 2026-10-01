@@ -79,6 +79,8 @@ import { EducationDashboard } from "../../page/dashboard/EducationDashboard";
 import { QuizDashboard } from "../../page/dashboard/QuizDashboard";
 import { ContentDashboard } from "../../page/dashboard/ContentDashboard";
 import { PublicContentView } from "../../page/PublicContentView";
+import { PublicGroupView } from "../../page/PublicGroupView";
+import { PublicContentIndex } from "../../page/PublicContentIndex";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -128,6 +130,14 @@ function MainApp() {
                   <Route
                     path="/c/:containerId/:slug"
                     element={<PublicContentView />}
+                  />
+                  <Route
+                    path="/c/:containerId"
+                    element={<PublicContentIndex />}
+                  />
+                  <Route
+                    path="/c/:containerId/g/:groupSlug"
+                    element={<PublicGroupView />}
                   />
                   <Route
                     path="/dashboard"

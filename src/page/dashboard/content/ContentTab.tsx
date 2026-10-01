@@ -322,7 +322,7 @@ function EditPanel({
         body,
         format,
         visibility,
-        slug: slug.trim() || undefined,
+        slug: slug.trim() || null,
         content_type_id: c?.content_type_id,
       }),
     onSuccess: invalidate,

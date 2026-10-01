@@ -121,6 +121,47 @@ export interface ContentReference {
   relation_type: string;
 }
 
+export interface ContentGroup {
+  id: string;
+  parent_group_id: string | null;
+  name: string;
+  slug: string | null;
+  description: string;
+  position: number;
+}
+
+export interface GroupMember {
+  membership_id: string;
+  position: number;
+  content_id: string;
+  title: string;
+  summary: string;
+  slug: string | null;
+  status: ContentStatus;
+  visibility: ContentVisibility;
+}
+
+export interface PublicContentSummary {
+  slug: string;
+  title: string;
+  summary: string;
+  content_type_id: string;
+  published_at: string | null;
+}
+
+export interface PublicGroupSummary {
+  id: string;
+  slug: string | null;
+  name: string;
+  description: string;
+}
+
+export interface PublicGroupPage {
+  group: PublicGroupSummary;
+  child_groups: PublicGroupSummary[];
+  content: PublicContentSummary[];
+}
+
 function base(containerId: string) {
   return `/api/content/containers/${containerId}`;
 }
@@ -212,9 +253,50 @@ function contentReferences(containerId: string) {
   };
 }
 
-/** Genuinely unauthenticated — no permission check on the backend at all. */
+/** Genuinely unauthenticated — no permission check on the backend at
+ * all. Note the "content/" segment before the slug — it's there
+ * deliberately so a real content slug that happens to equal "discover"
+ * or "groups" is never swallowed by those other public routes. */
 function getPublic(containerId: string, slug: string) {
-  return api.get<PublicContent>(`/api/content/public/${containerId}/${slug}/`);
+  return api.get<PublicContent>(`/api/content/public/${containerId}/content/${slug}/`);
 }
 
-export const content_ = { contentTypes, content, blocks, media, links, embeds, contentReferences, getPublic };
+function discoverPublic(containerId: string, filters?: { content_type_id?: string; search?: string; group_id?: string }) {
+  const qs = new URLSearchParams();
+  if (filters?.content_type_id) qs.set("content_type_id", filters.content_type_id);
+  if (filters?.search) qs.set("search", filters.search);
+  if (filters?.group_id) qs.set("group_id", filters.group_id);
+  const s = qs.toString();
+  return api.get<{ content: PublicContentSummary[] }>(`/api/content/public/${containerId}/discover/${s ? `?${s}` : ""}`).then((r) => r.content);
+}
+
+function listPublicRootGroups(containerId: string) {
+  return api.get<{ groups: PublicGroupSummary[] }>(`/api/content/public/${containerId}/groups/`).then((r) => r.groups);
+}
+
+function getPublicGroup(containerId: string, groupSlug: string) {
+  return api.get<PublicGroupPage>(`/api/content/public/${containerId}/groups/${groupSlug}/`);
+}
+
+function groups(containerId: string) {
+  const b = `${base(containerId)}/groups`;
+  return {
+    list: () => api.get<{ groups: ContentGroup[] }>(`${b}/`).then((r) => r.groups),
+    children: (parentGroupId?: string) =>
+      api.get<{ groups: ContentGroup[] }>(`${b}/children/${parentGroupId ? `?parent_group_id=${parentGroupId}` : ""}`).then((r) => r.groups),
+    create: (input: { name: string; parent_group_id?: string; slug?: string; description?: string; position?: number }) =>
+      api.post<ContentGroup>(`${b}/create/`, input),
+    get: (groupId: string) => api.get<ContentGroup>(`${b}/${groupId}/`),
+    update: (groupId: string, changes: Partial<Pick<ContentGroup, "name" | "slug" | "description" | "position" | "parent_group_id">>) =>
+      api.post<ContentGroup>(`${b}/${groupId}/update/`, changes),
+    delete: (groupId: string) => api.post<{ deleted: true }>(`${b}/${groupId}/delete/`, {}),
+    members: (groupId: string) => api.get<{ members: GroupMember[] }>(`${b}/${groupId}/members/`).then((r) => r.members),
+    addMember: (groupId: string, contentId: string, position = 0) =>
+      api.post<{ id: string; group_id: string; content_id: string; position: number }>(`${b}/${groupId}/members/add/`, { content_id: contentId, position }),
+    removeMember: (groupId: string, contentId: string) => api.post<{ removed: true }>(`${b}/${groupId}/members/${contentId}/remove/`, {}),
+  };
+}
+
+export const content_ = {
+  contentTypes, content, blocks, media, links, embeds, contentReferences, groups, getPublic, discoverPublic, listPublicRootGroups, getPublicGroup,
+};
