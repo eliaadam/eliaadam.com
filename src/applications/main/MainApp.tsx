@@ -83,6 +83,8 @@ import { PublicGroupView } from "../../page/PublicGroupView";
 import { PublicContentIndex } from "../../page/PublicContentIndex";
 import { SearchDashboard } from "../../page/dashboard/SearchDashboard";
 
+import { SettingsDashboard } from "../../page/dashboard/SettingsDashboard";
+
 /**
  * Pure router + provider wiring. Every actual page/component lives in
  * its own file under `page/` or `components/` — this file's only job
@@ -149,6 +151,7 @@ function MainApp() {
                       </ProtectedRoute>
                     }
                   >
+                    <Route path="settings" element={<SettingsDashboard />} />
                     <Route path="search" element={<SearchDashboard />} />
                     <Route index element={<Containers />} />
                     <Route path="profile" element={<Profile />} />
