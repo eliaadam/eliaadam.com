@@ -5,6 +5,7 @@ import type {
   GatewayRoutingPolicy,
   PayoutFeePolicy,
 } from "../../../lib/sdk/domains/paymentGateway";
+import { PaymentMethodsSettingsPage } from "../PaymentMethodsSettingsPage";
 
 const inputClass =
   "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm outline-none ring-black/20 dark:ring-white/30 focus:border-black focus:ring-2 dark:border-neutral-700 dark:bg-neutral-900 dark:focus:border-white";
@@ -45,6 +46,7 @@ export function PaymentGatewaySettings() {
       <div className="mt-6 flex flex-col gap-8">
         <GatewayRoutingSettings />
         <PayoutFeeSettings />
+        <PaymentMethodsSettingsPage />
       </div>
     </div>
   );

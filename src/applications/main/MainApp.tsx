@@ -81,6 +81,7 @@ import { ContentDashboard } from "../../page/dashboard/ContentDashboard";
 import { PublicContentView } from "../../page/PublicContentView";
 import { PublicGroupView } from "../../page/PublicGroupView";
 import { PublicContentIndex } from "../../page/PublicContentIndex";
+import { SearchDashboard } from "../../page/dashboard/SearchDashboard";
 
 /**
  * Pure router + provider wiring. Every actual page/component lives in
@@ -139,6 +140,7 @@ function MainApp() {
                     path="/c/:containerId/g/:groupSlug"
                     element={<PublicGroupView />}
                   />
+
                   <Route
                     path="/dashboard"
                     element={
@@ -147,6 +149,7 @@ function MainApp() {
                       </ProtectedRoute>
                     }
                   >
+                    <Route path="search" element={<SearchDashboard />} />
                     <Route index element={<Containers />} />
                     <Route path="profile" element={<Profile />} />
                     <Route

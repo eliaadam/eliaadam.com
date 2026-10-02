@@ -37,6 +37,8 @@ import { quizGamification } from "./domains/quizGamification";
 import { quizPools } from "./domains/quizPools";
 import { quizAdaptive } from "./domains/quizAdaptive";
 import { content_ as content } from "./domains/content";
+import { search_ as search } from "./domains/search";
+import { paymentMethods_ as paymentMethods } from "./domains/paymentMethods";
 /**
  * Single entry point for every domain's API client.
  *
@@ -77,7 +79,7 @@ export const sdk = {
     customerCredit,
     retailFinanceSetup,
     educationAcademic, educationEnrollment, educationAdmissions, educationAttendance, educationAssessment,
-    quiz, quizPresentation, quizGamification, quizPools, quizAdaptive, content
+    quiz, quizPresentation, quizGamification, quizPools, quizAdaptive, content, search, paymentMethods
 };
 
 export type { TransactionKind } from "./domains/customerCredit";
