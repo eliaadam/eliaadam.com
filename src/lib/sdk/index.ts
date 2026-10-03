@@ -40,6 +40,7 @@ import { content_ as content } from "./domains/content";
 import { search_ as search } from "./domains/search";
 import { paymentMethods_ as paymentMethods } from "./domains/paymentMethods";
 import { settings_ as settings } from "./domains/settings";
+import { analytics_ as analytics } from "./domains/analytics";
 /**
  * Single entry point for every domain's API client.
  *
@@ -91,7 +92,8 @@ export const sdk = {
     content, 
     search, 
     paymentMethods, 
-    settings
+    settings,
+    analytics
 };
 
 export type { TransactionKind } from "./domains/customerCredit";
