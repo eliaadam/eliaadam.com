@@ -18,12 +18,16 @@ import {
   LayoutGrid,
   Rows3,
   AlignLeft,
+  Users,
+  Inbox,
+  Settings as SettingsIcon,
   type LucideIcon,
 } from "lucide-react";
 
 import { useAuth } from "../context/Authcontext";
 import { useContainer } from "../context/ContainerContext";
 import { ThemeToggle } from "../context/ThemeContext";
+import { useCanManageMembers } from "../../lib/hooks/useCanManageMembers";
 
 import { ContainerSwitcher } from "./ContainerSwitcher";
 import { CapabilityNavLink } from "./CapabilityNavLink";
@@ -34,7 +38,14 @@ import {
   type NavDisplayMode,
 } from "../../context/NavDisplayContext";
 
-const staticNavItems = [
+interface NavItem {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end: boolean;
+}
+
+const staticNavItems: NavItem[] = [
   { to: "/dashboard", label: "Containers", icon: Folders, end: true },
   { to: "/dashboard/profile", label: "Profile", icon: User, end: false },
   { to: "/dashboard/templates", label: "Templates", icon: Boxes, end: false },
@@ -63,6 +74,60 @@ const staticNavItems = [
     end: false,
   },
 ];
+
+/**
+ * Members / Join requests / Container settings for whichever container
+ * is CURRENTLY selected — moved here (from per-row links on the
+ * Containers "My Containers" list) so the most common management
+ * actions are one click away from anywhere, not just from that list.
+ *
+ * Gated to the current container's OWNER only, per request. This is
+ * deliberately NOT a `usePermission()` check — ownership here means
+ * `is_container_owner()` (creator or holder of the `container-owner`
+ * role), a direct role-assignment check that bypasses the Authority
+ * Gate entirely, not a permission code. `useCanManageMembers` already
+ * implements exactly this (isCreator || holdsOwnerRole) for
+ * `ContainerMembers.tsx` — reused here rather than re-implemented, so
+ * there's exactly one place this logic can drift from the backend's
+ * own `is_container_owner()`, not two.
+ *
+ * Returns `[]` (nothing rendered) when there's no current container,
+ * ownership is still loading, or the actor isn't the owner — same
+ * hide-while-unauthorized shape as `Show`/`CapabilityNavLink`
+ * elsewhere in this app, just not implemented via that component
+ * because this isn't a usePermission-backed check.
+ */
+function useCurrentContainerNavItems(): NavItem[] {
+  const { currentContainerId } = useContainer();
+  const { canManage, isLoading } = useCanManageMembers(
+    currentContainerId ?? undefined,
+  );
+
+  if (!currentContainerId || isLoading || !canManage) {
+    return [];
+  }
+
+  return [
+    {
+      to: `/dashboard/containers/${currentContainerId}/members`,
+      label: "Members",
+      icon: Users,
+      end: false,
+    },
+    {
+      to: `/dashboard/containers/${currentContainerId}/join-requests`,
+      label: "Join requests",
+      icon: Inbox,
+      end: false,
+    },
+    {
+      to: `/dashboard/containers/${currentContainerId}/settings`,
+      label: "Container settings",
+      icon: SettingsIcon,
+      end: false,
+    },
+  ];
+}
 
 const ASIDE_WIDTH: Record<NavDisplayMode, string> = {
   icons: "72px",
@@ -172,6 +237,12 @@ function ProfileMenu() {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const currentContainerNavItems = useCurrentContainerNavItems();
+
+  // Current-container management links first (Members / Join requests
+  // / Container settings, owner-only, when present), then the fixed
+  // app-wide items — one merged list, rendered identically.
+  const navItems: NavItem[] = [...currentContainerNavItems, ...staticNavItems];
 
   useEffect(() => {
     if (!open) return;
@@ -259,7 +330,7 @@ function ProfileMenu() {
             </p>
 
             <nav className="flex flex-col gap-1">
-              {staticNavItems.map(({ to, label, icon: Icon, end }) => (
+              {navItems.map(({ to, label, icon: Icon, end }) => (
                 <NavLink
                   key={to}
                   to={to}

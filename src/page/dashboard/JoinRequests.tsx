@@ -47,11 +47,11 @@ export function JoinRequests() {
   return (
     <div className="max-w-xl">
       <Link
-        to="/dashboard/containers"
+        to="/dashboard"
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-600 dark:text-neutral-400"
       >
         <ArrowLeft size={14} />
-        Back to containers
+        Back
       </Link>
 
       <h1 className="text-xl font-semibold tracking-tight">Join requests</h1>

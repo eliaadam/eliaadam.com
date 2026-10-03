@@ -47,10 +47,11 @@ export function ContainerMembers() {
 
   const actorsQuery = useQuery({
     queryKey: ["actors", "all"],
-    queryFn: () => sdk.identity.listActors({
-      limit: 200,
-      containerId: ""
-    }),
+    queryFn: () =>
+      sdk.identity.listActors({
+        limit: 200,
+        containerId: "",
+      }),
   });
 
   // "container-owner" is a real, base seeded Authority role (spec
@@ -120,7 +121,7 @@ export function ContainerMembers() {
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-600 dark:text-neutral-400"
       >
         <ArrowLeft size={14} />
-        Back to containers
+        Back
       </Link>
 
       <h1 className="text-xl font-semibold tracking-tight">Members</h1>
